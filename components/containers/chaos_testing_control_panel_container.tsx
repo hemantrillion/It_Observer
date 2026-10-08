@@ -40,11 +40,11 @@ export function ChaosTestingControlPanelContainer({ onChaosTriggered }: ChaosTes
   return (
     <div className="space-y-2.5 w-full">
       {/* Centered Section Header in Arial */}
-      <div className="text-center">
-        <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
-          // INTERACTIVE CHAOS INJECTION TESTING PANEL
+      <div className="text-center space-y-1">
+        <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
+          INTERACTIVE CHAOS INJECTION TESTING PANEL
         </h2>
-        <p className="font-sans text-xs text-black opacity-60">
+        <p className="font-sans text-sm text-black opacity-60">
           Controlled Failure Injection On Local Companion Service (Port 5001)
         </p>
       </div>

@@ -22,11 +22,11 @@ export default function SettingsPage() {
 
       <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-6">
         {/* Centered Section Header in Arial */}
-        <div className="text-center">
-          <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
-            // TEST SUITE CONFIGURATION & CLOUD ADAPTERS
+        <div className="text-center space-y-1">
+          <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
+            TEST SUITE CONFIGURATION & CLOUD ADAPTERS
           </h2>
-          <p className="font-sans text-xs text-black opacity-60">
+          <p className="font-sans text-sm text-black opacity-60">
             Connect Optional Private Credentials For Extended Telemetry Limits
           </p>
         </div>

@@ -75,11 +75,11 @@ export default function ObservatoryDashboardPage() {
       <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-8">
         {/* Section: Overview Metrics */}
         <section className="space-y-3 w-full">
-          <div className="text-center">
-            <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
-              // SYSTEM TELEMETRY OVERVIEW
+          <div className="text-center space-y-1">
+            <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
+              SYSTEM TELEMETRY OVERVIEW
             </h2>
-            <p className="font-sans text-xs text-black opacity-60">
+            <p className="font-sans text-sm text-black opacity-60">
               Live Real-Time Aggregates Across Monitored Infrastructure
             </p>
           </div>
@@ -95,11 +95,11 @@ export default function ObservatoryDashboardPage() {
         {/* Section: Active Critical Notifications */}
         {activeIncidents.length > 0 && (
           <section className="space-y-3 w-full">
-            <div className="text-center">
-              <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
-                // ACTIVE CRITICAL NOTIFICATIONS ({activeIncidents.length})
+            <div className="text-center space-y-1">
+              <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
+                ACTIVE CRITICAL NOTIFICATIONS ({activeIncidents.length})
               </h2>
-              <p className="font-sans text-xs text-black opacity-60">
+              <p className="font-sans text-sm text-black opacity-60">
                 Action Required: Immediate Detected System Incidents
               </p>
             </div>

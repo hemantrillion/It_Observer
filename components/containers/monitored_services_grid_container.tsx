@@ -12,11 +12,11 @@ export function MonitoredServicesGridContainer({ services }: MonitoredServicesGr
   return (
     <div className="space-y-4 w-full">
       {/* Centered Section Header in Arial */}
-      <div className="text-center">
-        <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
-          // TEST SUITE MONITORED TARGETS ({services.length})
+      <div className="text-center space-y-1">
+        <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
+          TEST SUITE MONITORED TARGETS ({services.length})
         </h2>
-        <p className="font-sans text-xs text-black opacity-60">
+        <p className="font-sans text-sm text-black opacity-60">
           Automated Continuous Health & Latency Telemetry Active
         </p>
       </div>
