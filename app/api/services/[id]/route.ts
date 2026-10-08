@@ -5,7 +5,7 @@ import { getMetricSamplesByServiceQuery } from '@/lib/database/get_metric_sample
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -14,8 +14,19 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Service not found' }, { status: 404 });
     }
 
-    const samples = getMetricSamplesByServiceQuery(params.id, 40);
-    return NextResponse.json({ success: true, service, samples });
+    const { searchParams } = new URL(request.url);
+    const limitParam = parseInt(searchParams.get('limit') || '120', 10);
+    const safeLimit = Math.max(10, Math.min(500, isNaN(limitParam) ? 120 : limitParam));
+
+    const samples = getMetricSamplesByServiceQuery(params.id, safeLimit);
+    return NextResponse.json(
+      { success: true, service, samples },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to query service';
     return NextResponse.json({ success: false, error: message }, { status: 500 });

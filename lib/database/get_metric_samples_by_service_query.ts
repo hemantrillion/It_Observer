@@ -12,7 +12,7 @@ export interface MetricSampleRecord {
   error_message: string | null;
 }
 
-export function getMetricSamplesByServiceQuery(serviceId: string, limit = 30): MetricSampleRecord[] {
+export function getMetricSamplesByServiceQuery(serviceId: string, limit = 120): MetricSampleRecord[] {
   initializeObservatoryTables();
   const db = getDatabaseConnection();
   return db.prepare(`
