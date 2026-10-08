@@ -48,6 +48,15 @@ export function TopHeaderNavigationBarContainer({ onPoll, isPolling = false }: T
             href="/settings"
             isActive={pathname === '/settings'}
           />
+          <a
+            href="/metrics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-1.5 border border-black rounded-md font-sans font-semibold text-xs uppercase tracking-wider bg-white text-black hover:bg-neutral-100 transition-colors inline-flex items-center gap-1.5"
+            title="Prometheus Text Metric Exposition Endpoint"
+          >
+            <span>[ METRICS ]</span>
+          </a>
 
           {onPoll && (
             <div className="sm:ml-2">

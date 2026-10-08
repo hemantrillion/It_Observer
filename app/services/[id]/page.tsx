@@ -72,7 +72,7 @@ export default function ServiceDetailPage() {
         ) : (
           <div className="space-y-6 w-full">
             <ServiceDetailInfoBlockCard service={service} />
-            <LatencyMetricTimeseriesGraphCard samples={samples} />
+            <LatencyMetricTimeseriesGraphCard samples={samples} service={service} />
           </div>
         )}
       </main>
