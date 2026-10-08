@@ -56,12 +56,9 @@ export default function ObservatoryDashboardPage() {
   }, [fetchStatus]);
 
   useEffect(() => {
-    // Initial fetch
     fetchStatus();
-    // Immediate first poll
     triggerPoll();
 
-    // Regular polling interval
     const interval = setInterval(() => {
       triggerPoll();
     }, 8000);
@@ -70,42 +67,69 @@ export default function ObservatoryDashboardPage() {
   }, [fetchStatus, triggerPoll]);
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col w-full font-sans">
+      {/* Full-width header */}
       <TopHeaderNavigationBarContainer onPoll={triggerPoll} isPolling={isPolling} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full space-y-6">
-        {/* System Overview Bar */}
-        <SystemOverviewMetricsBarContainer
-          total={summary.total}
-          healthy={summary.healthy}
-          degraded={summary.degraded}
-          down={summary.down}
-          activeAlerts={summary.activeAlerts}
-        />
-
-        {/* Active Incident Alerts */}
-        {activeIncidents.length > 0 && (
-          <div className="space-y-2">
-            <div className="font-mono text-xs font-black uppercase tracking-wider">
-              // ACTIVE CRITICAL NOTIFICATIONS ({activeIncidents.length})
-            </div>
-            {activeIncidents.map((incident) => (
-              <ActiveIncidentAlertNotificationCard key={incident.id} incident={incident} />
-            ))}
+      {/* Full screen left to right main layout */}
+      <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-8">
+        {/* Section: Overview Metrics */}
+        <section className="space-y-3 w-full">
+          <div className="text-center">
+            <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
+              // SYSTEM TELEMETRY OVERVIEW
+            </h2>
+            <p className="font-sans text-xs text-black opacity-60">
+              Live Real-Time Aggregates Across Monitored Infrastructure
+            </p>
           </div>
+          <SystemOverviewMetricsBarContainer
+            total={summary.total}
+            healthy={summary.healthy}
+            degraded={summary.degraded}
+            down={summary.down}
+            activeAlerts={summary.activeAlerts}
+          />
+        </section>
+
+        {/* Section: Active Critical Notifications */}
+        {activeIncidents.length > 0 && (
+          <section className="space-y-3 w-full">
+            <div className="text-center">
+              <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
+                // ACTIVE CRITICAL NOTIFICATIONS ({activeIncidents.length})
+              </h2>
+              <p className="font-sans text-xs text-black opacity-60">
+                Action Required: Immediate Detected System Incidents
+              </p>
+            </div>
+            <div className="space-y-2 w-full">
+              {activeIncidents.map((incident) => (
+                <ActiveIncidentAlertNotificationCard key={incident.id} incident={incident} />
+              ))}
+            </div>
+          </section>
         )}
 
-        {/* Interactive Chaos Testing Panel */}
-        <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
+        {/* Section: Interactive Chaos Testing Panel */}
+        <section className="w-full">
+          <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
+        </section>
 
-        {/* Monitored Services Grid */}
-        <MonitoredServicesGridContainer services={services} />
+        {/* Section: Monitored Services Grid */}
+        <section className="w-full">
+          <MonitoredServicesGridContainer services={services} />
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t-3 border-black p-4 mt-8 bg-white font-mono text-xs flex justify-between items-center max-w-7xl mx-auto w-full">
-        <span className="font-bold">INFRASTRUCTURE OBSERVATORY 30-A</span>
-        <span className="opacity-60">TEST SUITE MONITORED CORE // MONOCHROME NEO-BRUTALISM</span>
+      {/* Full-width Business Footer */}
+      <footer className="w-full border-t border-black px-6 md:px-10 py-5 bg-white font-sans text-xs text-black flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span className="font-bold tracking-tight uppercase">
+          INFRASTRUCTURE OBSERVATORY 30-A
+        </span>
+        <span className="opacity-60 text-center sm:text-right">
+          ENTERPRISE TELEMETRY ENGINE // FULL-WIDTH BUSINESS DASHBOARD
+        </span>
       </footer>
     </div>
   );

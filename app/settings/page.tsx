@@ -17,26 +17,27 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col w-full font-sans">
       <TopHeaderNavigationBarContainer />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 py-6 w-full space-y-6">
-        <div>
-          <h2 className="font-mono font-black text-xl tracking-tight uppercase mb-1">
-            TEST SUITE CONFIGURATION & CLOUD ADAPTERS
+      <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-6">
+        {/* Centered Section Header in Arial */}
+        <div className="text-center">
+          <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
+            // TEST SUITE CONFIGURATION & CLOUD ADAPTERS
           </h2>
-          <p className="font-mono text-xs opacity-60">
-            CONNECT OPTIONAL PRIVATE CREDENTIALS FOR ENHANCED TELEMETRY LIMITS
+          <p className="font-sans text-xs text-black opacity-60">
+            Connect Optional Private Credentials For Extended Telemetry Limits
           </p>
         </div>
 
-        <div className="border-3 border-black p-6 bg-white shadow-brutal space-y-6">
+        <div className="border border-black rounded-lg p-6 bg-white space-y-6 w-full max-w-4xl mx-auto">
           {/* GitHub Token */}
           <div className="space-y-2">
-            <label className="block font-mono text-xs font-black uppercase">
+            <label className="block font-sans text-xs font-bold uppercase text-black">
               GITHUB PERSONAL ACCESS TOKEN (OPTIONAL)
             </label>
-            <p className="font-mono text-[11px] opacity-60">
+            <p className="font-sans text-xs opacity-60 text-black">
               Increases rate limit from 60 to 5,000 requests/hour for GitHub API adapter.
             </p>
             <input
@@ -44,51 +45,51 @@ export default function SettingsPage() {
               value={githubToken}
               onChange={(e) => setGithubToken(e.target.value)}
               placeholder="ghp_..."
-              className="w-full p-2.5 border-2 border-black font-mono text-xs bg-white text-black focus:outline-none focus:bg-white"
+              className="w-full p-2.5 border border-black rounded-md font-mono text-xs bg-white text-black focus:outline-none"
             />
           </div>
 
           {/* AWS CloudWatch Keys */}
-          <div className="space-y-4 border-t-2 border-black pt-4">
+          <div className="space-y-4 border-t border-black/20 pt-4">
             <div>
-              <label className="block font-mono text-xs font-black uppercase">
+              <label className="block font-sans text-xs font-bold uppercase text-black">
                 AWS IAM CREDENTIALS (OPTIONAL)
               </label>
-              <p className="font-mono text-[11px] opacity-60">
+              <p className="font-sans text-xs opacity-60 text-black">
                 Enables live CloudWatch metric querying and EC2/RDS monitoring across 90.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <span className="block font-mono text-[10px] font-bold uppercase mb-1">ACCESS KEY ID</span>
+                <span className="block font-sans text-[10px] font-bold uppercase mb-1 opacity-70">ACCESS KEY ID</span>
                 <input
                   type="text"
                   value={awsKeyId}
                   onChange={(e) => setAwsKeyId(e.target.value)}
                   placeholder="AKIA..."
-                  className="w-full p-2.5 border-2 border-black font-mono text-xs bg-white text-black focus:outline-none"
+                  className="w-full p-2.5 border border-black rounded-md font-mono text-xs bg-white text-black focus:outline-none"
                 />
               </div>
               <div>
-                <span className="block font-mono text-[10px] font-bold uppercase mb-1">SECRET ACCESS KEY</span>
+                <span className="block font-sans text-[10px] font-bold uppercase mb-1 opacity-70">SECRET ACCESS KEY</span>
                 <input
                   type="password"
                   value={awsSecret}
                   onChange={(e) => setAwsSecret(e.target.value)}
                   placeholder="••••••••••••••••"
-                  className="w-full p-2.5 border-2 border-black font-mono text-xs bg-white text-black focus:outline-none"
+                  className="w-full p-2.5 border border-black rounded-md font-mono text-xs bg-white text-black focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Cloudflare Token */}
-          <div className="space-y-2 border-t-2 border-black pt-4">
-            <label className="block font-mono text-xs font-black uppercase">
+          <div className="space-y-2 border-t border-black/20 pt-4">
+            <label className="block font-sans text-xs font-bold uppercase text-black">
               CLOUDFLARE API TOKEN (OPTIONAL)
             </label>
-            <p className="font-mono text-[11px] opacity-60">
+            <p className="font-sans text-xs opacity-60 text-black">
               Enables live edge network latency and security intelligence metrics.
             </p>
             <input
@@ -96,11 +97,11 @@ export default function SettingsPage() {
               value={cloudflareToken}
               onChange={(e) => setCloudflareToken(e.target.value)}
               placeholder="cftoken_..."
-              className="w-full p-2.5 border-2 border-black font-mono text-xs bg-white text-black focus:outline-none"
+              className="w-full p-2.5 border border-black rounded-md font-mono text-xs bg-white text-black focus:outline-none"
             />
           </div>
 
-          <div className="pt-4 border-t-2 border-black flex justify-end">
+          <div className="pt-4 border-t border-black/20 flex justify-end">
             <SaveCloudCredentialsButtonOnSettings onSave={handleSave} isSaved={isSaved} />
           </div>
         </div>

@@ -14,25 +14,25 @@ export function TopHeaderNavigationBarContainer({ onPoll, isPolling = false }: T
   const pathname = usePathname();
 
   return (
-    <header className="border-b-4 border-black bg-white sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <header className="w-full border-b border-black bg-white sticky top-0 z-40">
+      <div className="w-full px-6 md:px-10 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-black text-white font-mono font-black flex items-center justify-center border-2 border-black text-sm">
+          <div className="w-8 h-8 rounded-md bg-black text-white font-mono font-bold flex items-center justify-center text-xs">
             30A
           </div>
           <div>
-            <h1 className="font-mono font-black text-lg tracking-tight uppercase">
+            <h1 className="font-sans font-bold text-base tracking-tight uppercase text-black">
               INFRASTRUCTURE OBSERVATORY
             </h1>
-            <p className="font-mono text-[10px] uppercase tracking-widest opacity-60">
+            <p className="font-sans text-[11px] uppercase tracking-wider text-black opacity-60">
               LIGHTWEIGHT TELEMETRY & HEALTH ENGINE
             </p>
           </div>
         </div>
 
         {/* Navigation & Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <NavigationTabButtonOnNavBar
             label="[ DASHBOARD ]"
             href="/"
@@ -50,7 +50,7 @@ export function TopHeaderNavigationBarContainer({ onPoll, isPolling = false }: T
           />
 
           {onPoll && (
-            <div className="ml-2">
+            <div className="sm:ml-2">
               <RefreshMetricsButtonOnHeader onRefresh={onPoll} isLoading={isPolling} />
             </div>
           )}

@@ -12,9 +12,9 @@ export function TriggerChaosRecoverButtonOnPanel({ onTrigger, isLoading }: Trigg
     <button
       onClick={onTrigger}
       disabled={isLoading}
-      className="px-3 py-2 bg-black text-white font-mono font-bold text-xs uppercase border-2 border-black shadow-brutal hover:bg-white hover:text-black active:translate-x-0.5 active:translate-y-0.5 transition-none cursor-pointer disabled:opacity-50"
+      className="px-4 py-2 bg-black text-white font-sans font-semibold text-xs uppercase border border-black rounded-md hover:bg-neutral-800 transition-colors cursor-pointer disabled:opacity-50"
     >
-      [✓ RECOVER SERVICE]
+      ✓ RECOVER SERVICE
     </button>
   );
 }

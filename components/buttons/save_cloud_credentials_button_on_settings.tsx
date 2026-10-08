@@ -12,9 +12,9 @@ export function SaveCloudCredentialsButtonOnSettings({ onSave, isSaved }: SaveCl
     <button
       onClick={onSave}
       type="button"
-      className="px-6 py-2.5 bg-black text-white font-mono font-bold text-xs uppercase border-2 border-black shadow-brutal hover:bg-white hover:text-black active:translate-x-0.5 active:translate-y-0.5 transition-none cursor-pointer"
+      className="px-6 py-2.5 bg-black text-white font-sans font-semibold text-xs uppercase border border-black rounded-md hover:bg-neutral-800 transition-colors cursor-pointer"
     >
-      {isSaved ? '[ CREDENTIALS SAVED ✓ ]' : '[ SAVE CONFIGURATION ]'}
+      {isSaved ? 'CREDENTIALS SAVED ✓' : 'SAVE CONFIGURATION'}
     </button>
   );
 }

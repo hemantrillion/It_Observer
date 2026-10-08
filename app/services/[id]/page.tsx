@@ -40,24 +40,37 @@ export default function ServiceDetailPage() {
   }, [fetchServiceDetails]);
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col w-full font-sans">
       <TopHeaderNavigationBarContainer />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full space-y-6">
-        <div>
+      <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-6">
+        <div className="flex items-center justify-between">
           <BackToDashboardButtonOnDetailPage />
+          <span className="font-sans text-xs text-black opacity-60 uppercase font-semibold">
+            TELEMETRY INSPECTION NODE
+          </span>
+        </div>
+
+        {/* Centered section header in Arial */}
+        <div className="text-center">
+          <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
+            // SERVICE TELEMETRY DETAIL & LATENCY LOG
+          </h2>
+          <p className="font-sans text-xs text-black opacity-60">
+            Real-Time Sample Stream & Uptime History
+          </p>
         </div>
 
         {isLoading ? (
-          <div className="p-12 text-center font-mono font-bold text-sm">
+          <div className="p-16 text-center font-sans font-bold text-sm border border-black rounded-lg">
             [ LOADING SERVICE TELEMETRY DATA... ]
           </div>
         ) : !service ? (
-          <div className="p-12 text-center font-mono font-bold text-sm border-2 border-black">
+          <div className="p-16 text-center font-sans font-bold text-sm border border-black rounded-lg">
             [ SERVICE NOT FOUND ]
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             <ServiceDetailInfoBlockCard service={service} />
             <LatencyMetricTimeseriesGraphCard samples={samples} />
           </div>

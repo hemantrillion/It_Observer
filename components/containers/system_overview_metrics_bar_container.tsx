@@ -21,7 +21,7 @@ export function SystemOverviewMetricsBarContainer({
   const uptimeScore = total > 0 ? (((total - down) / total) * 100).toFixed(1) : '100.0';
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 w-full">
       <SystemHealthMetricSummaryCard
         label="TOTAL SERVICES"
         value={total}

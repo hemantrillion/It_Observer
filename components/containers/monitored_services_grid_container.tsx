@@ -10,17 +10,18 @@ interface MonitoredServicesGridContainerProps {
 
 export function MonitoredServicesGridContainer({ services }: MonitoredServicesGridContainerProps) {
   return (
-    <div className="space-y-3">
-      <div className="border-b-3 border-black pb-2 flex justify-between items-center">
-        <h3 className="font-mono font-black text-sm uppercase tracking-wider">
+    <div className="space-y-4 w-full">
+      {/* Centered Section Header in Arial */}
+      <div className="text-center">
+        <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
           // TEST SUITE MONITORED TARGETS ({services.length})
-        </h3>
-        <span className="font-mono text-[11px] font-bold opacity-60">
-          AUTOMATED POLLING CYCLE ACTIVE
-        </span>
+        </h2>
+        <p className="font-sans text-xs text-black opacity-60">
+          Automated Continuous Health & Latency Telemetry Active
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
         {services.map((service) => (
           <MonitoredServiceStatusBlockCard key={service.id} service={service} />
         ))}

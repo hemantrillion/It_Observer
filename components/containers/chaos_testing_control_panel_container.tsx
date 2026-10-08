@@ -24,7 +24,6 @@ export function ChaosTestingControlPanelContainer({ onChaosTriggered }: ChaosTes
       const data = await res.json();
       if (data.success) {
         setLastActionMessage(`[ACTION DISPATCHED]: ${action.toUpperCase()} - ${data.result.message}`);
-        // Trigger immediate poll so UI updates immediately
         setTimeout(() => {
           onChaosTriggered();
         }, 300);
@@ -39,36 +38,40 @@ export function ChaosTestingControlPanelContainer({ onChaosTriggered }: ChaosTes
   };
 
   return (
-    <div className="border-3 border-black p-4 bg-white shadow-brutal space-y-3">
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b-2 border-black pb-2 gap-2">
-        <div>
-          <span className="font-mono text-xs font-black uppercase tracking-wider">
-            // INTERACTIVE CHAOS INJECTION TESTING PANEL
-          </span>
-          <p className="font-mono text-[11px] opacity-70">
-            CONTROLLED FAILURE INJECTION ON LOCAL COMPANION SERVICE (PORT 5001)
-          </p>
-        </div>
-        {lastActionMessage && (
-          <span className="font-mono text-[10px] font-bold bg-black text-white px-2 py-0.5 border border-black truncate">
-            {lastActionMessage}
-          </span>
-        )}
+    <div className="space-y-2.5 w-full">
+      {/* Centered Section Header in Arial */}
+      <div className="text-center">
+        <h2 className="font-sans font-bold text-sm tracking-wider uppercase text-black">
+          // INTERACTIVE CHAOS INJECTION TESTING PANEL
+        </h2>
+        <p className="font-sans text-xs text-black opacity-60">
+          Controlled Failure Injection On Local Companion Service (Port 5001)
+        </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 pt-1">
-        <TriggerChaosDownButtonOnPanel
-          onTrigger={() => handleAction('down')}
-          isLoading={isLoading}
-        />
-        <TriggerChaosLagButtonOnPanel
-          onTrigger={() => handleAction('lag')}
-          isLoading={isLoading}
-        />
-        <TriggerChaosRecoverButtonOnPanel
-          onTrigger={() => handleAction('recover')}
-          isLoading={isLoading}
-        />
+      <div className="border border-black rounded-lg p-5 bg-white space-y-4">
+        {lastActionMessage && (
+          <div className="text-center">
+            <span className="font-sans text-xs font-semibold bg-black text-white px-3 py-1 rounded inline-block">
+              {lastActionMessage}
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <TriggerChaosDownButtonOnPanel
+            onTrigger={() => handleAction('down')}
+            isLoading={isLoading}
+          />
+          <TriggerChaosLagButtonOnPanel
+            onTrigger={() => handleAction('lag')}
+            isLoading={isLoading}
+          />
+          <TriggerChaosRecoverButtonOnPanel
+            onTrigger={() => handleAction('recover')}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
     </div>
   );

@@ -30,21 +30,12 @@ export default function IncidentsHistoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col">
+    <div className="min-h-screen bg-white text-black flex flex-col w-full font-sans">
       <TopHeaderNavigationBarContainer onPoll={fetchIncidents} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 py-6 w-full space-y-6">
-        <div>
-          <h2 className="font-mono font-black text-xl tracking-tight uppercase mb-1">
-            INCIDENT INTELLIGENCE & AUDIT TRAIL
-          </h2>
-          <p className="font-mono text-xs opacity-60">
-            RECORDED SERVICE DEGRADATIONS, OUTAGES, AND RECOVERY TIMELINES
-          </p>
-        </div>
-
+      <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-6">
         {isLoading ? (
-          <div className="p-12 text-center font-mono font-bold text-sm">
+          <div className="p-16 text-center font-sans font-bold text-sm border border-black rounded-lg">
             [ LOADING INCIDENT LOGS... ]
           </div>
         ) : (

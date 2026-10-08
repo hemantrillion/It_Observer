@@ -13,10 +13,10 @@ export function NavigationTabButtonOnNavBar({ label, href, isActive }: Navigatio
   return (
     <Link
       href={href}
-      className={`px-4 py-2 border-2 border-black font-mono font-bold text-xs uppercase tracking-wider transition-none ${
+      className={`px-3.5 py-1.5 border border-black rounded-md font-sans font-semibold text-xs uppercase tracking-wider transition-colors ${
         isActive
-          ? 'bg-black text-white shadow-brutal-sm'
-          : 'bg-white text-black hover:bg-black hover:text-white'
+          ? 'bg-black text-white'
+          : 'bg-white text-black hover:bg-neutral-100'
       }`}
     >
       {label}
