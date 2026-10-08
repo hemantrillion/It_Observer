@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:all": "node scripts/run-all.js",
     "build": "next build",
     "start": "next start",
     "service": "node controlled_service/server.js"
