@@ -11,6 +11,12 @@ import {
 import { GmailRightRail } from '@/components/gmail/gmail_right_rail';
 import { GmailInboxView } from '@/components/gmail/gmail_inbox_view';
 import { ObservatoryTelemetryEmbeddedView } from '@/components/gmail/observatory_telemetry_embedded_view';
+import {
+  GmailQuickSettingsPanel,
+  DensityOption,
+  ThemeOption,
+  PRESET_THEMES,
+} from '@/components/gmail/gmail_quick_settings_panel';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
 import { MessageSquare, Video } from 'lucide-react';
@@ -21,6 +27,11 @@ export default function ObservatoryGmailLayoutPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Quick Settings State
+  const [isQuickSettingsOpen, setIsQuickSettingsOpen] = useState(false);
+  const [density, setDensity] = useState<DensityOption>('compact');
+  const [activeTheme, setActiveTheme] = useState<ThemeOption>(PRESET_THEMES[0]);
 
   // Telemetry data state
   const [services, setServices] = useState<MonitoredServiceRecord[]>([]);
@@ -33,6 +44,64 @@ export default function ObservatoryGmailLayoutPage() {
   });
   const [activeIncidents, setActiveIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isPolling, setIsPolling] = useState(false);
+
+  // Restore saved theme and density on mount
+  useEffect(() => {
+    try {
+      const savedThemeId = localStorage.getItem('gmail_theme_id');
+      const savedCustomBg = localStorage.getItem('gmail_custom_wallpaper');
+      const savedDensity = localStorage.getItem('gmail_density') as DensityOption | null;
+
+      if (savedDensity) {
+        setDensity(savedDensity);
+      }
+
+      if (savedCustomBg) {
+        setActiveTheme({
+          id: 'custom_pc',
+          name: 'Custom Wallpaper',
+          type: 'image',
+          previewUrl: savedCustomBg,
+          backgroundStyle: `url(${savedCustomBg}) center/cover no-repeat fixed`,
+        });
+      } else if (savedThemeId) {
+        const found = PRESET_THEMES.find((t) => t.id === savedThemeId);
+        if (found) setActiveTheme(found);
+      }
+    } catch {
+      // localStorage may fail in private mode
+    }
+  }, []);
+
+  const handleSelectTheme = (theme: ThemeOption) => {
+    setActiveTheme(theme);
+    try {
+      localStorage.setItem('gmail_theme_id', theme.id);
+      localStorage.removeItem('gmail_custom_wallpaper');
+    } catch {}
+  };
+
+  const handleUploadCustomWallpaper = (dataUrl: string) => {
+    const customTheme: ThemeOption = {
+      id: 'custom_pc',
+      name: 'Custom Wallpaper',
+      type: 'image',
+      previewUrl: dataUrl,
+      backgroundStyle: `url(${dataUrl}) center/cover no-repeat fixed`,
+    };
+    setActiveTheme(customTheme);
+    try {
+      localStorage.setItem('gmail_custom_wallpaper', dataUrl);
+      localStorage.setItem('gmail_theme_id', 'custom_pc');
+    } catch {}
+  };
+
+  const handleDensityChange = (d: DensityOption) => {
+    setDensity(d);
+    try {
+      localStorage.setItem('gmail_density', d);
+    } catch {}
+  };
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -81,49 +150,83 @@ export default function ObservatoryGmailLayoutPage() {
     return () => clearInterval(interval);
   }, [fetchStatus, triggerPoll]);
 
+  const hasWallpaper = activeTheme.id !== 'default';
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#f6f8fc] text-[#1f1f1f] overflow-hidden font-sans select-none">
+    <div
+      style={hasWallpaper ? { background: activeTheme.backgroundStyle } : undefined}
+      className={`h-screen w-screen flex flex-col ${
+        hasWallpaper ? 'bg-cover bg-center' : 'bg-[#f6f8fc]'
+      } text-[#1f1f1f] overflow-hidden font-sans select-none relative`}
+    >
       {/* Zone 3: Top Navigation Bar */}
-      <GmailTopNavbar
-        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        activeMode={activeRailTab}
+      <div className={hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'}>
+        <GmailTopNavbar
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          activeMode={activeRailTab}
+          onOpenSettings={() => setIsQuickSettingsOpen((prev) => !prev)}
+          isSettingsOpen={isQuickSettingsOpen}
+        />
+      </div>
+
+      {/* Quick Settings Panel Flyout */}
+      <GmailQuickSettingsPanel
+        isOpen={isQuickSettingsOpen}
+        onClose={() => setIsQuickSettingsOpen(false)}
+        density={density}
+        onDensityChange={handleDensityChange}
+        activeThemeId={activeTheme.id}
+        onSelectTheme={handleSelectTheme}
+        onUploadCustomWallpaper={handleUploadCustomWallpaper}
+        onSeeAllSettings={() => {
+          setActiveRailTab('demo');
+          setDemoSubView('settings');
+        }}
       />
 
       {/* Main Body Layout: Horizontal Flexbox Container */}
       <div className="flex flex-1 overflow-hidden">
         {/* Zone 1: Far-Left Narrow Rail (Mail, Chat, Meet, Demo) */}
-        <GmailLeftRail
-          activeTab={activeRailTab}
-          onSelectTab={(tab) => {
-            setActiveRailTab(tab);
-            if (tab === 'demo') {
-              setDemoSubView('dashboard');
-            }
-          }}
-        />
+        <div className={hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}>
+          <GmailLeftRail
+            activeTab={activeRailTab}
+            onSelectTab={(tab) => {
+              setActiveRailTab(tab);
+              if (tab === 'demo') {
+                setDemoSubView('dashboard');
+              }
+            }}
+          />
+        </div>
 
         {/* Zone 2: Collapsible Sidebar */}
         {isSidebarOpen && (
-          <GmailLeftSidebar
-            activeTab={activeRailTab}
-            demoSubView={demoSubView}
-            onSelectDemoSubView={setDemoSubView}
-            statusFilter={statusFilter}
-            onSelectStatusFilter={setStatusFilter}
-            onPoll={triggerPoll}
-            isPolling={isPolling}
-            incidentCount={activeIncidents.length}
-            healthyCount={summary.healthy}
-            degradedCount={summary.degraded}
-            downCount={summary.down}
-            totalServicesCount={summary.total}
-          />
+          <div className={hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}>
+            <GmailLeftSidebar
+              activeTab={activeRailTab}
+              demoSubView={demoSubView}
+              onSelectDemoSubView={setDemoSubView}
+              statusFilter={statusFilter}
+              onSelectStatusFilter={setStatusFilter}
+              onPoll={triggerPoll}
+              isPolling={isPolling}
+              incidentCount={activeIncidents.length}
+              healthyCount={summary.healthy}
+              degradedCount={summary.degraded}
+              downCount={summary.down}
+              totalServicesCount={summary.total}
+            />
+          </div>
         )}
 
         {/* Zone 4: Central Workspace Card */}
-        <main className="flex-1 flex flex-col bg-white rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm">
+        <main
+          className={`flex-1 flex flex-col rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm ${
+            hasWallpaper ? 'bg-white/95 backdrop-blur-md shadow-xl' : 'bg-white'
+          }`}
+        >
           {activeRailTab === 'demo' ? (
             <ObservatoryTelemetryEmbeddedView
               services={services}
@@ -134,9 +237,10 @@ export default function ObservatoryGmailLayoutPage() {
               demoSubView={demoSubView}
               statusFilter={statusFilter}
               searchQuery={searchQuery}
+              density={density}
             />
           ) : activeRailTab === 'mail' ? (
-            <GmailInboxView />
+            <GmailInboxView density={density} />
           ) : activeRailTab === 'chat' ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
               <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
@@ -173,7 +277,9 @@ export default function ObservatoryGmailLayoutPage() {
         </main>
 
         {/* Zone 5: Far-Right Companion Rail */}
-        <GmailRightRail />
+        <div className={hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}>
+          <GmailRightRail />
+        </div>
       </div>
     </div>
   );

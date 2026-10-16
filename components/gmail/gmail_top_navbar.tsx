@@ -15,6 +15,8 @@ interface GmailTopNavbarProps {
   searchQuery?: string;
   onSearchChange?: (q: string) => void;
   activeMode?: string;
+  onOpenSettings?: () => void;
+  isSettingsOpen?: boolean;
 }
 
 export function GmailTopNavbar({
@@ -22,6 +24,8 @@ export function GmailTopNavbar({
   searchQuery = '',
   onSearchChange,
   activeMode = 'demo',
+  onOpenSettings,
+  isSettingsOpen = false,
 }: GmailTopNavbarProps) {
   return (
     <header className="h-16 flex items-center justify-between px-4 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
@@ -113,8 +117,13 @@ export function GmailTopNavbar({
 
         {/* Settings */}
         <button
+          onClick={onOpenSettings}
           title="Settings"
-          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors"
+          className={`p-2 rounded-full transition-colors ${
+            isSettingsOpen
+              ? 'bg-black/15 text-[#1f1f1f]'
+              : 'hover:bg-black/5 text-[#444746]'
+          }`}
         >
           <Settings className="w-5 h-5" />
         </button>

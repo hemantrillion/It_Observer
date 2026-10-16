@@ -194,9 +194,15 @@ const INITIAL_EMAILS: EmailItem[] = [
   },
 ];
 
+import { DensityOption } from './gmail_quick_settings_panel';
+
 type CategoryTab = 'primary' | 'promotions' | 'social' | 'updates';
 
-export function GmailInboxView() {
+interface GmailInboxViewProps {
+  density?: DensityOption;
+}
+
+export function GmailInboxView({ density = 'compact' }: GmailInboxViewProps) {
   const [emails, setEmails] = useState<EmailItem[]>(INITIAL_EMAILS);
   const [activeTab, setActiveTab] = useState<CategoryTab>('primary');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -356,11 +362,17 @@ export function GmailInboxView() {
       <div className="flex-1 overflow-y-auto divide-y divide-[#f2f4f8]">
         {emails.map((email) => {
           const isSelected = selectedIds.has(email.id);
+          const rowPadding =
+            density === 'compact'
+              ? 'py-1 text-xs'
+              : density === 'comfortable'
+              ? 'py-2 text-sm'
+              : 'py-2.5 text-sm';
 
           return (
             <div
               key={email.id}
-              className={`group flex items-center px-4 py-2 hover:shadow-xs transition-colors cursor-pointer text-sm ${
+              className={`group flex items-center px-4 ${rowPadding} hover:shadow-xs transition-colors cursor-pointer ${
                 isSelected
                   ? 'bg-[#c2e7ff]/40'
                   : email.isUnread

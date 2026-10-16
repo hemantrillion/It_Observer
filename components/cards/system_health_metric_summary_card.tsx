@@ -15,25 +15,34 @@ export function SystemHealthMetricSummaryCard({
   subtext,
   isWarning = false,
 }: SystemHealthMetricSummaryCardProps) {
+  const getAccentColor = () => {
+    const l = label.toLowerCase();
+    if (l.includes('healthy')) return 'text-[#137333]';
+    if (l.includes('degraded')) return Number(value) > 0 ? 'text-[#b06000]' : 'text-[#444746]';
+    if (l.includes('down')) return Number(value) > 0 ? 'text-[#c5221f]' : 'text-[#444746]';
+    if (l.includes('incident') || l.includes('alert')) return Number(value) > 0 ? 'text-[#c5221f]' : 'text-[#444746]';
+    return 'text-[#0b57d0]';
+  };
+
   return (
-    <div className="border border-black rounded-lg p-5 bg-white flex flex-col justify-between h-full">
+    <div className="border border-[#e0e2ec] hover:border-[#0b57d0]/40 rounded-2xl p-5 bg-white flex flex-col justify-between h-full shadow-2xs hover:shadow-md transition-all">
       <div className="flex items-center justify-between mb-2">
-        <span className="font-sans text-[11px] font-bold uppercase tracking-wider text-black opacity-70">
+        <span className="font-sans text-[11px] font-semibold uppercase tracking-wider text-[#444746]">
           {label}
         </span>
-        {isWarning && (
-          <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded bg-black text-white uppercase">
+        {isWarning && Number(value) > 0 && (
+          <span className="font-sans text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fce8e6] text-[#c5221f] border border-[#f5c2c7] uppercase">
             ATTN
           </span>
         )}
       </div>
 
-      <div className="text-3xl font-sans font-bold text-black tracking-tight my-2">
+      <div className={`text-3xl font-sans font-bold tracking-tight my-1.5 ${getAccentColor()}`}>
         {value}
       </div>
 
       {subtext && (
-        <div className="font-sans text-[11px] text-black opacity-60 uppercase mt-1">
+        <div className="font-sans text-[11px] text-[#5e5e5e] font-medium mt-1">
           {subtext}
         </div>
       )}
