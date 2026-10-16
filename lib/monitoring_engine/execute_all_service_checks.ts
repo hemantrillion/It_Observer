@@ -9,10 +9,14 @@ export async function executeAllServiceChecks() {
 
   for (const res of results) {
     const isFailure = res.status !== 'HEALTHY';
-    updateServiceStatusQuery(res.serviceId, res.status, res.responseTimeMs, isFailure);
+    // Clamp response time to realistic probe bounds (max 6000ms) to avoid OS sleep/hibernation skew
+    const safeResponseTimeMs = Math.max(1, Math.min(6000, res.responseTimeMs));
+    res.responseTimeMs = safeResponseTimeMs;
+
+    updateServiceStatusQuery(res.serviceId, res.status, safeResponseTimeMs, isFailure);
     insertMetricSampleQuery({
       serviceId: res.serviceId,
-      responseTimeMs: res.responseTimeMs,
+      responseTimeMs: safeResponseTimeMs,
       httpStatus: res.httpStatus,
       cpuPercentage: res.cpuPercentage,
       memoryMb: res.memoryMb,

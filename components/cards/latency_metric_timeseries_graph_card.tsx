@@ -26,7 +26,9 @@ interface LatencyMetricTimeseriesGraphCardProps {
 }
 
 function extractLatency(s: GenericMetricSample): number {
-  return s.latency_ms ?? s.response_time_ms ?? 0;
+  const raw = s.latency_ms ?? s.response_time_ms ?? 0;
+  // Guard against OS sleep/hibernation skew: clamp between 0 and 6000ms (standard probe timeout)
+  return Math.min(6000, Math.max(0, raw));
 }
 
 function getCleanUpperBound(val: number): number {
@@ -34,12 +36,12 @@ function getCleanUpperBound(val: number): number {
   if (val <= 250) return 250;
   if (val <= 500) return 500;
   if (val <= 1000) return 1000;
+  if (val <= 1500) return 1500;
   if (val <= 2000) return 2000;
   if (val <= 3000) return 3000;
+  if (val <= 4000) return 4000;
   if (val <= 5000) return 5000;
-  if (val <= 10000) return 10000;
-  const power = Math.pow(10, Math.floor(Math.log10(val)));
-  return Math.ceil(val / power) * power;
+  return 6000; // Cap scales strictly at 6000ms max (standard maximum HTTP timeout)
 }
 
 function formatTime(isoString: string): string {
@@ -47,6 +49,24 @@ function formatTime(isoString: string): string {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return isoString;
     return d.toTimeString().split(' ')[0];
+  } catch {
+    return isoString;
+  }
+}
+
+function formatAxisDateOrTime(isoString: string, spansMultipleDays: boolean): string {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const timeStr = d.toTimeString().split(' ')[0];
+    if (spansMultipleDays) {
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = d.getDate();
+      const month = monthNames[d.getMonth()];
+      const hoursMinutes = timeStr.substring(0, 5);
+      return `${day} ${month} ${hoursMinutes}`;
+    }
+    return timeStr;
   } catch {
     return isoString;
   }
@@ -247,13 +267,20 @@ export function LatencyMetricTimeseriesGraphCard({
   const serviceId = service?.id || (chronological[0]?.service_id ?? 'service');
   const targetUrl = service?.target_url || 'http://localhost/probe';
 
+  const spansMultipleDays = useMemo(() => {
+    if (chronological.length < 2) return false;
+    const first = new Date(chronological[0].timestamp).toDateString();
+    const last = new Date(chronological[chronological.length - 1].timestamp).toDateString();
+    return first !== last;
+  }, [chronological]);
+
   // Calculate start & end times of the currently visible time frame
   const timeFrameLabel = useMemo(() => {
     if (chronological.length < 2) return '';
-    const start = formatTime(chronological[0].timestamp);
-    const end = formatTime(chronological[chronological.length - 1].timestamp);
+    const start = formatAxisDateOrTime(chronological[0].timestamp, spansMultipleDays);
+    const end = formatAxisDateOrTime(chronological[chronological.length - 1].timestamp, spansMultipleDays);
     return `${start} → ${end}`;
-  }, [chronological]);
+  }, [chronological, spansMultipleDays]);
 
   return (
     <div className="border border-black rounded-lg p-5 bg-white space-y-5 w-full">
@@ -502,7 +529,7 @@ export function LatencyMetricTimeseriesGraphCard({
                 {xTickIndices.map((idx) => {
                   const pt = points[idx];
                   if (!pt) return null;
-                  const timeLabel = formatTime(pt.sample.timestamp);
+                  const timeLabel = formatAxisDateOrTime(pt.sample.timestamp, spansMultipleDays);
 
                   // Edge anchor adjustment to prevent overflow
                   const isFirst = idx === 0;
