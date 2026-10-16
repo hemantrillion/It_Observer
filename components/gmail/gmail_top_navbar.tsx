@@ -51,9 +51,9 @@ export function GmailTopNavbar({
       </div>
 
       {/* Middle: Rounded Pill Search Box - Left-aligned on the exact vertical axis where Box 4 begins */}
-      <div className="w-[720px] max-w-[calc(100%-420px)] shrink-0">
-        <div className="bg-[#eaf1fb] hover:bg-[#e1e9f5] focus-within:bg-white focus-within:shadow-md transition-all rounded-full h-11 flex items-center px-4 gap-3 border border-transparent focus-within:border-[#c4c7c5]">
-          <Search className="w-5 h-5 text-[#444746] shrink-0" />
+      <div className="w-[720px] max-w-[calc(100%-460px)] shrink-0">
+        <div className="bg-[#eaf1fb] hover:bg-[#e1e9f5] focus-within:bg-white focus-within:shadow-md transition-all rounded-full h-12 flex items-center px-4 gap-3.5 border border-transparent focus-within:border-[#c4c7c5]">
+          <Search className="w-5.5 h-5.5 text-[#444746] shrink-0" />
           <input
             type="text"
             value={searchQuery}
@@ -63,14 +63,14 @@ export function GmailTopNavbar({
                 ? 'Search InfraTrace telemetry, services, metrics...'
                 : 'Search in InfraTrace'
             }
-            className="w-full bg-transparent text-sm text-[#1f1f1f] placeholder:text-[#5e5e5e] outline-none font-sans"
+            className="w-full bg-transparent text-[15px] text-[#1f1f1f] placeholder:text-[#5e5e5e] outline-none font-sans"
           />
           <button
             type="button"
             title="Search options"
-            className="p-1 rounded-full hover:bg-black/5 text-[#444746]"
+            className="p-1.5 rounded-full hover:bg-black/5 text-[#444746]"
           >
-            <SlidersHorizontal className="w-4 h-4" />
+            <SlidersHorizontal className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -78,14 +78,14 @@ export function GmailTopNavbar({
       {/* Spacer pushing controls to the far right, keeping search bar strictly left-aligned */}
       <div className="flex-1 min-w-4" />
 
-      {/* Right: Controls & Profile (Enlarged to match real Gmail dimensions) */}
-      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 pr-1">
+      {/* Right: Controls & Profile (Enlarged slightly more as requested) */}
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0 pr-1">
         {/* Toggle Flexbox Boundaries Button: strictly 'Flex' text (Green = ON, Red = OFF) */}
         {onToggleFlexboxBorders && (
           <button
             onClick={onToggleFlexboxBorders}
             title={showFlexboxBorders ? 'Flex: ON (Green)' : 'Flex: OFF (Red)'}
-            className={`h-10 px-4 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-xs flex items-center justify-center ${
+            className={`h-11 px-5 rounded-full text-sm font-bold transition-all cursor-pointer shadow-xs flex items-center justify-center ${
               showFlexboxBorders
                 ? 'bg-[#188038] text-white hover:bg-[#137333]'
                 : 'bg-[#d93025] text-white hover:bg-[#b3261e]'
@@ -96,39 +96,39 @@ export function GmailTopNavbar({
         )}
 
         {/* Status Pill (Active) */}
-        <div className="hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full border border-[#747775]/35 text-sm font-medium text-[#1f1f1f] hover:bg-black/5 cursor-pointer transition-colors">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block" />
-          <span>Active</span>
-          <ChevronDown className="w-4 h-4 text-[#444746]" />
+        <div className="hidden md:flex items-center gap-2.5 h-11 px-4.5 rounded-full border border-[#747775]/40 text-sm font-medium text-[#1f1f1f] hover:bg-black/5 cursor-pointer transition-colors">
+          <span className="w-3 h-3 rounded-full bg-[#188038] inline-block" />
+          <span className="text-[14px]">Active</span>
+          <ChevronDown className="w-4.5 h-4.5 text-[#444746]" />
         </div>
 
-        {/* Support Help (40px circle with 22px icon) */}
+        {/* Support Help (44px circle with 24px icon) */}
         <button
           title="Support"
-          className="w-10 h-10 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
+          className="w-11 h-11 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
         >
-          <HelpCircle className="w-[22px] h-[22px]" />
+          <HelpCircle className="w-6 h-6" />
         </button>
 
-        {/* Settings (40px circle with 22px icon) */}
+        {/* Settings (44px circle with 24px icon) */}
         <button
           onClick={onOpenSettings}
           title="Settings"
-          className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
+          className={`w-11 h-11 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             isSettingsOpen
               ? 'bg-black/15 text-[#1f1f1f]'
               : 'hover:bg-black/10 text-[#444746]'
           }`}
         >
-          <Settings className="w-[22px] h-[22px]" />
+          <Settings className="w-6 h-6" />
         </button>
 
-        {/* Google Apps 9-dots Grid (40px circle with 24px icon) */}
+        {/* Google Apps 9-dots Grid (44px circle with 26px icon) */}
         <button
           title="Google apps"
-          className="w-10 h-10 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
+          className="w-11 h-11 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
         >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="w-6.5 h-6.5" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="6" cy="6" r="2" />
             <circle cx="12" cy="6" r="2" />
             <circle cx="18" cy="6" r="2" />
@@ -141,12 +141,12 @@ export function GmailTopNavbar({
           </svg>
         </button>
 
-        {/* User Profile Avatar (40px circle matching real Gmail) */}
+        {/* User Profile Avatar (44px circle matching real Gmail) */}
         <div className="relative cursor-pointer ml-1">
-          <div className="w-10 h-10 rounded-full bg-[#004d40] text-white font-medium text-base flex items-center justify-center shadow-xs">
+          <div className="w-11 h-11 rounded-full bg-[#004d40] text-white font-medium text-lg flex items-center justify-center shadow-xs">
             H
           </div>
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#188038] ring-2 ring-white" />
+          <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-[#188038] ring-2 ring-white" />
         </div>
       </div>
     </header>
