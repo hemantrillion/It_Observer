@@ -28,6 +28,9 @@ export default function ObservatoryGmailLayoutPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  // Flexbox Boundaries Visual Debugger (Default: ON as requested)
+  const [showFlexBoundaries, setShowFlexBoundaries] = useState(true);
+
   // Quick Settings State
   const [isQuickSettingsOpen, setIsQuickSettingsOpen] = useState(false);
   const [density, setDensity] = useState<DensityOption>('compact');
@@ -159,8 +162,26 @@ export default function ObservatoryGmailLayoutPage() {
         hasWallpaper ? 'bg-cover bg-center' : 'bg-[#f6f8fc]'
       } text-[#1f1f1f] overflow-hidden font-sans select-none relative`}
     >
-      {/* Zone 3: Top Navigation Bar */}
-      <div className={hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'}>
+      {/* Zone 3: Top Navigation Bar Flexbox */}
+      <div
+        className={`relative shrink-0 ${
+          hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'
+        } ${
+          showFlexBoundaries
+            ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+            : ''
+        }`}
+      >
+        {/* Yellow Box 3 Indicator matching user's drawing */}
+        {showFlexBoundaries && (
+          <div className="absolute -top-3 left-4 bg-[#fde047] text-black font-extrabold text-[11px] px-3 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1.5 animate-pulse">
+            <span className="w-4 h-4 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[10px] font-black">
+              3
+            </span>
+            <span className="tracking-wide">FLEXBOX ZONE 3 (TOP NAVBAR)</span>
+          </div>
+        )}
+
         <GmailTopNavbar
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
           searchQuery={searchQuery}
@@ -168,6 +189,8 @@ export default function ObservatoryGmailLayoutPage() {
           activeMode={activeRailTab}
           onOpenSettings={() => setIsQuickSettingsOpen((prev) => !prev)}
           isSettingsOpen={isQuickSettingsOpen}
+          showFlexBoundaries={showFlexBoundaries}
+          onToggleFlexBoundaries={() => setShowFlexBoundaries((prev) => !prev)}
         />
       </div>
 
@@ -187,9 +210,27 @@ export default function ObservatoryGmailLayoutPage() {
       />
 
       {/* Main Body Layout: Horizontal Flexbox Container */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Zone 1: Far-Left Narrow Rail (Mail, Chat, Meet, Demo) */}
-        <div className={hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}>
+        <div
+          className={`relative shrink-0 ${
+            hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'
+          } ${
+            showFlexBoundaries
+              ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+              : ''
+          }`}
+        >
+          {/* Yellow Box 1 Indicator matching user's drawing */}
+          {showFlexBoundaries && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#fde047] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1">
+              <span className="w-3.5 h-3.5 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[9px] font-black">
+                1
+              </span>
+              <span>RAIL</span>
+            </div>
+          )}
+
           <GmailLeftRail
             activeTab={activeRailTab}
             onSelectTab={(tab) => {
@@ -203,7 +244,25 @@ export default function ObservatoryGmailLayoutPage() {
 
         {/* Zone 2: Collapsible Sidebar */}
         {isSidebarOpen && (
-          <div className={hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}>
+          <div
+            className={`relative shrink-0 ${
+              hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'
+            } ${
+              showFlexBoundaries
+                ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+                : ''
+            }`}
+          >
+            {/* Yellow Box 2 Indicator matching user's drawing */}
+            {showFlexBoundaries && (
+              <div className="absolute -top-3 left-6 bg-[#fde047] text-black font-extrabold text-[11px] px-2.5 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1.5">
+                <span className="w-4 h-4 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[10px] font-black">
+                  2
+                </span>
+                <span className="tracking-wide">FLEXBOX ZONE 2 (SIDEBAR)</span>
+              </div>
+            )}
+
             <GmailLeftSidebar
               activeTab={activeRailTab}
               demoSubView={demoSubView}
@@ -221,12 +280,26 @@ export default function ObservatoryGmailLayoutPage() {
           </div>
         )}
 
-        {/* Zone 4: Central Workspace Card */}
+        {/* Zone 4: Central Main Content Workspace Card */}
         <main
-          className={`flex-1 flex flex-col rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm ${
+          className={`relative flex-1 flex flex-col rounded-2xl mx-1 my-1 overflow-hidden min-w-0 ${
             hasWallpaper ? 'bg-white/95 backdrop-blur-md shadow-xl' : 'bg-white'
+          } ${
+            showFlexBoundaries
+              ? 'border-4 border-[#10b981] shadow-xl ring-2 ring-[#10b981]/40'
+              : 'border border-[#e0e2ec] shadow-sm'
           }`}
         >
+          {/* Yellow Box 4 Indicator matching user's drawing */}
+          {showFlexBoundaries && (
+            <div className="absolute top-2 right-4 bg-[#fde047] text-black font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg z-40 border-2 border-black flex items-center gap-1.5 animate-pulse">
+              <span className="w-4 h-4 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[10px] font-black">
+                4
+              </span>
+              <span className="tracking-wide">FLEXBOX ZONE 4 (MAIN WORKSPACE: DEMO / INBOX)</span>
+            </div>
+          )}
+
           {activeRailTab === 'demo' ? (
             <ObservatoryTelemetryEmbeddedView
               services={services}
@@ -277,7 +350,24 @@ export default function ObservatoryGmailLayoutPage() {
         </main>
 
         {/* Zone 5: Far-Right Companion Rail */}
-        <div className={hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}>
+        <div
+          className={`relative shrink-0 ${
+            hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'
+          } ${
+            showFlexBoundaries
+              ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+              : ''
+          }`}
+        >
+          {/* Yellow Box 5 Indicator matching user's drawing */}
+          {showFlexBoundaries && (
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#fde047] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1">
+              <span className="w-3.5 h-3.5 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[9px] font-black">
+                5
+              </span>
+            </div>
+          )}
+
           <GmailRightRail />
         </div>
       </div>

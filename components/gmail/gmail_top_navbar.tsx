@@ -17,6 +17,8 @@ interface GmailTopNavbarProps {
   activeMode?: string;
   onOpenSettings?: () => void;
   isSettingsOpen?: boolean;
+  showFlexBoundaries?: boolean;
+  onToggleFlexBoundaries?: () => void;
 }
 
 export function GmailTopNavbar({
@@ -26,6 +28,8 @@ export function GmailTopNavbar({
   activeMode = 'demo',
   onOpenSettings,
   isSettingsOpen = false,
+  showFlexBoundaries = true,
+  onToggleFlexBoundaries,
 }: GmailTopNavbarProps) {
   return (
     <header className="h-16 flex items-center justify-between px-4 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
@@ -147,6 +151,26 @@ export function GmailTopNavbar({
             </defs>
           </svg>
         </button>
+
+        {/* Flexbox Boundaries Toggle Button */}
+        {onToggleFlexBoundaries && (
+          <button
+            onClick={onToggleFlexBoundaries}
+            title="Toggle visible Flexbox boundaries 1 to 5"
+            className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-xs ${
+              showFlexBoundaries
+                ? 'bg-[#10b981] text-white border-[#059669]'
+                : 'bg-white text-[#444746] border-[#c4c7c5] hover:bg-black/5'
+            }`}
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                showFlexBoundaries ? 'bg-white animate-pulse' : 'bg-[#747775]'
+              }`}
+            />
+            <span>Flexbox Borders: {showFlexBoundaries ? 'ON' : 'OFF'}</span>
+          </button>
+        )}
 
         {/* Upgrade Button */}
         <button className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-medium tracking-wide shadow-sm transition-colors">
