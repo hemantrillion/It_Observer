@@ -79,20 +79,8 @@ export function initializeObservatoryTables(): void {
     insertService.run('cloudflare_edge', 'Cloudflare Edge Analytics', 'cloud_provider', 'https://api.cloudflare.com/client/v4/radar/http/summary/bot', 15, 'HEALTHY');
   }
 
-  // Seed platform users if empty
-  const userCountRow = db.prepare('SELECT COUNT(*) as count FROM platform_users').get() as { count: number };
-  if (userCountRow.count === 0) {
-    const insertUser = db.prepare(`
-      INSERT INTO platform_users (id, name, email, role, status, created_at, last_active_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const now = new Date().toISOString();
-    insertUser.run('usr_admin_1', 'HemanT', 'hemantrillion@gmail.com', 'Lead Architect / Admin', 'ACTIVE', '2026-10-01T10:00:00Z', now);
-    insertUser.run('usr_sre_2', 'Alex Vance', 'alex.vance@infratrace.internal', 'Lead SRE Operator', 'ACTIVE', '2026-10-05T14:30:00Z', now);
-    insertUser.run('usr_dev_3', 'DevOps Automator', 'sre-telemetry@infratrace.internal', 'System Automation Service', 'ACTIVE', '2026-10-08T09:15:00Z', now);
-    insertUser.run('usr_aud_4', 'Security Auditor', 'security-compliance@infratrace.internal', 'Compliance Inspector', 'IDLE', '2026-10-12T16:45:00Z', now);
-  }
+  // Clear any dummy users so table starts completely empty as requested
+  db.exec('DELETE FROM platform_users');
 
   // Seed initial database query logs if empty
   const logCountRow = db.prepare('SELECT COUNT(*) as count FROM database_query_logs').get() as { count: number };

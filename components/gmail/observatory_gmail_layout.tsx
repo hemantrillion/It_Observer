@@ -7,11 +7,14 @@ import {
   GmailLeftSidebar,
   DemoSubView,
   StatusFilter,
+  MetricsCategory,
+  UserSection,
 } from '@/components/gmail/gmail_left_sidebar';
 import { GmailRightRail } from '@/components/gmail/gmail_right_rail';
 import { GmailInboxView } from '@/components/gmail/gmail_inbox_view';
 import { ObservatoryTelemetryEmbeddedView } from '@/components/gmail/observatory_telemetry_embedded_view';
 import { ObservatoryUsersDatabaseView } from '@/components/gmail/observatory_users_database_view';
+import { ObservatoryMetricsDomainView } from '@/components/gmail/observatory_metrics_domain_view';
 import {
   GmailQuickSettingsPanel,
   DensityOption,
@@ -31,11 +34,13 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [activeRailTab, setActiveRailTab] = useState<RailTab>('demo');
   const [demoSubView, setDemoSubView] = useState<DemoSubView>('dashboard');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [activeMetricsCategory, setActiveMetricsCategory] = useState<MetricsCategory>('Infrastructure');
+  const [activeUserSection, setActiveUserSection] = useState<UserSection>('accounts');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Flexbox Boundaries Visibility
-  const [showFlexboxBorders, setShowFlexboxBorders] = useState(true);
+  // Flexbox Boundaries Visibility (Default: false as requested)
+  const [showFlexboxBorders, setShowFlexboxBorders] = useState(false);
 
   // Quick Settings State
   const [isQuickSettingsOpen, setIsQuickSettingsOpen] = useState(false);
@@ -186,10 +191,6 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
             setActiveRailTab(tab);
             if (tab === 'demo') {
               setDemoSubView('dashboard');
-            } else if (tab === 'metrics') {
-              setDemoSubView('metrics');
-            } else if (tab === 'users') {
-              setDemoSubView('users');
             }
           }}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
@@ -277,16 +278,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
               <GmailLeftSidebar
                 activeTab={activeRailTab}
                 demoSubView={demoSubView}
-                onSelectDemoSubView={(view) => {
-                  setDemoSubView(view);
-                  if (view === 'users') {
-                    setActiveRailTab('users');
-                  } else if (view === 'metrics') {
-                    setActiveRailTab('metrics');
-                  } else {
-                    setActiveRailTab('demo');
-                  }
-                }}
+                onSelectDemoSubView={setDemoSubView}
                 statusFilter={statusFilter}
                 onSelectStatusFilter={setStatusFilter}
                 onPoll={triggerPoll}
@@ -297,6 +289,10 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                 downCount={summary.down}
                 totalServicesCount={summary.total}
                 hasWallpaper={hasWallpaper}
+                activeMetricsCategory={activeMetricsCategory}
+                onSelectMetricsCategory={setActiveMetricsCategory}
+                activeUserSection={activeUserSection}
+                onSelectUserSection={setActiveUserSection}
               />
             </div>
           )}
@@ -332,20 +328,14 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   hasWallpaper={hasWallpaper}
                 />
               ) : activeRailTab === 'metrics' ? (
-                <ObservatoryTelemetryEmbeddedView
-                  services={services}
-                  summary={summary}
-                  activeIncidents={activeIncidents}
-                  triggerPoll={triggerPoll}
-                  isPolling={isPolling}
-                  demoSubView="metrics"
-                  statusFilter={statusFilter}
-                  searchQuery={searchQuery}
+                <ObservatoryMetricsDomainView
+                  activeCategory={activeMetricsCategory}
                   density={density}
                   hasWallpaper={hasWallpaper}
                 />
               ) : activeRailTab === 'users' ? (
                 <ObservatoryUsersDatabaseView
+                  activeSection={activeUserSection}
                   density={density}
                   hasWallpaper={hasWallpaper}
                 />

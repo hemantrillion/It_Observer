@@ -32,7 +32,7 @@ export function GmailTopNavbar({
   isSettingsOpen = false,
   onOpenAccountMenu,
   isAccountMenuOpen = false,
-  showFlexboxBorders = true,
+  showFlexboxBorders = false,
   onToggleFlexboxBorders,
   isSidebarOpen = true,
   hasWallpaper = false,

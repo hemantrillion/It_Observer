@@ -21,11 +21,45 @@ import {
   AlertCircle,
   XCircle,
   Users,
+  Globe,
+  ShieldCheck,
+  Key,
+  FileText,
+  Gauge,
+  Cloud,
+  Box,
+  Layers,
+  Cpu,
+  Server,
+  Activity,
+  CreditCard,
 } from 'lucide-react';
 import { RailTab } from './gmail_left_rail';
 
-export type DemoSubView = 'dashboard' | 'incidents' | 'settings' | 'metrics' | 'users';
+export type DemoSubView = 'dashboard' | 'incidents' | 'settings';
 export type StatusFilter = 'ALL' | 'HEALTHY' | 'DEGRADED' | 'DOWN';
+
+export const METRICS_CATEGORIES = [
+  'Cloud',
+  'Containers',
+  'Frontend',
+  'Infrastructure',
+  'Kubernetes',
+  'Process',
+  'Runtime',
+  'Service',
+  'Synthetic',
+  'Billing',
+] as const;
+
+export type MetricsCategory = (typeof METRICS_CATEGORIES)[number];
+
+export type UserSection =
+  | 'accounts'
+  | 'websites'
+  | 'roles'
+  | 'apikeys'
+  | 'audit';
 
 interface GmailLeftSidebarProps {
   activeTab: RailTab;
@@ -41,6 +75,10 @@ interface GmailLeftSidebarProps {
   downCount?: number;
   totalServicesCount?: number;
   hasWallpaper?: boolean;
+  activeMetricsCategory?: MetricsCategory;
+  onSelectMetricsCategory?: (cat: MetricsCategory) => void;
+  activeUserSection?: UserSection;
+  onSelectUserSection?: (section: UserSection) => void;
 }
 
 export function GmailLeftSidebar({
@@ -57,14 +95,160 @@ export function GmailLeftSidebar({
   downCount = 0,
   totalServicesCount = 6,
   hasWallpaper = false,
+  activeMetricsCategory = 'Infrastructure',
+  onSelectMetricsCategory,
+  activeUserSection = 'accounts',
+  onSelectUserSection,
 }: GmailLeftSidebarProps) {
-  const isDemo = activeTab === 'demo' || activeTab === 'metrics' || activeTab === 'users';
+  // ==========================================================
+  // VIEW 1: METRICS MODE (Sidebar populated from Image 2 & 3)
+  // ==========================================================
+  if (activeTab === 'metrics') {
+    return (
+      <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-white/10 mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Gauge className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#0b57d0]'}`} />
+            <span
+              className={`text-sm font-bold uppercase tracking-wider ${
+                hasWallpaper ? 'text-white drop-shadow-sm' : 'text-[#1f1f1f]'
+              }`}
+            >
+              Metrics Categories
+            </span>
+          </div>
+        </div>
 
-  return (
-    <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">
-      {/* Top Action Button: "Poll Now" in Demo mode, "+ Compose" in Mail mode */}
-      <div className="mb-4 pt-1">
-        {isDemo ? (
+        {/* Categories List matching Image 2 & Image 3 reference */}
+        <div className="divide-y divide-white/10 border-t border-b border-white/10">
+          {METRICS_CATEGORIES.map((cat) => {
+            const isSelected = activeMetricsCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => onSelectMetricsCategory?.(cat)}
+                className={`w-full flex items-center justify-between px-4 py-3.5 text-left font-bold text-sm tracking-tight transition-all cursor-pointer ${
+                  isSelected
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white backdrop-blur-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'bg-[#d3e3fd] text-[#041e49]'
+                    : hasWallpaper
+                    ? 'text-white/90 hover:bg-white/10 hover:text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                    : 'text-[#1f1f1f] hover:bg-black/5'
+                }`}
+              >
+                <span>{cat}</span>
+                <ChevronRight
+                  className={`w-4 h-4 transition-transform ${
+                    isSelected ? 'opacity-100 translate-x-0.5' : 'opacity-40'
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Raw Prometheus Metrics Endpoint */}
+        <div className="p-3 mt-auto border-t border-white/10">
+          <a
+            href="/metrics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+              hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <BarChart2 className={`w-4 h-4 ${hasWallpaper ? 'text-white' : 'text-[#0b57d0]'}`} />
+              <span>Raw Prometheus (/metrics)</span>
+            </div>
+            <span
+              className={`text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded ${
+                hasWallpaper ? 'bg-sky-400/30 text-sky-200' : 'bg-blue-100 text-[#0b57d0]'
+              }`}
+            >
+              RAW
+            </span>
+          </a>
+        </div>
+      </aside>
+    );
+  }
+
+  // ==========================================================
+  // VIEW 2: USERS MODE (User management, websites, roles)
+  // ==========================================================
+  if (activeTab === 'users') {
+    const userSections: { id: UserSection; label: string; icon: React.ElementType }[] = [
+      { id: 'accounts', label: 'User Accounts', icon: Users },
+      { id: 'websites', label: 'Monitored Websites', icon: Globe },
+      { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
+      { id: 'apikeys', label: 'API Keys & Webhooks', icon: Key },
+      { id: 'audit', label: 'User Audit Logs', icon: FileText },
+    ];
+
+    return (
+      <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
+        {/* Header */}
+        <div className="px-4 py-3 border-b border-white/10 mb-2 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Users className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#0b57d0]'}`} />
+            <span
+              className={`text-sm font-bold uppercase tracking-wider ${
+                hasWallpaper ? 'text-white drop-shadow-sm' : 'text-[#1f1f1f]'
+              }`}
+            >
+              User Management
+            </span>
+          </div>
+        </div>
+
+        {/* User Sections List */}
+        <div className="space-y-1 px-2">
+          {userSections.map((sec) => {
+            const isSelected = activeUserSection === sec.id;
+            const IconComp = sec.icon;
+
+            return (
+              <button
+                key={sec.id}
+                type="button"
+                onClick={() => onSelectUserSection?.(sec.id)}
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                  isSelected
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'bg-[#d3e3fd] text-[#041e49]'
+                    : hasWallpaper
+                    ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                    : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <IconComp className={`w-4 h-4 ${hasWallpaper ? 'text-white' : ''}`} />
+                  <span>{sec.label}</span>
+                </div>
+                <ChevronRight className={`w-3.5 h-3.5 ${isSelected ? 'opacity-100' : 'opacity-40'}`} />
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+    );
+  }
+
+  // ==========================================================
+  // VIEW 3: DEMO MODE (PURE DEMO ONLY - NO USERS / NO DB)
+  // ==========================================================
+  if (activeTab === 'demo') {
+    return (
+      <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">
+        {/* Top Action Button: "Poll Now" */}
+        <div className="mb-4 pt-1">
           <button
             onClick={onPoll}
             disabled={isPolling}
@@ -81,22 +265,9 @@ export function GmailLeftSidebar({
             />
             <span>{isPolling ? 'Polling...' : 'Poll Now'}</span>
           </button>
-        ) : (
-          <button
-            className={`rounded-2xl font-semibold text-sm px-6 py-4 flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
-              hasWallpaper
-                ? 'bg-white hover:bg-white/90 text-[#001d35] shadow-md hover:shadow-lg'
-                : 'bg-[#c2e7ff] hover:bg-[#b3d7ef] hover:shadow-md text-[#001d35] shadow-sm'
-            }`}
-          >
-            <Pencil className="w-5 h-5 text-[#001d35]" />
-            <span>Compose</span>
-          </button>
-        )}
-      </div>
+        </div>
 
-      {/* Navigation Links based on active tab */}
-      {isDemo ? (
+        {/* Navigation Links strictly for Demo */}
         <div className="space-y-1">
           {/* Dashboard */}
           <button
@@ -168,58 +339,6 @@ export function GmailLeftSidebar({
               <span>Settings</span>
             </div>
           </button>
-
-          {/* Users & Database Logs */}
-          <button
-            onClick={() => onSelectDemoSubView('users')}
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-              demoSubView === 'users'
-                ? hasWallpaper
-                  ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                  : 'bg-[#d3e3fd] text-[#041e49]'
-                : hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <Users
-                className={`w-5 h-5 ${hasWallpaper ? 'text-blue-300' : 'text-blue-600'}`}
-              />
-              <span>Users & DB</span>
-            </div>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                hasWallpaper ? 'bg-white/25 text-white' : 'bg-black/10 text-[#444746]'
-              }`}
-            >
-              DB
-            </span>
-          </button>
-
-          {/* Prometheus Metrics */}
-          <a
-            href="/metrics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-              <span>Metrics (/metrics)</span>
-            </div>
-            <span
-              className={`text-xs uppercase font-extrabold px-1.5 py-0.5 rounded ${
-                hasWallpaper ? 'bg-sky-400/30 text-sky-200' : 'bg-blue-100 text-[#0b57d0]'
-              }`}
-            >
-              RAW
-            </span>
-          </a>
 
           {/* Telemetry Filters Section */}
           <div
@@ -303,7 +422,7 @@ export function GmailLeftSidebar({
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shadow-xs" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs" />
                   <span>Down</span>
                 </div>
                 <span className="font-bold">{downCount}</span>
@@ -311,177 +430,96 @@ export function GmailLeftSidebar({
             </div>
           </div>
         </div>
-      ) : (
-        /* Mail mode folders matching screenshot */
-        <div className="space-y-1">
-          {/* Inbox */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'bg-[#d3e3fd] text-[#041e49]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <Inbox
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#041e49]'}`}
-              />
-              <span>Inbox</span>
-            </div>
-            <span className="text-xs font-bold">433</span>
-          </div>
+      </aside>
+    );
+  }
 
-          {/* Starred */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <Star
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-              />
-              <span>Starred</span>
-            </div>
-          </div>
+  // ==========================================================
+  // VIEW 4: DEFAULT MAIL / CHAT MODE
+  // ==========================================================
+  return (
+    <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">
+      {/* Top Action Button: "+ Compose" */}
+      <div className="mb-4 pt-1">
+        <button
+          className={`rounded-2xl font-semibold text-sm px-6 py-4 flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
+            hasWallpaper
+              ? 'bg-white hover:bg-white/90 text-[#001d35] shadow-md hover:shadow-lg'
+              : 'bg-[#c2e7ff] hover:bg-[#b3d7ef] hover:shadow-md text-[#001d35] shadow-sm'
+          }`}
+        >
+          <Pencil className="w-5 h-5 text-[#001d35]" />
+          <span>Compose</span>
+        </button>
+      </div>
 
-          {/* Snoozed */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <Clock
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-              />
-              <span>Snoozed</span>
-            </div>
+      <div className="space-y-0.5">
+        <button
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              : 'bg-[#d3e3fd] text-[#041e49]'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <Inbox className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+            <span>Inbox</span>
           </div>
+          <span className="text-xs font-bold">128</span>
+        </button>
 
-          {/* Sent */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <Send
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-              />
-              <span>Sent</span>
-            </div>
+        <button
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <Star className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+            <span>Starred</span>
           </div>
+        </button>
 
-          {/* Drafts */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <File
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-              />
-              <span>Drafts</span>
-            </div>
-            <span
-              className={`text-xs font-bold ${
-                hasWallpaper ? 'text-white' : 'text-[#444746]'
-              }`}
-            >
-              1
-            </span>
+        <button
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <Clock className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+            <span>Snoozed</span>
           </div>
+        </button>
 
-          {/* Purchases */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <ShoppingBag
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-              />
-              <span>Purchases</span>
-            </div>
-            <span
-              className={`text-xs font-bold ${
-                hasWallpaper ? 'text-white' : 'text-[#444746]'
-              }`}
-            >
-              19
-            </span>
+        <button
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <Send className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+            <span>Sent</span>
           </div>
+        </button>
 
-          {/* More */}
-          <div
-            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-semibold cursor-pointer transition-colors ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <ChevronDown
-                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-              />
-              <span>More</span>
-            </div>
+        <button
+          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <File className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+            <span>Drafts</span>
           </div>
-
-          {/* Labels section */}
-          <div
-            className={`pt-4 border-t mt-3 ${
-              hasWallpaper ? 'border-white/20' : 'border-[#e0e2ec]'
-            }`}
-          >
-            <div
-              className={`px-4 py-1.5 flex items-center justify-between text-sm font-semibold ${
-                hasWallpaper ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]' : 'text-[#444746]'
-              }`}
-            >
-              <span>Labels</span>
-              <button
-                className={`p-1 rounded-full ${
-                  hasWallpaper ? 'hover:bg-white/15' : 'hover:bg-black/5'
-                }`}
-              >
-                <Plus
-                  className={`w-4 h-4 ${
-                    hasWallpaper ? 'text-white' : 'text-[#444746]'
-                  }`}
-                />
-              </button>
-            </div>
-            <div
-              className={`w-full flex items-center gap-4 px-4 py-2 text-sm font-semibold cursor-pointer transition-colors ${
-                hasWallpaper
-                  ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                  : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-              }`}
-            >
-              <ChevronRight
-                className={`w-4 h-4 ${
-                  hasWallpaper ? 'text-white' : 'text-[#444746]'
-                }`}
-              />
-              <span>More</span>
-            </div>
-          </div>
-        </div>
-      )}
+        </button>
+      </div>
     </aside>
   );
 }

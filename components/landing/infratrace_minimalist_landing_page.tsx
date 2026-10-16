@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Search,
@@ -27,6 +28,7 @@ interface InfratraceMinimalistLandingPageProps {
 export function InfratraceMinimalistLandingPage({
   onStartDemo,
 }: InfratraceMinimalistLandingPageProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'developers' | 'sre' | 'enterprise'>('developers');
   const [authModalType, setAuthModalType] = useState<'signin' | 'signup' | null>(null);
 
@@ -34,7 +36,7 @@ export function InfratraceMinimalistLandingPage({
     if (onStartDemo) {
       onStartDemo();
     } else {
-      window.location.href = '/demo';
+      router.push('/demo');
     }
   };
 
@@ -165,14 +167,6 @@ export function InfratraceMinimalistLandingPage({
             >
               <span>Start with demo</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
-
-            {/* Free Tier / Secondary Action */}
-            <button
-              onClick={handleStartDemo}
-              className="px-6 py-3.5 rounded-full bg-[#131314] hover:bg-[#28292a] text-white text-sm font-semibold transition-all shadow-xs cursor-pointer flex items-center gap-2"
-            >
-              <span>Start free with AWS & Cloud</span>
             </button>
 
             {/* Sign in Button */}
