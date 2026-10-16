@@ -54,6 +54,49 @@ export const METRICS_CATEGORIES = [
 
 export type MetricsCategory = (typeof METRICS_CATEGORIES)[number];
 
+export interface MetricsSuboption {
+  id: string;
+  label: string;
+}
+
+export interface MetricsCategoryItem {
+  id: MetricsCategory;
+  label: string;
+  suboptions?: MetricsSuboption[];
+}
+
+export const METRICS_NAVIGATION: MetricsCategoryItem[] = [
+  {
+    id: 'Cloud',
+    label: 'Cloud',
+    suboptions: [
+      { id: 'aws', label: 'AWS' },
+      { id: 'azure', label: 'Azure' },
+      { id: 'cloud-foundry', label: 'Cloud Foundry' },
+      { id: 'cloud-gcp', label: 'Cloud GCP' },
+    ],
+  },
+  {
+    id: 'Containers',
+    label: 'Containers',
+  },
+  {
+    id: 'Frontend',
+    label: 'Frontend',
+    suboptions: [
+      { id: 'mobile', label: 'Mobile' },
+      { id: 'web', label: 'Web' },
+    ],
+  },
+  { id: 'Infrastructure', label: 'Infrastructure' },
+  { id: 'Kubernetes', label: 'Kubernetes' },
+  { id: 'Process', label: 'Process' },
+  { id: 'Runtime', label: 'Runtime' },
+  { id: 'Service', label: 'Service' },
+  { id: 'Synthetic', label: 'Synthetic' },
+  { id: 'Billing', label: 'Billing' },
+];
+
 export type UserSection =
   | 'accounts'
   | 'websites'
@@ -77,6 +120,8 @@ interface GmailLeftSidebarProps {
   hasWallpaper?: boolean;
   activeMetricsCategory?: MetricsCategory;
   onSelectMetricsCategory?: (cat: MetricsCategory) => void;
+  activeMetricsSuboption?: string | null;
+  onSelectMetricsSuboption?: (cat: MetricsCategory, suboptionId: string) => void;
   activeUserSection?: UserSection;
   onSelectUserSection?: (section: UserSection) => void;
 }
@@ -95,43 +140,96 @@ export function GmailLeftSidebar({
   downCount = 0,
   totalServicesCount = 6,
   hasWallpaper = false,
-  activeMetricsCategory = 'Infrastructure',
+  activeMetricsCategory = 'Cloud',
   onSelectMetricsCategory,
+  activeMetricsSuboption,
+  onSelectMetricsSuboption,
   activeUserSection = 'accounts',
   onSelectUserSection,
 }: GmailLeftSidebarProps) {
+  const [expandedMetricsCategory, setExpandedMetricsCategory] = React.useState<MetricsCategory | null>(
+    activeMetricsCategory || 'Cloud'
+  );
+
+  const handleToggleCategory = (cat: MetricsCategory) => {
+    onSelectMetricsCategory?.(cat);
+    if (expandedMetricsCategory === cat) {
+      setExpandedMetricsCategory(null);
+    } else {
+      setExpandedMetricsCategory(cat);
+    }
+  };
+
   // ==========================================================
-  // VIEW 1: METRICS MODE (Sidebar populated from Image 2 & 3)
+  // VIEW 1: METRICS MODE (Expandable / Collapsible Lists like Demo)
   // ==========================================================
   if (activeTab === 'metrics') {
     return (
       <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
-        {/* Categories List matching Image 2 & Image 3 reference */}
-        <div className="divide-y divide-white/10 border-b border-white/10">
-          {METRICS_CATEGORIES.map((cat) => {
-            const isSelected = activeMetricsCategory === cat;
+        <div className="space-y-1 px-2">
+          {METRICS_NAVIGATION.map((catItem) => {
+            const isSelected = activeMetricsCategory === catItem.id;
+            const isExpanded = expandedMetricsCategory === catItem.id;
+            const hasSuboptions = !!(catItem.suboptions && catItem.suboptions.length > 0);
+
             return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => onSelectMetricsCategory?.(cat)}
-                className={`w-full flex items-center justify-between px-4 py-3.5 text-left font-bold text-sm tracking-tight transition-all cursor-pointer ${
-                  isSelected
-                    ? hasWallpaper
-                      ? 'bg-white/20 text-white backdrop-blur-sm drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                      : 'bg-[#d3e3fd] text-[#041e49]'
-                    : hasWallpaper
-                    ? 'text-white/90 hover:bg-white/10 hover:text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                    : 'text-[#1f1f1f] hover:bg-black/5'
-                }`}
-              >
-                <span>{cat}</span>
-                <ChevronRight
-                  className={`w-4 h-4 transition-transform ${
-                    isSelected ? 'opacity-100 translate-x-0.5' : 'opacity-40'
+              <div key={catItem.id} className="space-y-0.5">
+                <button
+                  type="button"
+                  onClick={() => handleToggleCategory(catItem.id)}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                    isSelected
+                      ? hasWallpaper
+                        ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                        : 'bg-[#d3e3fd] text-[#041e49]'
+                      : hasWallpaper
+                      ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
                   }`}
-                />
-              </button>
+                >
+                  <span className="font-bold text-sm tracking-tight">{catItem.label}</span>
+                  {hasSuboptions ? (
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isExpanded ? 'rotate-180' : ''
+                      }`}
+                    />
+                  ) : null}
+                </button>
+
+                {/* Suboptions dropdown when expanded */}
+                {isExpanded && catItem.suboptions && (
+                  <div className="pl-4 pr-1 space-y-0.5 mt-0.5 animate-in fade-in duration-150">
+                    {catItem.suboptions.map((sub) => {
+                      const isSubSelected =
+                        activeMetricsCategory === catItem.id && activeMetricsSuboption === sub.id;
+
+                      return (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectMetricsCategory?.(catItem.id);
+                            onSelectMetricsSuboption?.(catItem.id, sub.id);
+                          }}
+                          className={`w-full flex items-center justify-between pl-4 pr-3 py-2 rounded-r-full text-xs font-bold transition-all cursor-pointer ${
+                            isSubSelected
+                              ? hasWallpaper
+                                ? 'bg-white/25 text-white shadow-xs font-bold'
+                                : 'bg-[#c2e7ff] text-[#001d35] font-bold shadow-xs'
+                              : hasWallpaper
+                              ? 'text-white/85 hover:bg-white/10 hover:text-white'
+                              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                          }`}
+                        >
+                          <span>{sub.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -140,7 +238,7 @@ export function GmailLeftSidebar({
   }
 
   // ==========================================================
-  // VIEW 2: USERS MODE (User management, websites, roles)
+  // VIEW 2: USERS MODE (Clean, No header, No right arrows)
   // ==========================================================
   if (activeTab === 'users') {
     const userSections: { id: UserSection; label: string; icon: React.ElementType }[] = [
@@ -153,21 +251,6 @@ export function GmailLeftSidebar({
 
     return (
       <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
-        {/* Header */}
-        <div className="px-4 py-3 border-b border-white/10 mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Users className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#0b57d0]'}`} />
-            <span
-              className={`text-sm font-bold uppercase tracking-wider ${
-                hasWallpaper ? 'text-white drop-shadow-sm' : 'text-[#1f1f1f]'
-              }`}
-            >
-              User Management
-            </span>
-          </div>
-        </div>
-
-        {/* User Sections List */}
         <div className="space-y-1 px-2">
           {userSections.map((sec) => {
             const isSelected = activeUserSection === sec.id;
@@ -178,7 +261,7 @@ export function GmailLeftSidebar({
                 key={sec.id}
                 type="button"
                 onClick={() => onSelectUserSection?.(sec.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                className={`w-full flex items-center px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
                   isSelected
                     ? hasWallpaper
                       ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
@@ -188,11 +271,10 @@ export function GmailLeftSidebar({
                     : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3.5">
                   <IconComp className={`w-4 h-4 ${hasWallpaper ? 'text-white' : ''}`} />
                   <span>{sec.label}</span>
                 </div>
-                <ChevronRight className={`w-3.5 h-3.5 ${isSelected ? 'opacity-100' : 'opacity-40'}`} />
               </button>
             );
           })}

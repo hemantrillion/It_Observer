@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Cloud,
   Box,
@@ -11,19 +11,23 @@ import {
   CreditCard,
   Gauge,
   ExternalLink,
-  Info,
   CheckCircle2,
   BarChart3,
-  TrendingUp,
   Radio,
+  Smartphone,
+  Globe2,
 } from 'lucide-react';
 import { MetricsCategory } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
 
-interface ObservatoryMetricsDomainViewProps {
-  activeCategory?: MetricsCategory;
-  density?: DensityOption;
-  hasWallpaper?: boolean;
+interface SuboptionDetail {
+  id: string;
+  label: string;
+  title: string;
+  description: string;
+  keyMetrics: { label: string; value: string; status: 'ok' | 'warn' }[];
+  graphPlaceholderTitle: string;
+  graphPlaceholderSubtitle: string;
 }
 
 interface DomainTelemetryMetadata {
@@ -32,6 +36,7 @@ interface DomainTelemetryMetadata {
   icon: React.ElementType;
   schemaTable: string;
   prometheusPrefix: string;
+  suboptions?: SuboptionDetail[];
   sampleMetrics: {
     name: string;
     type: 'Gauge' | 'Counter' | 'Histogram';
@@ -45,10 +50,76 @@ const DOMAIN_METADATA: Record<MetricsCategory, DomainTelemetryMetadata> = {
   Cloud: {
     title: 'Cloud Provider Telemetry',
     description:
-      'Aggregates multi-cloud metrics from AWS CloudWatch, Google Cloud Monitoring, and Azure Monitor across provisioned compute, serverless functions, and managed datastores.',
+      'Aggregates multi-cloud metrics from AWS CloudWatch, Azure Monitor, Cloud Foundry Diego cells, and Google Cloud Platform (GCP) across compute, storage, and serverless infrastructure.',
     icon: Cloud,
     schemaTable: 'cloud_provider_metrics_timeseries',
     prometheusPrefix: 'infratrace_cloud_*',
+    suboptions: [
+      {
+        id: 'aws',
+        label: 'AWS',
+        title: 'AWS (Amazon Web Services) Telemetry',
+        description:
+          'Real-time ingestion of Amazon EC2 instance utilization, S3 bucket storage sizes, RDS database query latencies, Lambda invocation concurrency, and CloudWatch alarm metrics in global AWS availability zones.',
+        keyMetrics: [
+          { label: 'EC2 CPU Average', value: '42.0%', status: 'ok' },
+          { label: 'S3 Cold Storage', value: '14.8 GB', status: 'ok' },
+          { label: 'CloudWatch Quota Remaining', value: '4,980 reqs', status: 'ok' },
+          { label: 'Lambda Error Rate', value: '0.00%', status: 'ok' },
+        ],
+        graphPlaceholderTitle: 'AWS Telemetry & Latency Graph Space',
+        graphPlaceholderSubtitle:
+          'Real-time timeseries canvas placeholder (EC2 CPU, RDS IOPS, and CloudWatch latency SLA tracking)',
+      },
+      {
+        id: 'azure',
+        label: 'Azure',
+        title: 'Microsoft Azure Cloud Telemetry',
+        description:
+          'Monitors Azure Virtual Machines (VM), Azure Blob Storage throughput, Cosmos DB latency percentiles, and Azure Kubernetes Service (AKS) node telemetry.',
+        keyMetrics: [
+          { label: 'VM Core Load', value: '38.4%', status: 'ok' },
+          { label: 'Blob Read IOPS', value: '1,240 IOPS', status: 'ok' },
+          { label: 'Cosmos P99 Latency', value: '8.4 ms', status: 'ok' },
+          { label: 'AKS Node Health', value: '100% Ready', status: 'ok' },
+        ],
+        graphPlaceholderTitle: 'Azure Cloud Infrastructure Graph Space',
+        graphPlaceholderSubtitle:
+          'Real-time timeseries canvas placeholder (Azure Monitor VM throughput and Cosmos DB latency curves)',
+      },
+      {
+        id: 'cloud-foundry',
+        label: 'Cloud Foundry',
+        title: 'Cloud Foundry Platform Telemetry',
+        description:
+          'Ingests Cloud Foundry Diego cell capacity, Gorouter HTTP ingress traffic distribution, app droplet memory allocation cgroups, and Cloud Controller API response times.',
+        keyMetrics: [
+          { label: 'Diego Cell Memory Pressure', value: '31.2%', status: 'ok' },
+          { label: 'Gorouter Ingress Rate', value: '890 req/s', status: 'ok' },
+          { label: 'Droplet Containers', value: '24 / 24 Healthy', status: 'ok' },
+          { label: 'Router P99 Latency', value: '12.4 ms', status: 'ok' },
+        ],
+        graphPlaceholderTitle: 'Cloud Foundry Diego & Gorouter Graph Space',
+        graphPlaceholderSubtitle:
+          'Real-time timeseries canvas placeholder (Gorouter HTTP traffic volume and Diego cell CPU/memory distribution)',
+      },
+      {
+        id: 'cloud-gcp',
+        label: 'Cloud GCP',
+        title: 'Google Cloud Platform (GCP) Telemetry',
+        description:
+          'Monitors Google Cloud Compute Engine, Cloud Run serverless concurrency, BigQuery query execution durations, Cloud Spanner transactions, and Google Cloud Storage (GCS) bandwidth.',
+        keyMetrics: [
+          { label: 'Cloud Run Invocations', value: '2,450 req/s', status: 'ok' },
+          { label: 'GCS Outbound Bandwidth', value: '450 MB/s', status: 'ok' },
+          { label: 'Spanner Latency P95', value: '6.8 ms', status: 'ok' },
+          { label: 'GKE Cluster Nodes', value: '6 / 6 Ready', status: 'ok' },
+        ],
+        graphPlaceholderTitle: 'Google Cloud Platform (GCP) Telemetry Graph Space',
+        graphPlaceholderSubtitle:
+          'Real-time timeseries canvas placeholder (Cloud Run request rate, GCS throughput, and Spanner P95 latency)',
+      },
+    ],
     sampleMetrics: [
       {
         name: 'cloud_aws_ec2_cpu_utilization_ratio',
@@ -58,11 +129,18 @@ const DOMAIN_METADATA: Record<MetricsCategory, DomainTelemetryMetadata> = {
         sampleValue: '0.42 (42.0%)',
       },
       {
-        name: 'cloud_aws_s3_bucket_byte_size_total',
-        type: 'Gauge',
+        name: 'cloud_azure_blob_throughput_bytes_total',
+        type: 'Counter',
         unit: 'Bytes',
-        description: 'Total storage consumed by telemetry artifact and cold-archive buckets',
-        sampleValue: '14.8 GB',
+        description: 'Total storage consumed by Azure blob storage telemetry endpoints',
+        sampleValue: '18.4 GB',
+      },
+      {
+        name: 'cloud_cf_gorouter_requests_total',
+        type: 'Counter',
+        unit: 'Requests',
+        description: 'Gorouter ingress HTTP requests routed across Diego cell droplets',
+        sampleValue: '482,190',
       },
       {
         name: 'cloud_gcp_cloudrun_request_count_total',
@@ -71,67 +149,56 @@ const DOMAIN_METADATA: Record<MetricsCategory, DomainTelemetryMetadata> = {
         description: 'Cumulative ingress invocations dispatched to serverless microservices',
         sampleValue: '184,291',
       },
-      {
-        name: 'cloud_api_rate_limit_quota_remaining',
-        type: 'Gauge',
-        unit: 'Requests Remaining',
-        description: 'Remaining API calls permitted before provider throttling kicks in',
-        sampleValue: '4,980 / 5,000',
-      },
-    ],
-  },
-  Containers: {
-    title: 'Container & Docker Telemetry',
-    description:
-      'Gathers OCI runtime metrics, cgroup v2 memory thresholds, CPU throttling quotas, and restart loop diagnostics across containerized microservices.',
-    icon: Box,
-    schemaTable: 'container_cgroup_metrics_timeseries',
-    prometheusPrefix: 'infratrace_container_*',
-    sampleMetrics: [
-      {
-        name: 'container_memory_usage_bytes',
-        type: 'Gauge',
-        unit: 'Bytes',
-        description: 'Working set memory allocated to active container namespaces',
-        sampleValue: '512.4 MB',
-      },
-      {
-        name: 'container_cpu_cfs_throttled_periods_total',
-        type: 'Counter',
-        unit: 'Periods',
-        description: 'CFS scheduler periods where container tasks exceeded quota and were throttled',
-        sampleValue: '0 (Optimal)',
-      },
-      {
-        name: 'container_restart_count_total',
-        type: 'Counter',
-        unit: 'Restarts',
-        description: 'Total process crash restarts recorded by Docker or containerd daemon',
-        sampleValue: '0',
-      },
-      {
-        name: 'container_network_receive_bytes_total',
-        type: 'Counter',
-        unit: 'Bytes',
-        description: 'Ingress network payload received over virtual eth0 interface',
-        sampleValue: '182.1 MB',
-      },
     ],
   },
   Frontend: {
     title: 'Frontend & Real User Monitoring (RUM)',
     description:
-      'Tracks Core Web Vitals (Largest Contentful Paint, First Input Delay, Cumulative Layout Shift), JavaScript runtime exceptions, and client-side page load timings.',
+      'Captures client-side web and native mobile application telemetry: Core Web Vitals, page render times, JavaScript runtime exceptions, and mobile crash diagnostics.',
     icon: Layers,
     schemaTable: 'frontend_rum_vitals_timeseries',
     prometheusPrefix: 'infratrace_frontend_*',
+    suboptions: [
+      {
+        id: 'mobile',
+        label: 'Mobile',
+        title: 'Mobile Application Telemetry (iOS & Android)',
+        description:
+          'Captures native iOS and Android application performance metrics: cold app startup latency, frame rendering freeze rates (UI jank), crash-free user sessions, and mobile API latency over cellular networks.',
+        keyMetrics: [
+          { label: 'Cold App Launch', value: '1.14 s', status: 'ok' },
+          { label: 'Crash-Free Session Rate', value: '99.96%', status: 'ok' },
+          { label: 'Frozen Frames (UI Jank)', value: '0.08%', status: 'ok' },
+          { label: 'Mobile API Latency', value: '62 ms', status: 'ok' },
+        ],
+        graphPlaceholderTitle: 'Mobile App Performance & Crash Graph Space',
+        graphPlaceholderSubtitle:
+          'Real-time timeseries canvas placeholder (Cold launch times, crash-free rates, and mobile HTTP response latencies)',
+      },
+      {
+        id: 'web',
+        label: 'Web',
+        title: 'Web Application & Core Web Vitals (RUM)',
+        description:
+          'Real User Monitoring (RUM) capturing browser Core Web Vitals: Largest Contentful Paint (LCP), Interaction to Next Paint (INP), Cumulative Layout Shift (CLS), Time to First Byte (TTFB), and unhandled JavaScript exceptions.',
+        keyMetrics: [
+          { label: 'Largest Contentful Paint (LCP)', value: '0.52 s (Good < 2.5s)', status: 'ok' },
+          { label: 'Interaction to Next Paint (INP)', value: '22 ms (Good < 200ms)', status: 'ok' },
+          { label: 'Cumulative Layout Shift (CLS)', value: '0.002 (Good < 0.1)', status: 'ok' },
+          { label: 'Uncaught JS Exceptions', value: '0 Errors', status: 'ok' },
+        ],
+        graphPlaceholderTitle: 'Web Core Web Vitals & Page Load Graph Space',
+        graphPlaceholderSubtitle:
+          'Real-time timeseries canvas placeholder (LCP, INP, CLS distributions and real user browser page rendering curves)',
+      },
+    ],
     sampleMetrics: [
       {
         name: 'frontend_lcp_duration_seconds',
         type: 'Histogram',
         unit: 'Seconds',
         description: 'Largest Contentful Paint render duration experienced by web clients',
-        sampleValue: '0.48s (Good < 2.5s)',
+        sampleValue: '0.52s (Good < 2.5s)',
       },
       {
         name: 'frontend_cls_score_ratio',
@@ -191,6 +258,44 @@ const DOMAIN_METADATA: Record<MetricsCategory, DomainTelemetryMetadata> = {
         unit: 'Packets',
         description: 'Outbound network packet traffic dispatched across physical NIC interfaces',
         sampleValue: '4,102,940',
+      },
+    ],
+  },
+  Containers: {
+    title: 'Container & Docker Telemetry',
+    description:
+      'Gathers OCI runtime metrics, cgroup v2 memory thresholds, CPU throttling quotas, and restart loop diagnostics across containerized microservices.',
+    icon: Box,
+    schemaTable: 'container_cgroup_metrics_timeseries',
+    prometheusPrefix: 'infratrace_container_*',
+    sampleMetrics: [
+      {
+        name: 'container_memory_usage_bytes',
+        type: 'Gauge',
+        unit: 'Bytes',
+        description: 'Working set memory allocated to active container namespaces',
+        sampleValue: '512.4 MB',
+      },
+      {
+        name: 'container_cpu_cfs_throttled_periods_total',
+        type: 'Counter',
+        unit: 'Periods',
+        description: 'CFS scheduler periods where container tasks exceeded quota and were throttled',
+        sampleValue: '0 (Optimal)',
+      },
+      {
+        name: 'container_restart_count_total',
+        type: 'Counter',
+        unit: 'Restarts',
+        description: 'Total process crash restarts recorded by Docker or containerd daemon',
+        sampleValue: '0',
+      },
+      {
+        name: 'container_network_receive_bytes_total',
+        type: 'Counter',
+        unit: 'Bytes',
+        description: 'Ingress network payload received over virtual eth0 interface',
+        sampleValue: '182.1 MB',
       },
     ],
   },
@@ -424,128 +529,202 @@ const DOMAIN_METADATA: Record<MetricsCategory, DomainTelemetryMetadata> = {
   },
 };
 
+interface ObservatoryMetricsDomainViewProps {
+  activeCategory?: MetricsCategory;
+  activeSuboption?: string | null;
+  density?: DensityOption;
+  hasWallpaper?: boolean;
+}
+
 export function ObservatoryMetricsDomainView({
-  activeCategory = 'Infrastructure',
+  activeCategory = 'Cloud',
+  activeSuboption,
   density = 'compact',
   hasWallpaper = false,
 }: ObservatoryMetricsDomainViewProps) {
-  const meta = DOMAIN_METADATA[activeCategory] || DOMAIN_METADATA.Infrastructure;
+  const meta = DOMAIN_METADATA[activeCategory] || DOMAIN_METADATA.Cloud;
   const IconComp = meta.icon;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to selected suboption heading when clicked
+  useEffect(() => {
+    if (activeSuboption) {
+      const targetElement = document.getElementById(activeSuboption);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [activeSuboption, activeCategory]);
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden bg-white select-text">
+    <div
+      ref={containerRef}
+      className="flex-1 flex flex-col h-full overflow-y-auto bg-white select-text"
+    >
       {/* ======================================================== */}
-      {/* 1. DOMAIN HEADER                                         */}
+      {/* 1. DOMAIN HERO HEADER (BIG, SHARP, HIGH-CONTRAST)        */}
       {/* ======================================================== */}
-      <div className="p-5 border-b border-[#e0e2ec] shrink-0 flex items-start justify-between gap-4 bg-[#f8fafd]">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
-              <IconComp className="w-5 h-5" />
+      <div className="p-6 sm:p-8 border-b border-[#e0e2ec] shrink-0 bg-[#f8fafd]">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+          <div className="space-y-3 max-w-4xl">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0] shadow-xs">
+                <IconComp className="w-7 h-7 stroke-[2.2]" />
+              </div>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1f1f1f] tracking-tight">
+                {meta.title}
+              </h1>
+              <span className="px-3.5 py-1 rounded-full text-xs sm:text-sm font-bold bg-[#e8f0fe] text-[#0b57d0] border border-[#0b57d0]/25">
+                Telemetry Domain
+              </span>
             </div>
-            <h2 className="text-xl font-bold text-[#1f1f1f] tracking-tight">
-              {meta.title}
-            </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#e8f0fe] text-[#0b57d0] border border-[#0b57d0]/20">
-              Telemetry Domain
-            </span>
+
+            <p className="text-base sm:text-xl text-[#3c4043] font-medium leading-relaxed">
+              {meta.description}
+            </p>
           </div>
 
-          <p className="text-xs text-[#5e5e5e] max-w-2xl leading-relaxed">
-            {meta.description}
-          </p>
-        </div>
-
-        {/* Action button to scrape raw Prometheus endpoint */}
-        <div className="flex items-center gap-2 shrink-0">
-          <a
-            href="/metrics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#c4c7c5] hover:border-[#0b57d0] hover:text-[#0b57d0] text-xs font-semibold text-[#1f1f1f] shadow-xs transition-colors"
-          >
-            <BarChart3 className="w-3.5 h-3.5 text-[#0b57d0]" />
-            <span>Open Prometheus /metrics</span>
-            <ExternalLink className="w-3 h-3 text-[#747775]" />
-          </a>
+          {/* Quick status badge */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#c4c7c5] text-xs sm:text-sm font-bold text-[#1f1f1f] shadow-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Ingestion Ready</span>
+            </span>
+          </div>
         </div>
       </div>
 
       {/* ======================================================== */}
-      {/* 2. DOMAIN CONTENT                                        */}
+      {/* 2. SUBOPTIONS SECTIONS (AWS, AZURE, GCP, MOBILE, WEB...)  */}
       {/* ======================================================== */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-6">
-        {/* Quick KPI Overview Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl border border-[#e0e2ec] bg-[#f8fafd] space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5e5e5e]">
-              Metric Ingestion
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-base font-bold text-[#1f1f1f]">Live Streaming</span>
+      <div className="p-6 sm:p-8 space-y-12">
+        {meta.suboptions && meta.suboptions.length > 0 ? (
+          meta.suboptions.map((sub) => {
+            const isTargeted = activeSuboption === sub.id;
+
+            return (
+              <section
+                key={sub.id}
+                id={sub.id}
+                className={`scroll-mt-8 p-6 sm:p-8 rounded-3xl border transition-all duration-300 ${
+                  isTargeted
+                    ? 'border-[#0b57d0] bg-[#f8fafd] shadow-lg ring-2 ring-[#0b57d0]/20'
+                    : 'border-[#e0e2ec] bg-[#fbfcfe] shadow-xs hover:border-[#c4c7c5]'
+                }`}
+              >
+                {/* Heading & Small Detail */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="text-2xl sm:text-3xl font-black text-[#1f1f1f] tracking-tight flex items-center gap-3">
+                      <span>{sub.title}</span>
+                      {isTargeted && (
+                        <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#0b57d0] text-white">
+                          Selected
+                        </span>
+                      )}
+                    </h2>
+                    <span className="text-xs sm:text-sm font-mono font-bold text-[#0b57d0] px-3 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                      #{sub.id}
+                    </span>
+                  </div>
+
+                  <p className="text-base sm:text-lg text-[#3c4043] font-medium leading-relaxed max-w-5xl">
+                    {sub.description}
+                  </p>
+
+                  {/* Key Metrics Chips */}
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    {sub.keyMetrics.map((km, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-[#e0e2ec] text-xs sm:text-sm font-semibold shadow-2xs"
+                      >
+                        <span className="text-[#5e5e5e]">{km.label}:</span>
+                        <span className="text-[#1f1f1f] font-mono font-bold">{km.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* EMPTY WHITE BOX (As space left for graph - User Requested) */}
+                <div className="w-full h-72 sm:h-80 bg-white border-2 border-dashed border-[#c4c7c5] hover:border-[#0b57d0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-xs transition-colors group">
+                  <div className="w-14 h-14 rounded-full bg-[#f0f4f9] group-hover:bg-[#e8f0fe] flex items-center justify-center text-[#0b57d0] mb-3 transition-colors">
+                    <Activity className="w-7 h-7 stroke-[2.2]" />
+                  </div>
+                  <h4 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
+                    {sub.graphPlaceholderTitle}
+                  </h4>
+                  <p className="text-sm sm:text-base text-[#5e5e5e] font-medium max-w-lg mt-2 leading-relaxed">
+                    {sub.graphPlaceholderSubtitle}
+                  </p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0b57d0] bg-[#e8f0fe] px-3.5 py-1 rounded-full">
+                    Canvas Graph Rendering Area
+                  </span>
+                </div>
+              </section>
+            );
+          })
+        ) : (
+          /* Default category view for categories without suboptions (with big fonts & graph placeholder) */
+          <section className="p-6 sm:p-8 rounded-3xl border border-[#e0e2ec] bg-[#fbfcfe] shadow-xs space-y-6">
+            <div className="space-y-3">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#1f1f1f] tracking-tight">
+                {meta.title} Timeseries Analytics
+              </h2>
+              <p className="text-base sm:text-lg text-[#3c4043] font-medium leading-relaxed max-w-5xl">
+                {meta.description}
+              </p>
             </div>
-            <p className="text-[11px] text-[#5e5e5e]">Scraping via OpenTelemetry daemon</p>
-          </div>
 
-          <div className="p-4 rounded-xl border border-[#e0e2ec] bg-[#f8fafd] space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5e5e5e]">
-              Prometheus Metric Filter
-            </span>
-            <p className="text-base font-mono font-bold text-[#0b57d0] truncate">
-              {meta.prometheusPrefix}
-            </p>
-            <p className="text-[11px] text-[#5e5e5e]">Exported via Prometheus text format</p>
-          </div>
+            {/* EMPTY WHITE BOX FOR GRAPH */}
+            <div className="w-full h-80 sm:h-96 bg-white border-2 border-dashed border-[#c4c7c5] hover:border-[#0b57d0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-xs transition-colors">
+              <div className="w-14 h-14 rounded-full bg-[#f0f4f9] flex items-center justify-center text-[#0b57d0] mb-3">
+                <Activity className="w-7 h-7 stroke-[2.2]" />
+              </div>
+              <h4 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
+                {meta.title} Telemetry Graph Space
+              </h4>
+              <p className="text-sm sm:text-base text-[#5e5e5e] font-medium max-w-lg mt-2 leading-relaxed">
+                Real-time timeseries canvas placeholder for {meta.prometheusPrefix} metric streams
+              </p>
+              <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0b57d0] bg-[#e8f0fe] px-3.5 py-1 rounded-full">
+                Canvas Graph Rendering Area
+              </span>
+            </div>
+          </section>
+        )}
 
-          <div className="p-4 rounded-xl border border-[#e0e2ec] bg-[#f8fafd] space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5e5e5e]">
-              Database Schema Table
-            </span>
-            <p className="text-base font-mono font-bold text-[#1f1f1f] truncate">
-              {meta.schemaTable}
-            </p>
-            <p className="text-[11px] text-[#5e5e5e]">SQLite indexed timeseries log</p>
-          </div>
-
-          <div className="p-4 rounded-xl border border-[#e0e2ec] bg-[#f8fafd] space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#5e5e5e]">
-              Scrape Interval
-            </span>
-            <p className="text-base font-bold text-[#1f1f1f]">10s polling cadence</p>
-            <p className="text-[11px] text-[#5e5e5e]">Configurable via settings</p>
-          </div>
-        </div>
-
-        {/* Telemetry Metrics Dictionary Table */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-            <h3 className="text-sm font-bold text-[#1f1f1f] uppercase tracking-wider">
-              {activeCategory} Metrics Dictionary & Sample Readings
+        {/* Telemetry Dictionary Table with sharp, big fonts */}
+        <div className="space-y-4 pt-4 border-t border-[#e0e2ec]">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
+              {activeCategory} Metrics Dictionary & Schema Spec
             </h3>
-            <span className="text-xs text-[#5e5e5e]">Prometheus / OpenTelemetry Standard</span>
+            <span className="text-xs sm:text-sm font-semibold text-[#5e5e5e]">
+              OpenTelemetry Standard
+            </span>
           </div>
 
-          <div className="border border-[#e0e2ec] rounded-xl overflow-hidden shadow-xs">
+          <div className="border border-[#e0e2ec] rounded-2xl overflow-hidden shadow-xs bg-white">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#f0f4f9] text-[#444746] text-xs font-semibold border-b border-[#e0e2ec]">
-                  <th className="py-3 px-4">Metric Identifier</th>
-                  <th className="py-3 px-4">Metric Type</th>
-                  <th className="py-3 px-4">Measurement Unit</th>
-                  <th className="py-3 px-4">Telemetry Description</th>
-                  <th className="py-3 px-4 text-right">Latest Sample</th>
+                <tr className="bg-[#f0f4f9] text-[#444746] text-xs sm:text-sm font-bold border-b border-[#e0e2ec]">
+                  <th className="py-3.5 px-5">Metric Name</th>
+                  <th className="py-3.5 px-5">Type</th>
+                  <th className="py-3.5 px-5">Unit</th>
+                  <th className="py-3.5 px-5">Description</th>
+                  <th className="py-3.5 px-5 text-right">Latest Sample</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e0e2ec] text-xs">
+              <tbody className="divide-y divide-[#e0e2ec] text-xs sm:text-sm">
                 {meta.sampleMetrics.map((m) => (
                   <tr key={m.name} className="hover:bg-[#f8fafd] transition-colors">
-                    <td className="py-3 px-4 font-mono font-semibold text-[#0b57d0]">
+                    <td className="py-3.5 px-5 font-mono font-bold text-[#0b57d0]">
                       {m.name}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-5">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                           m.type === 'Gauge'
                             ? 'bg-[#e8f0fe] text-[#0b57d0]'
                             : m.type === 'Counter'
@@ -556,9 +735,9 @@ export function ObservatoryMetricsDomainView({
                         {m.type}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-[#5e5e5e] font-medium">{m.unit}</td>
-                    <td className="py-3 px-4 text-[#1f1f1f] max-w-md">{m.description}</td>
-                    <td className="py-3 px-4 font-mono font-bold text-[#1f1f1f] text-right">
+                    <td className="py-3.5 px-5 text-[#5e5e5e] font-semibold">{m.unit}</td>
+                    <td className="py-3.5 px-5 text-[#2d3135] font-medium max-w-md">{m.description}</td>
+                    <td className="py-3.5 px-5 font-mono font-black text-[#1f1f1f] text-right">
                       {m.sampleValue}
                     </td>
                   </tr>

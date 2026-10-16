@@ -34,7 +34,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [activeRailTab, setActiveRailTab] = useState<RailTab>('demo');
   const [demoSubView, setDemoSubView] = useState<DemoSubView>('dashboard');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
-  const [activeMetricsCategory, setActiveMetricsCategory] = useState<MetricsCategory>('Infrastructure');
+  const [activeMetricsCategory, setActiveMetricsCategory] = useState<MetricsCategory>('Cloud');
+  const [activeMetricsSuboption, setActiveMetricsSuboption] = useState<string | null>(null);
   const [activeUserSection, setActiveUserSection] = useState<UserSection>('accounts');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -290,7 +291,15 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                 totalServicesCount={summary.total}
                 hasWallpaper={hasWallpaper}
                 activeMetricsCategory={activeMetricsCategory}
-                onSelectMetricsCategory={setActiveMetricsCategory}
+                onSelectMetricsCategory={(cat) => {
+                  setActiveMetricsCategory(cat);
+                  setActiveMetricsSuboption(null);
+                }}
+                activeMetricsSuboption={activeMetricsSuboption}
+                onSelectMetricsSuboption={(cat, subId) => {
+                  setActiveMetricsCategory(cat);
+                  setActiveMetricsSuboption(subId);
+                }}
                 activeUserSection={activeUserSection}
                 onSelectUserSection={setActiveUserSection}
               />
@@ -330,6 +339,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
               ) : activeRailTab === 'metrics' ? (
                 <ObservatoryMetricsDomainView
                   activeCategory={activeMetricsCategory}
+                  activeSuboption={activeMetricsSuboption}
                   density={density}
                   hasWallpaper={hasWallpaper}
                 />
