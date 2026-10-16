@@ -1,15 +1,28 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { TopHeaderNavigationBarContainer } from '@/components/containers/top_header_navigation_bar_container';
-import { SystemOverviewMetricsBarContainer } from '@/components/containers/system_overview_metrics_bar_container';
-import { MonitoredServicesGridContainer } from '@/components/containers/monitored_services_grid_container';
-import { ChaosTestingControlPanelContainer } from '@/components/containers/chaos_testing_control_panel_container';
-import { ActiveIncidentAlertNotificationCard } from '@/components/cards/active_incident_alert_notification_card';
+import { GmailTopNavbar } from '@/components/gmail/gmail_top_navbar';
+import { GmailLeftRail, RailTab } from '@/components/gmail/gmail_left_rail';
+import {
+  GmailLeftSidebar,
+  DemoSubView,
+  StatusFilter,
+} from '@/components/gmail/gmail_left_sidebar';
+import { GmailRightRail } from '@/components/gmail/gmail_right_rail';
+import { GmailInboxView } from '@/components/gmail/gmail_inbox_view';
+import { ObservatoryTelemetryEmbeddedView } from '@/components/gmail/observatory_telemetry_embedded_view';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
+import { MessageSquare, Video } from 'lucide-react';
 
-export default function ObservatoryDashboardPage() {
+export default function ObservatoryGmailLayoutPage() {
+  const [activeRailTab, setActiveRailTab] = useState<RailTab>('demo');
+  const [demoSubView, setDemoSubView] = useState<DemoSubView>('dashboard');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Telemetry data state
   const [services, setServices] = useState<MonitoredServiceRecord[]>([]);
   const [summary, setSummary] = useState({
     total: 0,
@@ -35,7 +48,9 @@ export default function ObservatoryDashboardPage() {
         setSummary(servicesData.summary);
       }
       if (incidentsData.success) {
-        const active = incidentsData.incidents.filter((i: IncidentAlertRecord) => i.is_active === 1);
+        const active = incidentsData.incidents.filter(
+          (i: IncidentAlertRecord) => i.is_active === 1
+        );
         setActiveIncidents(active);
       }
     } catch (e) {
@@ -46,7 +61,7 @@ export default function ObservatoryDashboardPage() {
   const triggerPoll = useCallback(async () => {
     setIsPolling(true);
     try {
-      await fetch('/api/poller');
+      await fetch('/api/poller', { cache: 'no-store' });
       await fetchStatus();
     } catch (e) {
       console.error('Polling failed', e);
@@ -67,70 +82,99 @@ export default function ObservatoryDashboardPage() {
   }, [fetchStatus, triggerPoll]);
 
   return (
-    <div className="min-h-screen bg-white text-black flex flex-col w-full font-sans">
-      {/* Full-width header */}
-      <TopHeaderNavigationBarContainer onPoll={triggerPoll} isPolling={isPolling} />
+    <div className="h-screen w-screen flex flex-col bg-[#f6f8fc] text-[#1f1f1f] overflow-hidden font-sans select-none">
+      {/* Zone 3: Top Navigation Bar */}
+      <GmailTopNavbar
+        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        activeMode={activeRailTab}
+      />
 
-      {/* Full screen left to right main layout */}
-      <main className="flex-1 w-full px-6 md:px-10 py-8 space-y-8">
-        {/* Section: Overview Metrics */}
-        <section className="space-y-3 w-full">
-          <div className="text-center space-y-1">
-            <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
-              SYSTEM TELEMETRY OVERVIEW
-            </h2>
-            <p className="font-sans text-sm text-black opacity-60">
-              Live Real-Time Aggregates Across Monitored Infrastructure
-            </p>
-          </div>
-          <SystemOverviewMetricsBarContainer
-            total={summary.total}
-            healthy={summary.healthy}
-            degraded={summary.degraded}
-            down={summary.down}
-            activeAlerts={summary.activeAlerts}
+      {/* Main Body Layout: Horizontal Flexbox Container */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Zone 1: Far-Left Narrow Rail (Mail, Chat, Meet, Demo) */}
+        <GmailLeftRail
+          activeTab={activeRailTab}
+          onSelectTab={(tab) => {
+            setActiveRailTab(tab);
+            if (tab === 'demo') {
+              setDemoSubView('dashboard');
+            }
+          }}
+        />
+
+        {/* Zone 2: Collapsible Sidebar */}
+        {isSidebarOpen && (
+          <GmailLeftSidebar
+            activeTab={activeRailTab}
+            demoSubView={demoSubView}
+            onSelectDemoSubView={setDemoSubView}
+            statusFilter={statusFilter}
+            onSelectStatusFilter={setStatusFilter}
+            onPoll={triggerPoll}
+            isPolling={isPolling}
+            incidentCount={activeIncidents.length}
+            healthyCount={summary.healthy}
+            degradedCount={summary.degraded}
+            downCount={summary.down}
+            totalServicesCount={summary.total}
           />
-        </section>
-
-        {/* Section: Active Critical Notifications */}
-        {activeIncidents.length > 0 && (
-          <section className="space-y-3 w-full">
-            <div className="text-center space-y-1">
-              <h2 className="font-sans font-bold text-3xl md:text-4xl tracking-tight uppercase text-black">
-                ACTIVE CRITICAL NOTIFICATIONS ({activeIncidents.length})
-              </h2>
-              <p className="font-sans text-sm text-black opacity-60">
-                Action Required: Immediate Detected System Incidents
-              </p>
-            </div>
-            <div className="space-y-2 w-full">
-              {activeIncidents.map((incident) => (
-                <ActiveIncidentAlertNotificationCard key={incident.id} incident={incident} />
-              ))}
-            </div>
-          </section>
         )}
 
-        {/* Section: Interactive Chaos Testing Panel */}
-        <section className="w-full">
-          <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
-        </section>
+        {/* Zone 4: Central Workspace Card */}
+        <main className="flex-1 flex flex-col bg-white rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm">
+          {activeRailTab === 'demo' ? (
+            <ObservatoryTelemetryEmbeddedView
+              services={services}
+              summary={summary}
+              activeIncidents={activeIncidents}
+              triggerPoll={triggerPoll}
+              isPolling={isPolling}
+              demoSubView={demoSubView}
+              statusFilter={statusFilter}
+              searchQuery={searchQuery}
+            />
+          ) : activeRailTab === 'mail' ? (
+            <GmailInboxView />
+          ) : activeRailTab === 'chat' ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
+                <MessageSquare className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-[#1f1f1f]">Google Chat</h3>
+              <p className="max-w-md text-sm text-[#444746]">
+                Direct messages and spaces for infrastructure incident response teams and DevOps notifications.
+              </p>
+              <button
+                onClick={() => setActiveRailTab('demo')}
+                className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs"
+              >
+                Go to Telemetry Demo
+              </button>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
+              <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
+                <Video className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-[#1f1f1f]">Google Meet</h3>
+              <p className="max-w-md text-sm text-[#444746]">
+                Instant secure video meetings for War Room incident coordination and engineering triage.
+              </p>
+              <button
+                onClick={() => setActiveRailTab('demo')}
+                className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs"
+              >
+                Go to Telemetry Demo
+              </button>
+            </div>
+          )}
+        </main>
 
-        {/* Section: Monitored Services Grid */}
-        <section className="w-full">
-          <MonitoredServicesGridContainer services={services} />
-        </section>
-      </main>
-
-      {/* Full-width Business Footer */}
-      <footer className="w-full border-t border-black px-6 md:px-10 py-5 bg-white font-sans text-xs text-black flex flex-col sm:flex-row justify-between items-center gap-2">
-        <span className="font-bold tracking-tight uppercase">
-          INFRASTRUCTURE OBSERVATORY 30-A
-        </span>
-        <span className="opacity-60 text-center sm:text-right">
-          ENTERPRISE TELEMETRY ENGINE // FULL-WIDTH BUSINESS DASHBOARD
-        </span>
-      </footer>
+        {/* Zone 5: Far-Right Companion Rail */}
+        <GmailRightRail />
+      </div>
     </div>
   );
 }
