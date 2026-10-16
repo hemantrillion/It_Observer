@@ -72,15 +72,7 @@ export function GmailLeftRail({
                     : 'text-[#444746] group-hover:bg-black/5'
                 }`}
               >
-                {tab.id === 'demo' ? (
-                  <img
-                    src="/infra_trace_logo.png"
-                    alt="InfraTrace"
-                    className="w-5 h-5 object-contain"
-                  />
-                ) : (
-                  <IconComponent className="w-5 h-5" />
-                )}
+                <IconComponent className="w-5 h-5" />
 
                 {/* Red unread badge for mail */}
                 {tab.badge && tab.id === 'mail' && (

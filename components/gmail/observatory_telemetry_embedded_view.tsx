@@ -148,13 +148,6 @@ export function ObservatoryTelemetryEmbeddedView({
             </button>
           ) : (
             <div className="flex items-center gap-2 text-xs font-semibold text-[#444746] uppercase tracking-wider">
-              <img
-                src="/infra_trace_logo.png"
-                alt="InfraTrace"
-                className="w-4 h-4 object-contain"
-              />
-              <span>InfraTrace</span>
-              <span>/</span>
               <span className="text-[#1f1f1f] font-bold">
                 {demoSubView.toUpperCase()}
               </span>

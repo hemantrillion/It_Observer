@@ -1,5 +1,13 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { Roboto } from 'next/font/google';
+
+const roboto = Roboto({
+  weight: ['300', '400', '500', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-roboto',
+});
 
 export const metadata: Metadata = {
   title: 'InfraTrace // Gmail Telemetry Observatory',
@@ -15,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="bg-white text-black min-h-screen antialiased flex flex-col">
+    <html lang="en" className={roboto.variable}>
+      <body className={`${roboto.className} font-sans bg-white text-[#1f1f1f] min-h-screen antialiased flex flex-col`}>
         {children}
       </body>
     </html>

@@ -31,12 +31,14 @@ export function GmailTopNavbar({
   isSidebarOpen = true,
 }: GmailTopNavbarProps) {
   return (
-    <header className="h-16 flex items-center justify-between px-4 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
-      {/* Left: InfraTrace Logo & Wordmark (Aligned with Box 2 sidebar width) */}
+    <header className="h-16 flex items-center pr-4 pl-0 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
+      {/* Left: InfraTrace Logo & Wordmark (Exact width matching Box 2 so search aligns with Box 4) */}
       <div
         className={`${
-          isSidebarOpen ? 'w-64' : 'w-48'
-        } flex items-center gap-3 cursor-pointer shrink-0 pl-1 pr-3 transition-all duration-200`}
+          isSidebarOpen
+            ? (showFlexboxBorders ? 'w-[262px]' : 'w-64')
+            : 'w-48'
+        } flex items-center gap-3 cursor-pointer shrink-0 pl-3 pr-2 transition-all duration-200`}
       >
         <img
           src="/infra_trace_logo.png"
@@ -48,8 +50,8 @@ export function GmailTopNavbar({
         </span>
       </div>
 
-      {/* Middle: Rounded Pill Search Box - Starts directly where Box 4 begins */}
-      <div className="flex-1 max-w-[720px] mr-4">
+      {/* Middle: Rounded Pill Search Box - Left-aligned on the exact vertical axis where Box 4 begins */}
+      <div className="w-[720px] max-w-[calc(100%-420px)] shrink-0">
         <div className="bg-[#eaf1fb] hover:bg-[#e1e9f5] focus-within:bg-white focus-within:shadow-md transition-all rounded-full h-11 flex items-center px-4 gap-3 border border-transparent focus-within:border-[#c4c7c5]">
           <Search className="w-5 h-5 text-[#444746] shrink-0" />
           <input
@@ -73,8 +75,11 @@ export function GmailTopNavbar({
         </div>
       </div>
 
+      {/* Spacer pushing controls to the far right, keeping search bar strictly left-aligned */}
+      <div className="flex-1 min-w-4" />
+
       {/* Right: Controls & Profile */}
-      <div className="flex items-center gap-1 sm:gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         {/* Toggle Flexbox Boundaries Button: strictly 'Flex' text (Green = ON, Red = OFF) */}
         {onToggleFlexboxBorders && (
           <button
