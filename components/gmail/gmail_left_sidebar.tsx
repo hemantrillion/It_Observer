@@ -58,7 +58,7 @@ export function GmailLeftSidebar({
   const isDemo = activeTab === 'demo';
 
   return (
-    <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-[#f6f8fc] overflow-y-auto select-none">
+    <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">
       {/* Top Action Button: "Poll Now" in Demo mode, "+ Compose" in Mail mode */}
       <div className="mb-4 pt-1">
         {isDemo ? (

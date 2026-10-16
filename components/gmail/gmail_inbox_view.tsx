@@ -200,9 +200,13 @@ type CategoryTab = 'primary' | 'promotions' | 'social' | 'updates';
 
 interface GmailInboxViewProps {
   density?: DensityOption;
+  hasWallpaper?: boolean;
 }
 
-export function GmailInboxView({ density = 'compact' }: GmailInboxViewProps) {
+export function GmailInboxView({
+  density = 'compact',
+  hasWallpaper = false,
+}: GmailInboxViewProps) {
   const [emails, setEmails] = useState<EmailItem[]>(INITIAL_EMAILS);
   const [activeTab, setActiveTab] = useState<CategoryTab>('primary');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -232,9 +236,17 @@ export function GmailInboxView({ density = 'compact' }: GmailInboxViewProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white select-none overflow-hidden">
+    <div
+      className={`flex-1 flex flex-col h-full ${
+        hasWallpaper ? 'bg-white/80' : 'bg-white'
+      } select-none overflow-hidden`}
+    >
       {/* Top Toolbar */}
-      <div className="h-12 border-b border-[#e0e2ec] px-4 flex items-center justify-between shrink-0 bg-white">
+      <div
+        className={`h-12 border-b border-[#e0e2ec] px-4 flex items-center justify-between shrink-0 ${
+          hasWallpaper ? 'bg-white/80' : 'bg-white'
+        }`}
+      >
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Select all checkbox */}
           <button

@@ -32,6 +32,7 @@ interface ObservatoryTelemetryEmbeddedViewProps {
   statusFilter: StatusFilter;
   searchQuery: string;
   density?: DensityOption;
+  hasWallpaper?: boolean;
 }
 
 export function ObservatoryTelemetryEmbeddedView({
@@ -44,6 +45,7 @@ export function ObservatoryTelemetryEmbeddedView({
   statusFilter,
   searchQuery,
   density = 'compact',
+  hasWallpaper = false,
 }: ObservatoryTelemetryEmbeddedViewProps) {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<MonitoredServiceRecord | null>(null);
@@ -134,9 +136,9 @@ export function ObservatoryTelemetryEmbeddedView({
     density === 'compact' ? 'space-y-4 p-4 md:p-6' : density === 'comfortable' ? 'space-y-6 p-6 md:p-8' : 'space-y-8 p-6 md:p-10';
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white overflow-y-auto font-sans select-none">
+    <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-white/80' : 'bg-white'} overflow-y-auto font-sans select-none`}>
       {/* Top Breadcrumb & Live Status Bar */}
-      <div className="h-12 border-b border-[#e0e2ec] px-6 flex items-center justify-between shrink-0 bg-white">
+      <div className={`h-12 border-b border-[#e0e2ec] px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/80' : 'bg-white'}`}>
         <div className="flex items-center gap-3">
           {selectedServiceId ? (
             <button

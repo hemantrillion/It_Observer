@@ -19,7 +19,7 @@ export const PRESET_THEMES: ThemeOption[] = [
     name: 'Default',
     type: 'color',
     previewUrl: 'default_svg',
-    backgroundStyle: '#f6f8fc',
+    backgroundStyle: '#f8fafd',
   },
   {
     id: 'mountain_sunset',

@@ -159,20 +159,20 @@ export default function ObservatoryGmailLayoutPage() {
     <div
       style={hasWallpaper ? { background: activeTheme.backgroundStyle } : undefined}
       className={`h-screen w-screen flex flex-row ${
-        hasWallpaper ? 'bg-cover bg-center' : 'bg-[#f6f8fc]'
+        hasWallpaper ? 'bg-cover bg-center' : 'bg-[#f8fafd]'
       } text-[#1f1f1f] overflow-hidden font-sans select-none relative`}
     >
       {/* ======================================================== */}
-      {/* FLEXBOX 1: Far-Left Narrow Rail (Full Height)            */}
+      {/* FLEXBOX 1: Far-Left Narrow Rail (Level 1: Darkest tint)  */}
       {/* Contains: Hamburger collapse button at top, Mail, Chat,   */}
-      {/*           Meet, Demo                                     */}
+      {/*           Meet, Demo. Matches Search Box darkness.        */}
       {/* ======================================================== */}
       <div
         className={`relative h-full shrink-0 flex flex-col transition-all ${
           showFlexboxBorders
             ? 'border-2 border-red-500 m-0.5 rounded-sm'
             : ''
-        } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
+        } ${hasWallpaper ? 'bg-[#e9eef6]/65 backdrop-blur-md' : 'bg-[#e9eef6]'}`}
       >
         <GmailLeftRail
           activeTab={activeRailTab}
@@ -192,16 +192,15 @@ export default function ObservatoryGmailLayoutPage() {
       {/* ======================================================== */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* ====================================================== */}
-        {/* FLEXBOX 3: Top Navigation Bar                          */}
+        {/* FLEXBOX 3: Top Navigation Bar (Level 2: Medium tint)   */}
         {/* Starts with Gmail logo & wordmark, search, controls    */}
-        {/* (Does NOT contain the hamburger button!)               */}
         {/* ====================================================== */}
         <div
           className={`relative shrink-0 transition-all ${
             showFlexboxBorders
               ? 'border-2 border-amber-500 m-0.5 rounded-sm'
               : ''
-          } ${hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'}`}
+          } ${hasWallpaper ? 'bg-[#f8fafd]/45 backdrop-blur-md' : 'bg-[#f8fafd]'}`}
         >
           <GmailTopNavbar
             searchQuery={searchQuery}
@@ -212,6 +211,7 @@ export default function ObservatoryGmailLayoutPage() {
             showFlexboxBorders={showFlexboxBorders}
             onToggleFlexboxBorders={() => setShowFlexboxBorders((prev) => !prev)}
             isSidebarOpen={isSidebarOpen}
+            hasWallpaper={hasWallpaper}
           />
         </div>
 
@@ -237,13 +237,18 @@ export default function ObservatoryGmailLayoutPage() {
           {/* In Demo mode: Poll Now + Observatory nav + filters   */}
           {/* In Mail mode: + Compose + Folders + Labels           */}
           {/* ==================================================== */}
+          {/* ==================================================== */}
+          {/* FLEXBOX 2: Left Collapsible Sidebar (Level 2)       */}
+          {/* In Demo mode: Poll Now + Observatory nav + filters   */}
+          {/* In Mail mode: + Compose + Folders + Labels           */}
+          {/* ==================================================== */}
           {isSidebarOpen && (
             <div
               className={`relative h-full shrink-0 flex flex-col transition-all ${
                 showFlexboxBorders
                   ? 'border-2 border-green-600 m-0.5 rounded-sm'
                   : ''
-              } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
+              } ${hasWallpaper ? 'bg-[#f8fafd]/45 backdrop-blur-md' : 'bg-[#f8fafd]'}`}
             >
               <GmailLeftSidebar
                 activeTab={activeRailTab}
@@ -263,7 +268,7 @@ export default function ObservatoryGmailLayoutPage() {
           )}
 
           {/* ==================================================== */}
-          {/* FLEXBOX 4: Central Main Content Area                 */}
+          {/* FLEXBOX 4: Central Main Content Area (Level 3: White) */}
           {/* White rounded card with either Demo Cockpit or Inbox */}
           {/* ==================================================== */}
           <div
@@ -275,7 +280,7 @@ export default function ObservatoryGmailLayoutPage() {
           >
             <main
               className={`flex-1 flex flex-col rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm ${
-                hasWallpaper ? 'bg-white/95 backdrop-blur-md shadow-xl' : 'bg-white'
+                hasWallpaper ? 'bg-white/90 backdrop-blur-md shadow-xl' : 'bg-white'
               }`}
             >
               {activeRailTab === 'demo' ? (
@@ -289,9 +294,10 @@ export default function ObservatoryGmailLayoutPage() {
                   statusFilter={statusFilter}
                   searchQuery={searchQuery}
                   density={density}
+                  hasWallpaper={hasWallpaper}
                 />
               ) : activeRailTab === 'mail' ? (
-                <GmailInboxView density={density} />
+                <GmailInboxView density={density} hasWallpaper={hasWallpaper} />
               ) : activeRailTab === 'chat' ? (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
                   <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
@@ -329,7 +335,7 @@ export default function ObservatoryGmailLayoutPage() {
           </div>
 
           {/* ==================================================== */}
-          {/* FLEXBOX 5: Far-Right Companion Rail                  */}
+          {/* FLEXBOX 5: Far-Right Companion Rail (Level 2)        */}
           {/* Contains: Calendar, Keep, Tasks, Contacts, +, >      */}
           {/* ==================================================== */}
           <div
@@ -337,7 +343,7 @@ export default function ObservatoryGmailLayoutPage() {
               showFlexboxBorders
                 ? 'border-2 border-purple-600 m-0.5 rounded-sm'
                 : ''
-            } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
+            } ${hasWallpaper ? 'bg-[#f8fafd]/45 backdrop-blur-md' : 'bg-[#f8fafd]'}`}
           >
             <GmailRightRail />
           </div>

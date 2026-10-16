@@ -41,7 +41,7 @@ export function GmailLeftRail({
   ];
 
   return (
-    <aside className="w-[72px] h-full flex flex-col items-center py-2 shrink-0 bg-[#f6f8fc] space-y-4 select-none">
+    <aside className="w-[72px] h-full flex flex-col items-center py-2 shrink-0 bg-transparent space-y-4 select-none">
       {/* Collapse button on left (Hamburger menu) - 48px circle with 24px icon */}
       <button
         onClick={onToggleSidebar}
