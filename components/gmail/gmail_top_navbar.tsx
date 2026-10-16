@@ -31,56 +31,23 @@ export function GmailTopNavbar({
 }: GmailTopNavbarProps) {
   return (
     <header className="h-16 flex items-center justify-between px-4 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
-      {/* Left: Logo & Wordmark (Starts Box 3, without hamburger!) */}
-      <div className="flex items-center gap-2.5 cursor-pointer shrink-0 pl-1">
-        {activeMode === 'demo' ? (
-          <div className="flex items-center gap-2">
-            <img
-              src="/infra_trace_logo.png"
-              alt="InfraTrace Logo"
-              className="w-8 h-8 object-contain drop-shadow-xs"
-            />
-            <span className="text-[21px] font-bold text-[#1f1f1f] tracking-tight font-sans">
-              InfraTrace
-            </span>
+      {/* Left: InfraTrace Logo & Wordmark (In place of Gmail logo!) */}
+      <div className="flex items-center gap-3 cursor-pointer shrink-0 pl-1">
+        <img
+          src="/infra_trace_logo.png"
+          alt="InfraTrace Logo"
+          className="w-9 h-9 object-contain drop-shadow-sm transition-transform hover:scale-105"
+        />
+        <div className="flex items-center gap-2">
+          <span className="text-[22px] font-semibold text-[#1f1f1f] tracking-tight font-sans">
+            InfraTrace
+          </span>
+          {activeMode === 'demo' && (
             <span className="hidden sm:inline-block text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#eaf1fb] text-[#0b57d0] border border-[#d3e3fd]">
               Observatory
             </span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            {/* Authentic Gmail Envelope SVG */}
-            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4Z"
-                fill="#EBF3FC"
-              />
-              <path
-                d="M20 8L12 13L4 8V6L12 11L20 6V8Z"
-                fill="#EA4335"
-              />
-              <path
-                d="M20 6L12 11L4 6V4H20V6Z"
-                fill="#EA4335"
-              />
-              <path
-                d="M4 6V18H2V6C2 4.9 2.9 4 4 4V6Z"
-                fill="#4285F4"
-              />
-              <path
-                d="M20 6V18H22V6C22 4.9 21.1 4 20 4V6Z"
-                fill="#34A853"
-              />
-              <path
-                d="M20 18H4V20H20C21.1 20 22 19.1 22 18H20Z"
-                fill="#FBBC04"
-              />
-            </svg>
-            <span className="text-[22px] font-normal text-[#444746] tracking-tight font-sans">
-              Gmail
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Middle: Rounded Pill Search Box */}
@@ -93,8 +60,8 @@ export function GmailTopNavbar({
             onChange={(e) => onSearchChange?.(e.target.value)}
             placeholder={
               activeMode === 'demo'
-                ? 'Search telemetry, services, metrics...'
-                : 'Search mail'
+                ? 'Search InfraTrace telemetry, services, metrics...'
+                : 'Search in InfraTrace'
             }
             className="w-full bg-transparent text-sm text-[#1f1f1f] placeholder:text-[#5e5e5e] outline-none font-sans"
           />
@@ -115,7 +82,7 @@ export function GmailTopNavbar({
           <button
             onClick={onToggleFlexboxBorders}
             title="Toggle Flexbox 1-5 Boundaries"
-            className={`hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+            className={`hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
               showFlexboxBorders
                 ? 'bg-red-50 text-red-700 border-red-300 shadow-2xs'
                 : 'bg-white text-[#444746] border-[#747775]/30 hover:bg-black/5'
@@ -136,7 +103,7 @@ export function GmailTopNavbar({
         {/* Support Help */}
         <button
           title="Support"
-          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors"
+          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
@@ -145,7 +112,7 @@ export function GmailTopNavbar({
         <button
           onClick={onOpenSettings}
           title="Settings"
-          className={`p-2 rounded-full transition-colors ${
+          className={`p-2 rounded-full transition-colors cursor-pointer ${
             isSettingsOpen
               ? 'bg-black/15 text-[#1f1f1f]'
               : 'hover:bg-black/5 text-[#444746]'
@@ -157,7 +124,7 @@ export function GmailTopNavbar({
         {/* Gemini Star */}
         <button
           title="Gemini"
-          className="p-2 rounded-full hover:bg-black/5 transition-colors"
+          className="p-2 rounded-full hover:bg-black/5 transition-colors cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
             <path
@@ -175,14 +142,14 @@ export function GmailTopNavbar({
         </button>
 
         {/* Upgrade Button */}
-        <button className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-medium tracking-wide shadow-sm transition-colors">
+        <button className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-medium tracking-wide shadow-sm transition-colors cursor-pointer">
           Upgrade
         </button>
 
         {/* Google Apps 9-dots Grid */}
         <button
           title="Google apps"
-          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors"
+          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="6" cy="6" r="2" />
