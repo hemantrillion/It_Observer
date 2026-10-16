@@ -106,22 +106,8 @@ export function GmailLeftSidebar({
   if (activeTab === 'metrics') {
     return (
       <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
-        {/* Header */}
-        <div className="px-4 py-3 border-b border-white/10 mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Gauge className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#0b57d0]'}`} />
-            <span
-              className={`text-sm font-bold uppercase tracking-wider ${
-                hasWallpaper ? 'text-white drop-shadow-sm' : 'text-[#1f1f1f]'
-              }`}
-            >
-              Metrics Categories
-            </span>
-          </div>
-        </div>
-
         {/* Categories List matching Image 2 & Image 3 reference */}
-        <div className="divide-y divide-white/10 border-t border-b border-white/10">
+        <div className="divide-y divide-white/10 border-b border-white/10">
           {METRICS_CATEGORIES.map((cat) => {
             const isSelected = activeMetricsCategory === cat;
             return (
@@ -327,7 +313,7 @@ export function GmailLeftSidebar({
           >
             <div className="flex items-center gap-4">
               <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-              <span>Metrics (/metrics)</span>
+              <span>Raw Metrics</span>
             </div>
             <span
               className={`text-xs uppercase font-extrabold px-1.5 py-0.5 rounded ${
