@@ -172,7 +172,7 @@ export default function ObservatoryGmailLayoutPage() {
           showFlexboxBorders
             ? 'border-2 border-red-500 m-0.5 rounded-sm'
             : ''
-        } ${hasWallpaper ? 'bg-black/14 backdrop-blur-md' : 'bg-[#e9eef6]'}`}
+        } ${hasWallpaper ? 'bg-white/15 backdrop-blur-md border-r border-white/15' : 'bg-[#e9eef6]'}`}
       >
         <GmailLeftRail
           activeTab={activeRailTab}
@@ -190,8 +190,13 @@ export default function ObservatoryGmailLayoutPage() {
       {/* ======================================================== */}
       {/* Right-Hand Workspace Container (Column: Box 3 top, then   */}
       {/* Box 2, Box 4, Box 5 side-by-side)                         */}
+      {/* Themed Mode: Unified blackish translucent canvas          */}
       {/* ======================================================== */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div
+        className={`flex-1 flex flex-col h-full overflow-hidden ${
+          hasWallpaper ? 'bg-black/30 backdrop-blur-sm' : ''
+        }`}
+      >
         {/* ====================================================== */}
         {/* FLEXBOX 3: Top Navigation Bar (Level 2: Medium tint)   */}
         {/* Starts with Gmail logo & wordmark, search, controls    */}

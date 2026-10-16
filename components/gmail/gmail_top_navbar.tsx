@@ -58,12 +58,12 @@ export function GmailTopNavbar({
         </span>
       </div>
 
-      {/* Middle: Rounded Pill Search Box (Level 1: #e9eef6 in default, translucent dark glass in themed mode) */}
+      {/* Middle: Rounded Pill Search Box (Level 1: #e9eef6 in default, whitish translucent glass in themed mode) */}
       <div className="w-[720px] max-w-[calc(100%-420px)] shrink-0">
         <div
           className={`group transition-all rounded-full h-11 flex items-center px-4 gap-3 border ${
             hasWallpaper
-              ? 'bg-black/15 hover:bg-black/25 border-white/20 text-white backdrop-blur-md focus-within:bg-white focus-within:text-[#1f1f1f] focus-within:border-transparent focus-within:shadow-md'
+              ? 'bg-white/15 hover:bg-white/25 border-white/25 text-white backdrop-blur-md focus-within:bg-white focus-within:text-[#1f1f1f] focus-within:border-transparent focus-within:shadow-md'
               : 'bg-[#e9eef6] hover:bg-[#dfe6f2] border-transparent focus-within:bg-white focus-within:border-[#c4c7c5] focus-within:shadow-md'
           }`}
         >
@@ -127,7 +127,7 @@ export function GmailTopNavbar({
         <div
           className={`hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
             hasWallpaper
-              ? 'bg-black/15 hover:bg-black/25 border border-white/20 text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              ? 'bg-white/15 hover:bg-white/25 border border-white/25 text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'border border-[#747775]/35 text-[#1f1f1f] hover:bg-black/5'
           }`}
         >
