@@ -31,7 +31,7 @@ export function GmailTopNavbar({
   isSidebarOpen = true,
 }: GmailTopNavbarProps) {
   return (
-    <header className="h-16 flex items-center pr-4 pl-0 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
+    <header className="h-16 flex items-center pr-4 pl-0 bg-[#f6f8fc] shrink-0 select-none">
       {/* Left: InfraTrace Logo & Wordmark (Exact width matching Box 2 so search aligns with Box 4) */}
       <div
         className={`${
