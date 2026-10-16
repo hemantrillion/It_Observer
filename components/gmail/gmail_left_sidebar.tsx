@@ -149,32 +149,6 @@ export function GmailLeftSidebar({
             );
           })}
         </div>
-
-        {/* Raw Prometheus Metrics Endpoint */}
-        <div className="p-3 mt-auto border-t border-white/10">
-          <a
-            href="/metrics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <BarChart2 className={`w-4 h-4 ${hasWallpaper ? 'text-white' : 'text-[#0b57d0]'}`} />
-              <span>Raw Prometheus (/metrics)</span>
-            </div>
-            <span
-              className={`text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded ${
-                hasWallpaper ? 'bg-sky-400/30 text-sky-200' : 'bg-blue-100 text-[#0b57d0]'
-              }`}
-            >
-              RAW
-            </span>
-          </a>
-        </div>
       </aside>
     );
   }
@@ -339,6 +313,30 @@ export function GmailLeftSidebar({
               <span>Settings</span>
             </div>
           </button>
+
+          {/* Raw Metrics in Demo (/metrics) */}
+          <a
+            href="/metrics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+              <span>Metrics (/metrics)</span>
+            </div>
+            <span
+              className={`text-xs uppercase font-extrabold px-1.5 py-0.5 rounded ${
+                hasWallpaper ? 'bg-sky-400/30 text-sky-200' : 'bg-blue-100 text-[#0b57d0]'
+              }`}
+            >
+              RAW
+            </span>
+          </a>
 
           {/* Telemetry Filters Section */}
           <div
