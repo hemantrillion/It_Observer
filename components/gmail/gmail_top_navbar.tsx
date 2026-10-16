@@ -47,21 +47,31 @@ export function GmailTopNavbar({
           alt="InfraTrace Logo"
           className="w-9 h-9 object-contain drop-shadow-sm transition-transform hover:scale-105"
         />
-        <span className="text-[22px] font-semibold text-[#1f1f1f] tracking-tight font-sans">
+        <span
+          className={`text-[22px] font-semibold tracking-tight font-sans ${
+            hasWallpaper ? 'text-white drop-shadow-sm' : 'text-[#1f1f1f]'
+          }`}
+        >
           InfraTrace
         </span>
       </div>
 
-      {/* Middle: Rounded Pill Search Box (Level 1: #e9eef6, matching Box 1 darkness ratio) */}
+      {/* Middle: Rounded Pill Search Box (Level 1: #e9eef6 in default, translucent dark glass in themed mode) */}
       <div className="w-[720px] max-w-[calc(100%-420px)] shrink-0">
         <div
-          className={`${
+          className={`group transition-all rounded-full h-11 flex items-center px-4 gap-3 border ${
             hasWallpaper
-              ? 'bg-[#e9eef6]/75 hover:bg-[#e9eef6]/85 backdrop-blur-md shadow-xs'
-              : 'bg-[#e9eef6] hover:bg-[#dfe6f2]'
-          } focus-within:bg-white focus-within:shadow-md transition-all rounded-full h-11 flex items-center px-4 gap-3 border border-transparent focus-within:border-[#c4c7c5]`}
+              ? 'bg-black/25 hover:bg-black/35 border-white/20 text-white backdrop-blur-md focus-within:bg-white focus-within:text-[#1f1f1f] focus-within:border-transparent focus-within:shadow-md'
+              : 'bg-[#e9eef6] hover:bg-[#dfe6f2] border-transparent focus-within:bg-white focus-within:border-[#c4c7c5] focus-within:shadow-md'
+          }`}
         >
-          <Search className="w-5 h-5 text-[#444746] shrink-0" />
+          <Search
+            className={`w-5 h-5 shrink-0 transition-colors ${
+              hasWallpaper
+                ? 'text-white/80 group-focus-within:text-[#444746]'
+                : 'text-[#444746]'
+            }`}
+          />
           <input
             type="text"
             value={searchQuery}
@@ -71,12 +81,20 @@ export function GmailTopNavbar({
                 ? 'Search InfraTrace telemetry, services, metrics...'
                 : 'Search in InfraTrace'
             }
-            className="w-full bg-transparent text-sm text-[#1f1f1f] placeholder:text-[#5e5e5e] outline-none font-sans"
+            className={`w-full bg-transparent text-sm outline-none font-sans ${
+              hasWallpaper
+                ? 'text-white placeholder:text-white/70 group-focus-within:text-[#1f1f1f] group-focus-within:placeholder:text-[#5e5e5e]'
+                : 'text-[#1f1f1f] placeholder:text-[#5e5e5e]'
+            }`}
           />
           <button
             type="button"
             title="Search options"
-            className="p-1 rounded-full hover:bg-black/5 text-[#444746]"
+            className={`p-1 rounded-full transition-colors ${
+              hasWallpaper
+                ? 'hover:bg-white/10 text-white/80 group-focus-within:text-[#444746] group-focus-within:hover:bg-black/5'
+                : 'hover:bg-black/5 text-[#444746]'
+            }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>
@@ -104,16 +122,28 @@ export function GmailTopNavbar({
         )}
 
         {/* Status Pill (Active) */}
-        <div className="hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full border border-[#747775]/35 text-sm font-medium text-[#1f1f1f] hover:bg-black/5 cursor-pointer transition-colors">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block" />
+        <div
+          className={`hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full text-sm font-medium cursor-pointer transition-colors ${
+            hasWallpaper
+              ? 'bg-black/25 hover:bg-black/35 border border-white/20 text-white backdrop-blur-md'
+              : 'border border-[#747775]/35 text-[#1f1f1f] hover:bg-black/5'
+          }`}
+        >
+          <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block shadow-xs" />
           <span>Active</span>
-          <ChevronDown className="w-4 h-4 text-[#444746]" />
+          <ChevronDown
+            className={`w-4 h-4 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+          />
         </div>
 
         {/* Support Help (40px circle with 22px icon) */}
         <button
           title="Support"
-          className="w-10 h-10 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
+          className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
+            hasWallpaper
+              ? 'hover:bg-white/10 text-white'
+              : 'hover:bg-black/10 text-[#444746]'
+          }`}
         >
           <HelpCircle className="w-[22px] h-[22px]" />
         </button>
@@ -124,7 +154,11 @@ export function GmailTopNavbar({
           title="Settings"
           className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             isSettingsOpen
-              ? 'bg-black/15 text-[#1f1f1f]'
+              ? hasWallpaper
+                ? 'bg-white/20 text-white'
+                : 'bg-black/15 text-[#1f1f1f]'
+              : hasWallpaper
+              ? 'hover:bg-white/10 text-white'
               : 'hover:bg-black/10 text-[#444746]'
           }`}
         >
@@ -134,7 +168,11 @@ export function GmailTopNavbar({
         {/* Google Apps 9-dots Grid (40px circle with 24px icon) */}
         <button
           title="Google apps"
-          className="w-10 h-10 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
+          className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
+            hasWallpaper
+              ? 'hover:bg-white/10 text-white'
+              : 'hover:bg-black/10 text-[#444746]'
+          }`}
         >
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="6" cy="6" r="2" />

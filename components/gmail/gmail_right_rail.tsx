@@ -3,7 +3,11 @@
 import React, { useState } from 'react';
 import { Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 
-export function GmailRightRail() {
+interface GmailRightRailProps {
+  hasWallpaper?: boolean;
+}
+
+export function GmailRightRail({ hasWallpaper = false }: GmailRightRailProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   if (isCollapsed) {
@@ -12,7 +16,11 @@ export function GmailRightRail() {
         <button
           onClick={() => setIsCollapsed(false)}
           title="Show side panel"
-          className="p-1 rounded-full hover:bg-black/5 text-[#444746] transition-colors"
+          className={`p-1 rounded-full transition-colors ${
+            hasWallpaper
+              ? 'hover:bg-white/15 text-white/80'
+              : 'hover:bg-black/5 text-[#444746]'
+          }`}
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -27,7 +35,9 @@ export function GmailRightRail() {
         {/* Google Calendar */}
         <button
           title="Calendar"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors cursor-pointer group"
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+            hasWallpaper ? 'hover:bg-white/15' : 'hover:bg-black/5'
+          }`}
         >
           <div className="w-6 h-6 rounded bg-[#1a73e8] text-white flex flex-col items-center justify-center shadow-xs">
             <span className="text-[8px] leading-none font-bold uppercase pt-0.5">
@@ -40,7 +50,9 @@ export function GmailRightRail() {
         {/* Google Keep */}
         <button
           title="Keep"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors cursor-pointer group"
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+            hasWallpaper ? 'hover:bg-white/15' : 'hover:bg-black/5'
+          }`}
         >
           <div className="w-6 h-6 rounded-md bg-[#fbbc04] flex items-center justify-center shadow-xs text-white">
             <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24">
@@ -52,7 +64,9 @@ export function GmailRightRail() {
         {/* Google Tasks */}
         <button
           title="Tasks"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors cursor-pointer group"
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+            hasWallpaper ? 'hover:bg-white/15' : 'hover:bg-black/5'
+          }`}
         >
           <div className="w-6 h-6 rounded-full bg-[#1a73e8] flex items-center justify-center shadow-xs text-white">
             <svg
@@ -67,7 +81,9 @@ export function GmailRightRail() {
         {/* Google Contacts */}
         <button
           title="Contacts"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors cursor-pointer group"
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer group ${
+            hasWallpaper ? 'hover:bg-white/15' : 'hover:bg-black/5'
+          }`}
         >
           <div className="w-6 h-6 rounded-full bg-[#4285f4] flex items-center justify-center shadow-xs text-white">
             <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
@@ -77,12 +93,20 @@ export function GmailRightRail() {
         </button>
 
         {/* Divider */}
-        <div className="w-5 h-[1px] bg-[#e0e2ec] my-1" />
+        <div
+          className={`w-5 h-[1px] my-1 ${
+            hasWallpaper ? 'bg-white/20' : 'bg-[#e0e2ec]'
+          }`}
+        />
 
         {/* Get Add-ons (+) */}
         <button
           title="Get add-ons"
-          className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'hover:bg-white/15 text-white'
+              : 'hover:bg-black/5 text-[#444746]'
+          }`}
         >
           <Plus className="w-5 h-5" />
         </button>
@@ -93,7 +117,11 @@ export function GmailRightRail() {
         <button
           onClick={() => setIsCollapsed(true)}
           title="Hide side panel"
-          className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
+          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+            hasWallpaper
+              ? 'hover:bg-white/15 text-white/80'
+              : 'hover:bg-black/5 text-[#444746]'
+          }`}
         >
           <ChevronRight className="w-4 h-4" />
         </button>

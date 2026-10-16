@@ -9,12 +9,14 @@ interface GmailLeftRailProps {
   activeTab: RailTab;
   onSelectTab: (tab: RailTab) => void;
   onToggleSidebar?: () => void;
+  hasWallpaper?: boolean;
 }
 
 export function GmailLeftRail({
   activeTab,
   onSelectTab,
   onToggleSidebar,
+  hasWallpaper = false,
 }: GmailLeftRailProps) {
   const tabs = [
     {
@@ -47,7 +49,11 @@ export function GmailLeftRail({
         onClick={onToggleSidebar}
         aria-label="Main menu"
         title="Main menu (Collapse / Expand Sidebar)"
-        className="w-12 h-12 rounded-full hover:bg-black/10 text-[#444746] transition-colors flex items-center justify-center focus:outline-none cursor-pointer"
+        className={`w-12 h-12 rounded-full transition-colors flex items-center justify-center focus:outline-none cursor-pointer ${
+          hasWallpaper
+            ? 'hover:bg-white/10 text-white'
+            : 'hover:bg-black/10 text-[#444746]'
+        }`}
       >
         <Menu className="w-6 h-6" />
       </button>
@@ -68,7 +74,11 @@ export function GmailLeftRail({
               <div
                 className={`w-14 h-8 rounded-full flex items-center justify-center relative transition-colors ${
                   isActive
-                    ? 'bg-[#d3e3fd] text-[#041e49]'
+                    ? hasWallpaper
+                      ? 'bg-white/25 text-white backdrop-blur-sm shadow-xs'
+                      : 'bg-[#d3e3fd] text-[#041e49]'
+                    : hasWallpaper
+                    ? 'text-white/80 group-hover:bg-white/10'
                     : 'text-[#444746] group-hover:bg-black/5'
                 }`}
               >
@@ -86,7 +96,11 @@ export function GmailLeftRail({
               <span
                 className={`text-xs mt-1.5 tracking-tight ${
                   isActive
-                    ? 'font-bold text-[#041e49]'
+                    ? hasWallpaper
+                      ? 'font-bold text-white'
+                      : 'font-bold text-[#041e49]'
+                    : hasWallpaper
+                    ? 'font-medium text-white/80 group-hover:text-white'
                     : 'font-medium text-[#444746] group-hover:text-[#1f1f1f]'
                 }`}
               >

@@ -172,7 +172,7 @@ export default function ObservatoryGmailLayoutPage() {
           showFlexboxBorders
             ? 'border-2 border-red-500 m-0.5 rounded-sm'
             : ''
-        } ${hasWallpaper ? 'bg-[#e9eef6]/65 backdrop-blur-md' : 'bg-[#e9eef6]'}`}
+        } ${hasWallpaper ? 'bg-black/25 backdrop-blur-md' : 'bg-[#e9eef6]'}`}
       >
         <GmailLeftRail
           activeTab={activeRailTab}
@@ -183,6 +183,7 @@ export default function ObservatoryGmailLayoutPage() {
             }
           }}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          hasWallpaper={hasWallpaper}
         />
       </div>
 
@@ -200,7 +201,7 @@ export default function ObservatoryGmailLayoutPage() {
             showFlexboxBorders
               ? 'border-2 border-amber-500 m-0.5 rounded-sm'
               : ''
-          } ${hasWallpaper ? 'bg-[#f8fafd]/45 backdrop-blur-md' : 'bg-[#f8fafd]'}`}
+          } ${hasWallpaper ? 'bg-transparent' : 'bg-[#f8fafd]'}`}
         >
           <GmailTopNavbar
             searchQuery={searchQuery}
@@ -233,12 +234,7 @@ export default function ObservatoryGmailLayoutPage() {
         {/* Body below Box 3: Horizontal flex row holding Box 2, 4, 5 */}
         <div className="flex-1 flex flex-row overflow-hidden">
           {/* ==================================================== */}
-          {/* FLEXBOX 2: Left Collapsible Sidebar                  */}
-          {/* In Demo mode: Poll Now + Observatory nav + filters   */}
-          {/* In Mail mode: + Compose + Folders + Labels           */}
-          {/* ==================================================== */}
-          {/* ==================================================== */}
-          {/* FLEXBOX 2: Left Collapsible Sidebar (Level 2)       */}
+          {/* FLEXBOX 2: Left Collapsible Sidebar (Level 2)        */}
           {/* In Demo mode: Poll Now + Observatory nav + filters   */}
           {/* In Mail mode: + Compose + Folders + Labels           */}
           {/* ==================================================== */}
@@ -248,7 +244,7 @@ export default function ObservatoryGmailLayoutPage() {
                 showFlexboxBorders
                   ? 'border-2 border-green-600 m-0.5 rounded-sm'
                   : ''
-              } ${hasWallpaper ? 'bg-[#f8fafd]/45 backdrop-blur-md' : 'bg-[#f8fafd]'}`}
+              } ${hasWallpaper ? 'bg-transparent' : 'bg-[#f8fafd]'}`}
             >
               <GmailLeftSidebar
                 activeTab={activeRailTab}
@@ -263,6 +259,7 @@ export default function ObservatoryGmailLayoutPage() {
                 degradedCount={summary.degraded}
                 downCount={summary.down}
                 totalServicesCount={summary.total}
+                hasWallpaper={hasWallpaper}
               />
             </div>
           )}
@@ -279,9 +276,11 @@ export default function ObservatoryGmailLayoutPage() {
             }`}
           >
             <main
-              className={`flex-1 flex flex-col rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm ${
-                hasWallpaper ? 'bg-white/90 backdrop-blur-md shadow-xl' : 'bg-white'
-              }`}
+              className={`flex-1 flex flex-col rounded-2xl mr-2 mb-2 ml-1 mt-0 border ${
+                hasWallpaper
+                  ? 'border-white/20 bg-white shadow-2xl'
+                  : 'border-[#e0e2ec] bg-white shadow-sm'
+              } overflow-hidden`}
             >
               {activeRailTab === 'demo' ? (
                 <ObservatoryTelemetryEmbeddedView
@@ -343,9 +342,9 @@ export default function ObservatoryGmailLayoutPage() {
               showFlexboxBorders
                 ? 'border-2 border-purple-600 m-0.5 rounded-sm'
                 : ''
-            } ${hasWallpaper ? 'bg-[#f8fafd]/45 backdrop-blur-md' : 'bg-[#f8fafd]'}`}
+            } ${hasWallpaper ? 'bg-transparent' : 'bg-[#f8fafd]'}`}
           >
-            <GmailRightRail />
+            <GmailRightRail hasWallpaper={hasWallpaper} />
           </div>
         </div>
       </div>

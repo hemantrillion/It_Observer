@@ -39,6 +39,7 @@ interface GmailLeftSidebarProps {
   degradedCount?: number;
   downCount?: number;
   totalServicesCount?: number;
+  hasWallpaper?: boolean;
 }
 
 export function GmailLeftSidebar({
@@ -54,6 +55,7 @@ export function GmailLeftSidebar({
   degradedCount = 1,
   downCount = 0,
   totalServicesCount = 6,
+  hasWallpaper = false,
 }: GmailLeftSidebarProps) {
   const isDemo = activeTab === 'demo';
 
@@ -65,7 +67,11 @@ export function GmailLeftSidebar({
           <button
             onClick={onPoll}
             disabled={isPolling}
-            className="rounded-2xl bg-[#c2e7ff] hover:bg-[#b3d7ef] hover:shadow-md text-[#001d35] font-semibold text-sm px-6 py-4 flex items-center gap-3 transition-all active:scale-[0.98] shadow-sm cursor-pointer disabled:opacity-75"
+            className={`rounded-2xl font-semibold text-sm px-6 py-4 flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-75 ${
+              hasWallpaper
+                ? 'bg-white hover:bg-white/90 text-[#001d35] shadow-md hover:shadow-lg'
+                : 'bg-[#c2e7ff] hover:bg-[#b3d7ef] hover:shadow-md text-[#001d35] shadow-sm'
+            }`}
           >
             <RefreshCw
               className={`w-5 h-5 text-[#001d35] ${
@@ -75,7 +81,13 @@ export function GmailLeftSidebar({
             <span>{isPolling ? 'Polling...' : 'Poll Now'}</span>
           </button>
         ) : (
-          <button className="rounded-2xl bg-[#c2e7ff] hover:bg-[#b3d7ef] hover:shadow-md text-[#001d35] font-semibold text-sm px-6 py-4 flex items-center gap-3 transition-all active:scale-[0.98] shadow-sm cursor-pointer">
+          <button
+            className={`rounded-2xl font-semibold text-sm px-6 py-4 flex items-center gap-3 transition-all active:scale-[0.98] cursor-pointer ${
+              hasWallpaper
+                ? 'bg-white hover:bg-white/90 text-[#001d35] shadow-md hover:shadow-lg'
+                : 'bg-[#c2e7ff] hover:bg-[#b3d7ef] hover:shadow-md text-[#001d35] shadow-sm'
+            }`}
+          >
             <Pencil className="w-5 h-5 text-[#001d35]" />
             <span>Compose</span>
           </button>
@@ -90,15 +102,23 @@ export function GmailLeftSidebar({
             onClick={() => onSelectDemoSubView('dashboard')}
             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-medium transition-colors ${
               demoSubView === 'dashboard'
-                ? 'bg-[#d3e3fd] text-[#041e49] font-bold'
+                ? hasWallpaper
+                  ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                  : 'bg-[#d3e3fd] text-[#041e49] font-bold'
+                : hasWallpaper
+                ? 'text-white/90 hover:bg-white/10 hover:text-white'
                 : 'text-[#444746] hover:bg-black/5'
             }`}
           >
             <div className="flex items-center gap-4">
-              <LayoutDashboard className="w-5 h-5" />
+              <LayoutDashboard className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
               <span>Dashboard</span>
             </div>
-            <span className="text-xs bg-black/10 px-2 py-0.5 rounded-full font-bold">
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                hasWallpaper ? 'bg-white/20 text-white' : 'bg-black/10'
+              }`}
+            >
               {totalServicesCount}
             </span>
           </button>
@@ -108,12 +128,18 @@ export function GmailLeftSidebar({
             onClick={() => onSelectDemoSubView('incidents')}
             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-medium transition-colors ${
               demoSubView === 'incidents'
-                ? 'bg-[#d3e3fd] text-[#041e49] font-bold'
+                ? hasWallpaper
+                  ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                  : 'bg-[#d3e3fd] text-[#041e49] font-bold'
+                : hasWallpaper
+                ? 'text-white/90 hover:bg-white/10 hover:text-white'
                 : 'text-[#444746] hover:bg-black/5'
             }`}
           >
             <div className="flex items-center gap-4">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <AlertTriangle
+                className={`w-5 h-5 ${hasWallpaper ? 'text-amber-400' : 'text-amber-600'}`}
+              />
               <span>Incidents</span>
             </div>
             {incidentCount > 0 && (
@@ -128,12 +154,16 @@ export function GmailLeftSidebar({
             onClick={() => onSelectDemoSubView('settings')}
             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-medium transition-colors ${
               demoSubView === 'settings'
-                ? 'bg-[#d3e3fd] text-[#041e49] font-bold'
+                ? hasWallpaper
+                  ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                  : 'bg-[#d3e3fd] text-[#041e49] font-bold'
+                : hasWallpaper
+                ? 'text-white/90 hover:bg-white/10 hover:text-white'
                 : 'text-[#444746] hover:bg-black/5'
             }`}
           >
             <div className="flex items-center gap-4">
-              <Sliders className="w-5 h-5" />
+              <Sliders className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
               <span>Settings</span>
             </div>
           </button>
@@ -143,20 +173,36 @@ export function GmailLeftSidebar({
             href="/metrics"
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 transition-colors"
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-medium transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10 hover:text-white'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
           >
             <div className="flex items-center gap-4">
-              <BarChart2 className="w-5 h-5" />
+              <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
               <span>Metrics (/metrics)</span>
             </div>
-            <span className="text-[10px] uppercase font-bold text-[#0b57d0]">
+            <span
+              className={`text-[10px] uppercase font-bold ${
+                hasWallpaper ? 'text-sky-300' : 'text-[#0b57d0]'
+              }`}
+            >
               RAW
             </span>
           </a>
 
           {/* Telemetry Filters Section */}
-          <div className="pt-4 border-t border-[#e0e2ec] mt-3">
-            <div className="px-4 py-1 text-xs font-bold text-[#444746] uppercase tracking-wider flex items-center justify-between">
+          <div
+            className={`pt-4 border-t mt-3 ${
+              hasWallpaper ? 'border-white/20' : 'border-[#e0e2ec]'
+            }`}
+          >
+            <div
+              className={`px-4 py-1 text-xs font-bold uppercase tracking-wider flex items-center justify-between ${
+                hasWallpaper ? 'text-white/80' : 'text-[#444746]'
+              }`}
+            >
               <span>Status Filters</span>
             </div>
 
@@ -165,7 +211,11 @@ export function GmailLeftSidebar({
                 onClick={() => onSelectStatusFilter('ALL')}
                 className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-xs font-medium ${
                   statusFilter === 'ALL'
-                    ? 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                      : 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    : hasWallpaper
+                    ? 'text-white/90 hover:bg-white/10'
                     : 'text-[#444746] hover:bg-black/5'
                 }`}
               >
@@ -177,12 +227,16 @@ export function GmailLeftSidebar({
                 onClick={() => onSelectStatusFilter('HEALTHY')}
                 className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-xs font-medium ${
                   statusFilter === 'HEALTHY'
-                    ? 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                      : 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    : hasWallpaper
+                    ? 'text-white/90 hover:bg-white/10'
                     : 'text-[#444746] hover:bg-black/5'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-xs" />
                   <span>Healthy</span>
                 </div>
                 <span className="font-bold">{healthyCount}</span>
@@ -192,12 +246,16 @@ export function GmailLeftSidebar({
                 onClick={() => onSelectStatusFilter('DEGRADED')}
                 className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-xs font-medium ${
                   statusFilter === 'DEGRADED'
-                    ? 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                      : 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    : hasWallpaper
+                    ? 'text-white/90 hover:bg-white/10'
                     : 'text-[#444746] hover:bg-black/5'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-amber-400 inline-block shadow-xs" />
                   <span>Degraded</span>
                 </div>
                 <span className="font-bold">{degradedCount}</span>
@@ -207,12 +265,16 @@ export function GmailLeftSidebar({
                 onClick={() => onSelectStatusFilter('DOWN')}
                 className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-xs font-medium ${
                   statusFilter === 'DOWN'
-                    ? 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white font-bold backdrop-blur-sm'
+                      : 'bg-[#eaf1fb] text-[#041e49] font-bold'
+                    : hasWallpaper
+                    ? 'text-white/90 hover:bg-white/10'
                     : 'text-[#444746] hover:bg-black/5'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-red-600 inline-block" />
+                  <span className="w-2 h-2 rounded-full bg-red-500 inline-block shadow-xs" />
                   <span>Down</span>
                 </div>
                 <span className="font-bold">{downCount}</span>
@@ -224,74 +286,168 @@ export function GmailLeftSidebar({
         /* Mail mode folders matching screenshot */
         <div className="space-y-0.5">
           {/* Inbox */}
-          <div className="w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-bold bg-[#d3e3fd] text-[#041e49] cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-bold cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'bg-white/20 text-white backdrop-blur-sm'
+                : 'bg-[#d3e3fd] text-[#041e49]'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <Inbox className="w-5 h-5 text-[#041e49]" />
+              <Inbox
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white' : 'text-[#041e49]'}`}
+              />
               <span>Inbox</span>
             </div>
             <span className="text-xs font-bold">433</span>
           </div>
 
           {/* Starred */}
-          <div className="w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <Star className="w-5 h-5 text-[#444746]" />
+              <Star
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+              />
               <span>Starred</span>
             </div>
           </div>
 
           {/* Snoozed */}
-          <div className="w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <Clock className="w-5 h-5 text-[#444746]" />
+              <Clock
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+              />
               <span>Snoozed</span>
             </div>
           </div>
 
           {/* Sent */}
-          <div className="w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <Send className="w-5 h-5 text-[#444746]" />
+              <Send
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+              />
               <span>Sent</span>
             </div>
           </div>
 
           {/* Drafts */}
-          <div className="w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <File className="w-5 h-5 text-[#444746]" />
+              <File
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+              />
               <span>Drafts</span>
             </div>
-            <span className="text-xs font-bold text-[#444746]">1</span>
+            <span
+              className={`text-xs font-bold ${
+                hasWallpaper ? 'text-white/80' : 'text-[#444746]'
+              }`}
+            >
+              1
+            </span>
           </div>
 
           {/* Purchases */}
-          <div className="w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <ShoppingBag className="w-5 h-5 text-[#444746]" />
+              <ShoppingBag
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+              />
               <span>Purchases</span>
             </div>
-            <span className="text-xs font-bold text-[#444746]">19</span>
+            <span
+              className={`text-xs font-bold ${
+                hasWallpaper ? 'text-white/80' : 'text-[#444746]'
+              }`}
+            >
+              19
+            </span>
           </div>
 
           {/* More */}
-          <div className="w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
+          <div
+            className={`w-full flex items-center justify-between px-4 py-2 rounded-r-full text-sm font-medium cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'text-white/90 hover:bg-white/10'
+                : 'text-[#444746] hover:bg-black/5'
+            }`}
+          >
             <div className="flex items-center gap-4">
-              <ChevronDown className="w-5 h-5 text-[#444746]" />
+              <ChevronDown
+                className={`w-5 h-5 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+              />
               <span>More</span>
             </div>
           </div>
 
           {/* Labels section */}
-          <div className="pt-4 border-t border-[#e0e2ec] mt-3">
-            <div className="px-4 py-1 flex items-center justify-between text-sm font-medium text-[#444746]">
+          <div
+            className={`pt-4 border-t mt-3 ${
+              hasWallpaper ? 'border-white/20' : 'border-[#e0e2ec]'
+            }`}
+          >
+            <div
+              className={`px-4 py-1 flex items-center justify-between text-sm font-medium ${
+                hasWallpaper ? 'text-white/80' : 'text-[#444746]'
+              }`}
+            >
               <span>Labels</span>
-              <button className="p-1 rounded-full hover:bg-black/5">
-                <Plus className="w-4 h-4 text-[#444746]" />
+              <button
+                className={`p-1 rounded-full ${
+                  hasWallpaper ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                }`}
+              >
+                <Plus
+                  className={`w-4 h-4 ${
+                    hasWallpaper ? 'text-white/80' : 'text-[#444746]'
+                  }`}
+                />
               </button>
             </div>
-            <div className="w-full flex items-center gap-4 px-4 py-2 text-sm font-medium text-[#444746] hover:bg-black/5 cursor-pointer">
-              <ChevronRight className="w-4 h-4 text-[#444746]" />
+            <div
+              className={`w-full flex items-center gap-4 px-4 py-2 text-sm font-medium cursor-pointer transition-colors ${
+                hasWallpaper
+                  ? 'text-white/90 hover:bg-white/10'
+                  : 'text-[#444746] hover:bg-black/5'
+              }`}
+            >
+              <ChevronRight
+                className={`w-4 h-4 ${
+                  hasWallpaper ? 'text-white/80' : 'text-[#444746]'
+                }`}
+              />
               <span>More</span>
             </div>
           </div>
