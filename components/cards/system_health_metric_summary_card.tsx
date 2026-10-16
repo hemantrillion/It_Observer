@@ -25,13 +25,13 @@ export function SystemHealthMetricSummaryCard({
   };
 
   return (
-    <div className="border border-[#e0e2ec] hover:border-[#0b57d0]/40 rounded-2xl p-5 bg-white flex flex-col justify-between h-full shadow-2xs hover:shadow-md transition-all">
+    <div className="border border-[#e0e2ec] hover:border-[#0b57d0]/40 rounded-2xl p-5 bg-white/90 backdrop-blur-xs flex flex-col justify-between h-full shadow-2xs hover:shadow-md transition-all">
       <div className="flex items-center justify-between mb-2">
-        <span className="font-sans text-[11px] font-semibold uppercase tracking-wider text-[#444746]">
+        <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#444746]">
           {label}
         </span>
         {isWarning && Number(value) > 0 && (
-          <span className="font-sans text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#fce8e6] text-[#c5221f] border border-[#f5c2c7] uppercase">
+          <span className="font-sans text-xs font-bold px-2 py-0.5 rounded-full bg-[#fce8e6] text-[#c5221f] border border-[#f5c2c7] uppercase">
             ATTN
           </span>
         )}
@@ -42,7 +42,7 @@ export function SystemHealthMetricSummaryCard({
       </div>
 
       {subtext && (
-        <div className="font-sans text-[11px] text-[#5e5e5e] font-medium mt-1">
+        <div className="font-sans text-xs text-[#5e5e5e] font-semibold mt-1">
           {subtext}
         </div>
       )}

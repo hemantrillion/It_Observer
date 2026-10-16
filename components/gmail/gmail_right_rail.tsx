@@ -104,7 +104,7 @@ export function GmailRightRail({ hasWallpaper = false }: GmailRightRailProps) {
           title="Get add-ons"
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
             hasWallpaper
-              ? 'hover:bg-white/15 text-white'
+              ? 'hover:bg-white/15 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'hover:bg-black/5 text-[#444746]'
           }`}
         >
@@ -119,7 +119,7 @@ export function GmailRightRail({ hasWallpaper = false }: GmailRightRailProps) {
           title="Hide side panel"
           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
             hasWallpaper
-              ? 'hover:bg-white/15 text-white/80'
+              ? 'hover:bg-white/15 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'hover:bg-black/5 text-[#444746]'
           }`}
         >

@@ -238,13 +238,13 @@ export function GmailInboxView({
   return (
     <div
       className={`flex-1 flex flex-col h-full ${
-        hasWallpaper ? 'bg-white/80' : 'bg-white'
+        hasWallpaper ? 'bg-transparent' : 'bg-white'
       } select-none overflow-hidden`}
     >
       {/* Top Toolbar */}
       <div
-        className={`h-12 border-b border-[#e0e2ec] px-4 flex items-center justify-between shrink-0 ${
-          hasWallpaper ? 'bg-white/80' : 'bg-white'
+        className={`h-12 border-b border-[#e0e2ec]/70 px-4 flex items-center justify-between shrink-0 ${
+          hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'
         }`}
       >
         <div className="flex items-center gap-1 sm:gap-2">
@@ -278,7 +278,7 @@ export function GmailInboxView({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center gap-3 text-xs text-[#444746] font-medium">
+        <div className="flex items-center gap-3 text-xs text-[#444746] font-semibold">
           <span>1–{emails.length} of 531</span>
           <div className="flex items-center">
             <button
@@ -295,7 +295,11 @@ export function GmailInboxView({
       </div>
 
       {/* Tabs Row (Primary, Promotions, Social, Updates) */}
-      <div className="flex border-b border-[#e0e2ec] shrink-0 bg-white">
+      <div
+        className={`flex border-b border-[#e0e2ec]/70 shrink-0 ${
+          hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'
+        }`}
+      >
         {/* Primary */}
         <button
           onClick={() => setActiveTab('primary')}
@@ -371,24 +375,28 @@ export function GmailInboxView({
       </div>
 
       {/* Email Thread Rows List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#f2f4f8]">
+      <div className="flex-1 overflow-y-auto divide-y divide-[#e0e2ec]/50">
         {emails.map((email) => {
           const isSelected = selectedIds.has(email.id);
           const rowPadding =
             density === 'compact'
-              ? 'py-1 text-xs'
+              ? 'py-1.5 text-xs'
               : density === 'comfortable'
-              ? 'py-2 text-sm'
-              : 'py-2.5 text-sm';
+              ? 'py-2.5 text-sm'
+              : 'py-3 text-sm';
 
           return (
             <div
               key={email.id}
               className={`group flex items-center px-4 ${rowPadding} hover:shadow-xs transition-colors cursor-pointer ${
                 isSelected
-                  ? 'bg-[#c2e7ff]/40'
+                  ? 'bg-[#c2e7ff]/70'
                   : email.isUnread
-                  ? 'bg-white hover:bg-[#f6f8fc]'
+                  ? hasWallpaper
+                    ? 'bg-white/75 hover:bg-white/95'
+                    : 'bg-white hover:bg-[#f6f8fc]'
+                  : hasWallpaper
+                  ? 'bg-white/45 hover:bg-white/70'
                   : 'bg-[#f7f9fc] hover:bg-[#f1f3f7]'
               }`}
             >
@@ -427,7 +435,7 @@ export function GmailInboxView({
               {/* Sender Name */}
               <div
                 className={`w-48 truncate pr-3 shrink-0 ${
-                  email.isUnread ? 'font-bold text-[#1f1f1f]' : 'text-[#444746]'
+                  email.isUnread ? 'font-semibold text-[#1f1f1f]' : 'font-normal text-[#444746]'
                 }`}
               >
                 {email.sender}
@@ -438,8 +446,8 @@ export function GmailInboxView({
                 <span
                   className={
                     email.isUnread
-                      ? 'font-bold text-[#1f1f1f]'
-                      : 'text-[#1f1f1f]'
+                      ? 'font-semibold text-[#1f1f1f]'
+                      : 'font-normal text-[#1f1f1f]'
                   }
                 >
                   {email.subject}

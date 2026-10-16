@@ -172,7 +172,7 @@ export default function ObservatoryGmailLayoutPage() {
           showFlexboxBorders
             ? 'border-2 border-red-500 m-0.5 rounded-sm'
             : ''
-        } ${hasWallpaper ? 'bg-black/25 backdrop-blur-md' : 'bg-[#e9eef6]'}`}
+        } ${hasWallpaper ? 'bg-black/14 backdrop-blur-md' : 'bg-[#e9eef6]'}`}
       >
         <GmailLeftRail
           activeTab={activeRailTab}
@@ -276,11 +276,11 @@ export default function ObservatoryGmailLayoutPage() {
             }`}
           >
             <main
-              className={`flex-1 flex flex-col rounded-2xl mr-2 mb-2 ml-1 mt-0 border ${
+              className={`flex-1 flex flex-col rounded-2xl mr-2 mb-2 ml-1 mt-0 border transition-all overflow-hidden ${
                 hasWallpaper
-                  ? 'border-white/20 bg-white shadow-2xl'
+                  ? 'border-white/30 bg-white/85 backdrop-blur-md shadow-2xl'
                   : 'border-[#e0e2ec] bg-white shadow-sm'
-              } overflow-hidden`}
+              }`}
             >
               {activeRailTab === 'demo' ? (
                 <ObservatoryTelemetryEmbeddedView

@@ -136,9 +136,9 @@ export function ObservatoryTelemetryEmbeddedView({
     density === 'compact' ? 'space-y-4 p-4 md:p-6' : density === 'comfortable' ? 'space-y-6 p-6 md:p-8' : 'space-y-8 p-6 md:p-10';
 
   return (
-    <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-white/80' : 'bg-white'} overflow-y-auto font-sans select-none`}>
+    <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-white'} overflow-y-auto font-sans select-none`}>
       {/* Top Breadcrumb & Live Status Bar */}
-      <div className={`h-12 border-b border-[#e0e2ec] px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/80' : 'bg-white'}`}>
+      <div className={`h-12 border-b border-[#e0e2ec]/70 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
         <div className="flex items-center gap-3">
           {selectedServiceId ? (
             <button
@@ -154,7 +154,7 @@ export function ObservatoryTelemetryEmbeddedView({
                 {demoSubView.toUpperCase()}
               </span>
               {statusFilter !== 'ALL' && (
-                <span className="ml-2 px-2.5 py-0.5 rounded-full text-[10px] bg-[#eaf1fb] text-[#0b57d0] font-bold">
+                <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs bg-[#eaf1fb] text-[#0b57d0] font-bold">
                   {statusFilter}
                 </span>
               )}
@@ -168,7 +168,7 @@ export function ObservatoryTelemetryEmbeddedView({
             <span>Telemetry Active</span>
           </span>
           {lastUpdatedTime && (
-            <span className="text-[11px] text-[#5e5e5e] font-mono hidden sm:inline">
+            <span className="text-xs text-[#5e5e5e] font-mono hidden sm:inline">
               Probed: {lastUpdatedTime}
             </span>
           )}

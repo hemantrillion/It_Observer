@@ -32,12 +32,12 @@ export function MonitoredServiceStatusBlockCard({
   return (
     <div
       onClick={() => onInspect?.(service.id)}
-      className="border border-[#e0e2ec] hover:border-[#0b57d0]/60 hover:shadow-md rounded-2xl p-5 bg-white flex flex-col justify-between space-y-4 transition-all duration-200 group cursor-pointer"
+      className="border border-[#e0e2ec] hover:border-[#0b57d0]/60 hover:shadow-md rounded-2xl p-5 bg-white/90 backdrop-blur-xs flex flex-col justify-between space-y-4 transition-all duration-200 group cursor-pointer"
     >
       <div>
         {/* Header: Type Pill & Status Badge */}
         <div className="flex justify-between items-center mb-3">
-          <span className="inline-flex items-center gap-1.5 font-sans text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#f0f4f9] text-[#444746]">
+          <span className="inline-flex items-center gap-1.5 font-sans text-xs font-semibold px-2.5 py-1 rounded-full bg-[#f0f4f9] text-[#444746]">
             {getTypeIcon()}
             <span className="uppercase tracking-wide">{service.target_type.replace('_', ' ')}</span>
           </span>
@@ -74,21 +74,21 @@ export function MonitoredServiceStatusBlockCard({
         </p>
 
         {/* Metrics Grid */}
-        <div className="border-t border-[#e0e2ec] pt-3.5 grid grid-cols-2 gap-3 font-sans text-xs bg-[#f8fafd] rounded-xl p-3">
+        <div className="border-t border-[#e0e2ec] pt-3.5 grid grid-cols-2 gap-3 font-sans text-xs bg-[#f8fafd]/80 rounded-xl p-3">
           <div>
-            <div className="text-[#5e5e5e] text-[10px] uppercase font-semibold tracking-wider">
+            <div className="text-[#5e5e5e] text-xs uppercase font-bold tracking-wider">
               LATENCY
             </div>
-            <div className="font-bold text-sm text-[#1f1f1f] mt-0.5 flex items-baseline gap-1">
+            <div className="font-bold text-base text-[#1f1f1f] mt-0.5 flex items-baseline gap-1">
               <span>{service.latest_response_time_ms ? `${service.latest_response_time_ms}` : 'N/A'}</span>
-              <span className="text-[10px] font-normal text-[#5e5e5e]">ms</span>
+              <span className="text-xs font-medium text-[#5e5e5e]">ms</span>
             </div>
           </div>
           <div>
-            <div className="text-[#5e5e5e] text-[10px] uppercase font-semibold tracking-wider">
+            <div className="text-[#5e5e5e] text-xs uppercase font-bold tracking-wider">
               UPTIME
             </div>
-            <div className="font-bold text-sm text-[#1f1f1f] mt-0.5">
+            <div className="font-bold text-base text-[#1f1f1f] mt-0.5">
               {service.uptime_percentage}%
             </div>
           </div>

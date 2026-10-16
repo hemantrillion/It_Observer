@@ -49,7 +49,9 @@ export function GmailTopNavbar({
         />
         <span
           className={`text-[22px] font-semibold tracking-tight font-sans ${
-            hasWallpaper ? 'text-white drop-shadow-sm' : 'text-[#1f1f1f]'
+            hasWallpaper
+              ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+              : 'text-[#1f1f1f]'
           }`}
         >
           InfraTrace
@@ -61,7 +63,7 @@ export function GmailTopNavbar({
         <div
           className={`group transition-all rounded-full h-11 flex items-center px-4 gap-3 border ${
             hasWallpaper
-              ? 'bg-black/25 hover:bg-black/35 border-white/20 text-white backdrop-blur-md focus-within:bg-white focus-within:text-[#1f1f1f] focus-within:border-transparent focus-within:shadow-md'
+              ? 'bg-black/15 hover:bg-black/25 border-white/20 text-white backdrop-blur-md focus-within:bg-white focus-within:text-[#1f1f1f] focus-within:border-transparent focus-within:shadow-md'
               : 'bg-[#e9eef6] hover:bg-[#dfe6f2] border-transparent focus-within:bg-white focus-within:border-[#c4c7c5] focus-within:shadow-md'
           }`}
         >
@@ -123,16 +125,16 @@ export function GmailTopNavbar({
 
         {/* Status Pill (Active) */}
         <div
-          className={`hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full text-sm font-medium cursor-pointer transition-colors ${
+          className={`hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
             hasWallpaper
-              ? 'bg-black/25 hover:bg-black/35 border border-white/20 text-white backdrop-blur-md'
+              ? 'bg-black/15 hover:bg-black/25 border border-white/20 text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'border border-[#747775]/35 text-[#1f1f1f] hover:bg-black/5'
           }`}
         >
           <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block shadow-xs" />
           <span>Active</span>
           <ChevronDown
-            className={`w-4 h-4 ${hasWallpaper ? 'text-white/80' : 'text-[#444746]'}`}
+            className={`w-4 h-4 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
           />
         </div>
 
@@ -141,7 +143,7 @@ export function GmailTopNavbar({
           title="Support"
           className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             hasWallpaper
-              ? 'hover:bg-white/10 text-white'
+              ? 'hover:bg-white/15 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'hover:bg-black/10 text-[#444746]'
           }`}
         >
@@ -155,10 +157,10 @@ export function GmailTopNavbar({
           className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             isSettingsOpen
               ? hasWallpaper
-                ? 'bg-white/20 text-white'
+                ? 'bg-white/20 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
                 : 'bg-black/15 text-[#1f1f1f]'
               : hasWallpaper
-              ? 'hover:bg-white/10 text-white'
+              ? 'hover:bg-white/15 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'hover:bg-black/10 text-[#444746]'
           }`}
         >
@@ -170,7 +172,7 @@ export function GmailTopNavbar({
           title="Google apps"
           className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             hasWallpaper
-              ? 'hover:bg-white/10 text-white'
+              ? 'hover:bg-white/15 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
               : 'hover:bg-black/10 text-[#444746]'
           }`}
         >
