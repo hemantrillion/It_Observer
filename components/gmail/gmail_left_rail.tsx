@@ -1,26 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Menu, Mail, MessageSquare, Video, Activity } from 'lucide-react';
+import { Menu, Mail, MessageSquare, Gauge, Activity, Users } from 'lucide-react';
 
-export type RailTab = 'mail' | 'chat' | 'metrics' | 'demo' | 'meet';
-
-export function SpeedometerGaugeIcon({ className = 'w-6 h-6' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      {/* Outer arched band and solid right wedge matching Image 1 */}
-      <path d="M12 4C7.03 4 3 8.03 3 13h2.5c0-3.59 2.91-6.5 6.5-6.5 1.54 0 2.96.54 4.08 1.44l1.8-1.8A8.95 8.95 0 0 0 12 4zm5.88 5.64l-1.8 1.8c.45.65.72 1.43.72 2.28 0 .42-.06.82-.18 1.2h2.55c.14-.39.21-.8.21-1.2 0-1.77-.73-3.37-1.9-4.58z" />
-      {/* Inner left curved track groove matching Image 1 */}
-      <path d="M6.5 13H8.8c.2-1.7 1.3-3.1 2.8-3.7V7.2C8.6 7.9 6.9 10.2 6.5 13z" />
-      {/* Center vertical stem and pivot circle with hole matching Image 1 */}
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M11.25 10.5a.75.75 0 0 1 1.5 0v3.1a2.25 2.25 0 1 1-1.5 0V10.5zm.75 3.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5z"
-      />
-    </svg>
-  );
-}
+export type RailTab = 'mail' | 'chat' | 'metrics' | 'demo' | 'users' | 'meet';
 
 interface GmailLeftRailProps {
   activeTab: RailTab;
@@ -50,12 +33,17 @@ export function GmailLeftRail({
     {
       id: 'metrics' as RailTab,
       label: 'Metrics',
-      icon: SpeedometerGaugeIcon,
+      icon: Gauge,
     },
     {
       id: 'demo' as RailTab,
       label: 'Demo',
       icon: Activity,
+    },
+    {
+      id: 'users' as RailTab,
+      label: 'Users',
+      icon: Users,
     },
   ];
 

@@ -20,10 +20,11 @@ import {
   CheckCircle2,
   AlertCircle,
   XCircle,
+  Users,
 } from 'lucide-react';
 import { RailTab } from './gmail_left_rail';
 
-export type DemoSubView = 'dashboard' | 'incidents' | 'settings' | 'metrics';
+export type DemoSubView = 'dashboard' | 'incidents' | 'settings' | 'metrics' | 'users';
 export type StatusFilter = 'ALL' | 'HEALTHY' | 'DEGRADED' | 'DOWN';
 
 interface GmailLeftSidebarProps {
@@ -57,7 +58,7 @@ export function GmailLeftSidebar({
   totalServicesCount = 6,
   hasWallpaper = false,
 }: GmailLeftSidebarProps) {
-  const isDemo = activeTab === 'demo' || activeTab === 'metrics';
+  const isDemo = activeTab === 'demo' || activeTab === 'metrics' || activeTab === 'users';
 
   return (
     <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">
@@ -166,6 +167,34 @@ export function GmailLeftSidebar({
               <Sliders className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
               <span>Settings</span>
             </div>
+          </button>
+
+          {/* Users & Database Logs */}
+          <button
+            onClick={() => onSelectDemoSubView('users')}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              demoSubView === 'users'
+                ? hasWallpaper
+                  ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                  : 'bg-[#d3e3fd] text-[#041e49]'
+                : hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <Users
+                className={`w-5 h-5 ${hasWallpaper ? 'text-blue-300' : 'text-blue-600'}`}
+              />
+              <span>Users & DB</span>
+            </div>
+            <span
+              className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                hasWallpaper ? 'bg-white/25 text-white' : 'bg-black/10 text-[#444746]'
+              }`}
+            >
+              DB
+            </span>
           </button>
 
           {/* Prometheus Metrics */}

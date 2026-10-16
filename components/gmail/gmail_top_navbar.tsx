@@ -21,6 +21,7 @@ interface GmailTopNavbarProps {
   onToggleFlexboxBorders?: () => void;
   isSidebarOpen?: boolean;
   hasWallpaper?: boolean;
+  onNavigateLanding?: () => void;
 }
 
 export function GmailTopNavbar({
@@ -35,16 +36,19 @@ export function GmailTopNavbar({
   onToggleFlexboxBorders,
   isSidebarOpen = true,
   hasWallpaper = false,
+  onNavigateLanding,
 }: GmailTopNavbarProps) {
   return (
     <header className="h-16 flex items-center pr-4 pl-0 bg-transparent shrink-0 select-none">
       {/* Left: InfraTrace Logo & Wordmark (Exact width matching Box 2 so search aligns with Box 4) */}
       <div
+        onClick={onNavigateLanding}
+        title="InfraTrace - Click to view Landing Page"
         className={`${
           isSidebarOpen
             ? (showFlexboxBorders ? 'w-[262px]' : 'w-64')
             : 'w-48'
-        } flex items-center gap-3 cursor-pointer shrink-0 pl-3 pr-2 transition-all duration-200`}
+        } flex items-center gap-3 cursor-pointer shrink-0 pl-3 pr-2 transition-all duration-200 group`}
       >
         <img
           src="/infra_trace_logo.png"

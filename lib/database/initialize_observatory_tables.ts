@@ -41,6 +41,26 @@ export function initializeObservatoryTables(): void {
       duration_seconds INTEGER DEFAULT 0,
       FOREIGN KEY (service_id) REFERENCES monitored_services(id)
     );
+
+    CREATE TABLE IF NOT EXISTS platform_users (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      role TEXT DEFAULT 'Admin',
+      status TEXT DEFAULT 'ACTIVE',
+      created_at TEXT NOT NULL,
+      last_active_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS database_query_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      operation TEXT NOT NULL,
+      table_name TEXT NOT NULL,
+      query_details TEXT,
+      execution_time_ms REAL,
+      timestamp TEXT NOT NULL,
+      status TEXT DEFAULT 'SUCCESS'
+    );
   `);
 
   // Seed default test suite targets if empty
@@ -57,5 +77,36 @@ export function initializeObservatoryTables(): void {
     insertService.run('local_controlled_service', 'Local Controlled Node Service', 'system_process', 'http://localhost:5001/metrics', 5, 'HEALTHY');
     insertService.run('aws_cloudwatch', 'AWS CloudWatch Telemetry', 'cloud_provider', 'https://monitoring.us-east-1.amazonaws.com', 15, 'HEALTHY');
     insertService.run('cloudflare_edge', 'Cloudflare Edge Analytics', 'cloud_provider', 'https://api.cloudflare.com/client/v4/radar/http/summary/bot', 15, 'HEALTHY');
+  }
+
+  // Seed platform users if empty
+  const userCountRow = db.prepare('SELECT COUNT(*) as count FROM platform_users').get() as { count: number };
+  if (userCountRow.count === 0) {
+    const insertUser = db.prepare(`
+      INSERT INTO platform_users (id, name, email, role, status, created_at, last_active_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const now = new Date().toISOString();
+    insertUser.run('usr_admin_1', 'HemanT', 'hemantrillion@gmail.com', 'Lead Architect / Admin', 'ACTIVE', '2026-10-01T10:00:00Z', now);
+    insertUser.run('usr_sre_2', 'Alex Vance', 'alex.vance@infratrace.internal', 'Lead SRE Operator', 'ACTIVE', '2026-10-05T14:30:00Z', now);
+    insertUser.run('usr_dev_3', 'DevOps Automator', 'sre-telemetry@infratrace.internal', 'System Automation Service', 'ACTIVE', '2026-10-08T09:15:00Z', now);
+    insertUser.run('usr_aud_4', 'Security Auditor', 'security-compliance@infratrace.internal', 'Compliance Inspector', 'IDLE', '2026-10-12T16:45:00Z', now);
+  }
+
+  // Seed initial database query logs if empty
+  const logCountRow = db.prepare('SELECT COUNT(*) as count FROM database_query_logs').get() as { count: number };
+  if (logCountRow.count === 0) {
+    const insertLog = db.prepare(`
+      INSERT INTO database_query_logs (operation, table_name, query_details, execution_time_ms, timestamp, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    const now = new Date().toISOString();
+    insertLog.run('SELECT', 'monitored_services', 'SELECT * FROM monitored_services WHERE current_status = "HEALTHY" LIMIT 50', 0.42, now, 'SUCCESS');
+    insertLog.run('INSERT', 'metric_samples', 'INSERT INTO metric_samples (service_id, response_time_ms) VALUES ("github_api", 45.2)', 0.85, now, 'SUCCESS');
+    insertLog.run('SELECT', 'incident_alerts', 'SELECT COUNT(*) as active FROM incident_alerts WHERE is_active = 1', 0.28, now, 'SUCCESS');
+    insertLog.run('UPDATE', 'monitored_services', 'UPDATE monitored_services SET uptime_percentage = 99.98 WHERE id = "aws_cloudwatch"', 1.15, now, 'SUCCESS');
+    insertLog.run('SELECT', 'platform_users', 'SELECT id, name, email, role, status FROM platform_users ORDER BY created_at DESC', 0.36, now, 'SUCCESS');
   }
 }
