@@ -574,9 +574,7 @@ export function ObservatoryMetricsDomainView({
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1f1f1f] tracking-tight">
                 {meta.title}
               </h1>
-              <span className="px-3.5 py-1 rounded-full text-xs sm:text-sm font-bold bg-[#e8f0fe] text-[#0b57d0] border border-[#0b57d0]/25">
-                Telemetry Domain
-              </span>
+
             </div>
 
             <p className="text-base sm:text-xl text-[#3c4043] font-medium leading-relaxed">

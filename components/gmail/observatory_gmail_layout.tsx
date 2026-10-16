@@ -62,6 +62,10 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [activeIncidents, setActiveIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isPolling, setIsPolling] = useState(false);
 
+  // Constant Polling State (Default: false as requested by user)
+  const [isConstantPollingEnabled, setIsConstantPollingEnabled] = useState(false);
+  const [constantPollingInterval, setConstantPollingInterval] = useState(8000); // 8s by default
+
   // Restore saved theme and density on mount
   useEffect(() => {
     try {
@@ -158,14 +162,19 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
 
   useEffect(() => {
     fetchStatus();
-    triggerPoll();
+
+    // Constant Polling is OFF by default.
+    // When disabled, no automated background interval runs; polling occurs on manual trigger.
+    if (!isConstantPollingEnabled) {
+      return;
+    }
 
     const interval = setInterval(() => {
       triggerPoll();
-    }, 8000);
+    }, constantPollingInterval);
 
     return () => clearInterval(interval);
-  }, [fetchStatus, triggerPoll]);
+  }, [fetchStatus, triggerPoll, isConstantPollingEnabled, constantPollingInterval]);
 
   const hasWallpaper = activeTheme.id !== 'default';
 
@@ -335,6 +344,11 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   searchQuery={searchQuery}
                   density={density}
                   hasWallpaper={hasWallpaper}
+                  onServicesUpdated={fetchStatus}
+                  isConstantPollingEnabled={isConstantPollingEnabled}
+                  onToggleConstantPolling={setIsConstantPollingEnabled}
+                  constantPollingInterval={constantPollingInterval}
+                  onChangeConstantPollingInterval={setConstantPollingInterval}
                 />
               ) : activeRailTab === 'metrics' ? (
                 <ObservatoryMetricsDomainView

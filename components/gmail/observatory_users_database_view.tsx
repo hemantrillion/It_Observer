@@ -60,11 +60,7 @@ export function ObservatoryUsersDatabaseView({
           </p>
         </div>
 
-        {/* Informational Badge */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-[#c4c7c5] text-xs font-medium text-[#444746] shadow-xs shrink-0">
-          <Info className="w-4 h-4 text-[#0b57d0]" />
-          <span>Zero Dummy Records Mode</span>
-        </div>
+
       </div>
 
       {/* ======================================================== */}

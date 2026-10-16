@@ -11,6 +11,7 @@ import {
   File,
   ShoppingBag,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   Plus,
   LayoutDashboard,
@@ -189,17 +190,17 @@ export function GmailLeftSidebar({
                 >
                   <span className="font-bold text-sm tracking-tight">{catItem.label}</span>
                   {hasSuboptions ? (
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        isExpanded ? 'rotate-180' : ''
-                      }`}
-                    />
+                    isExpanded ? (
+                      <ChevronDown className="w-4 h-4 transition-transform duration-200" />
+                    ) : (
+                      <ChevronUp className="w-4 h-4 transition-transform duration-200" />
+                    )
                   ) : null}
                 </button>
 
-                {/* Suboptions dropdown when expanded */}
+                {/* Suboptions dropdown inside a white box with dividing lines */}
                 {isExpanded && catItem.suboptions && (
-                  <div className="pl-4 pr-1 space-y-0.5 mt-0.5 animate-in fade-in duration-150">
+                  <div className="mx-2 my-1.5 bg-white rounded-xl shadow-md border border-[#e0e2ec] overflow-hidden divide-y divide-[#e0e2ec] animate-in fade-in duration-150">
                     {catItem.suboptions.map((sub) => {
                       const isSubSelected =
                         activeMetricsCategory === catItem.id && activeMetricsSuboption === sub.id;
@@ -213,14 +214,10 @@ export function GmailLeftSidebar({
                             onSelectMetricsCategory?.(catItem.id);
                             onSelectMetricsSuboption?.(catItem.id, sub.id);
                           }}
-                          className={`w-full flex items-center justify-between pl-4 pr-3 py-2 rounded-r-full text-xs font-bold transition-all cursor-pointer ${
+                          className={`w-full flex items-center justify-between px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer text-left ${
                             isSubSelected
-                              ? hasWallpaper
-                                ? 'bg-white/25 text-white shadow-xs font-bold'
-                                : 'bg-[#c2e7ff] text-[#001d35] font-bold shadow-xs'
-                              : hasWallpaper
-                              ? 'text-white/85 hover:bg-white/10 hover:text-white'
-                              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                              ? 'bg-[#d3e3fd] text-[#041e49] font-black'
+                              : 'text-[#1f1f1f] hover:bg-[#f0f4f9] hover:text-[#0b57d0]'
                           }`}
                         >
                           <span>{sub.label}</span>
@@ -387,23 +384,14 @@ export function GmailLeftSidebar({
             href="/metrics"
             target="_blank"
             rel="noopener noreferrer"
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+            className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
               hasWallpaper
                 ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
                 : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
             }`}
           >
-            <div className="flex items-center gap-4">
-              <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-              <span>Raw Metrics</span>
-            </div>
-            <span
-              className={`text-xs uppercase font-extrabold px-1.5 py-0.5 rounded ${
-                hasWallpaper ? 'bg-sky-400/30 text-sky-200' : 'bg-blue-100 text-[#0b57d0]'
-              }`}
-            >
-              RAW
-            </span>
+            <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+            <span>Raw Metrics</span>
           </a>
 
           {/* Telemetry Filters Section */}

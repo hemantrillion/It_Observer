@@ -8,13 +8,13 @@ import { MonitoredServiceStatusBlockCard } from '@/components/cards/monitored_se
 import { ServiceDetailInfoBlockCard } from '@/components/cards/service_detail_info_block_card';
 import { LatencyMetricTimeseriesGraphCard } from '@/components/cards/latency_metric_timeseries_graph_card';
 import { IncidentHistoryTableContainer } from '@/components/containers/incident_history_table_container';
-import { SaveCloudCredentialsButtonOnSettings } from '@/components/buttons/save_cloud_credentials_button_on_settings';
+import { DemoSettingsCatalogView } from '@/components/containers/demo_settings_catalog_view';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { DemoSubView, StatusFilter } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
-import { ArrowLeft, Activity, RefreshCw, Key, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Activity, RefreshCw } from 'lucide-react';
 
 interface ObservatoryTelemetryEmbeddedViewProps {
   services: MonitoredServiceRecord[];
@@ -33,6 +33,11 @@ interface ObservatoryTelemetryEmbeddedViewProps {
   searchQuery: string;
   density?: DensityOption;
   hasWallpaper?: boolean;
+  onServicesUpdated?: () => void | Promise<void>;
+  isConstantPollingEnabled?: boolean;
+  onToggleConstantPolling?: (enabled: boolean) => void;
+  constantPollingInterval?: number;
+  onChangeConstantPollingInterval?: (intervalMs: number) => void;
 }
 
 export function ObservatoryTelemetryEmbeddedView({
@@ -46,6 +51,11 @@ export function ObservatoryTelemetryEmbeddedView({
   searchQuery,
   density = 'compact',
   hasWallpaper = false,
+  onServicesUpdated = () => {},
+  isConstantPollingEnabled = false,
+  onToggleConstantPolling = () => {},
+  constantPollingInterval = 8000,
+  onChangeConstantPollingInterval = () => {},
 }: ObservatoryTelemetryEmbeddedViewProps) {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<MonitoredServiceRecord | null>(null);
@@ -55,18 +65,6 @@ export function ObservatoryTelemetryEmbeddedView({
   const [allIncidents, setAllIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isLoadingIncidents, setIsLoadingIncidents] = useState(false);
 
-  // Settings State
-  const [githubToken, setGithubToken] = useState('');
-  const [awsKeyId, setAwsKeyId] = useState('');
-  const [awsSecret, setAwsSecret] = useState('');
-  const [cloudflareToken, setCloudflareToken] = useState('');
-  const [isSaved, setIsSaved] = useState(false);
-
-  const handleSaveSettings = () => {
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-  };
-
   // Fetch incidents list when in incidents view
   useEffect(() => {
     if (demoSubView === 'incidents') {
@@ -75,31 +73,35 @@ export function ObservatoryTelemetryEmbeddedView({
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            setAllIncidents(data.incidents);
+            setAllIncidents(data.incidents || []);
           }
         })
-        .catch(console.error)
+        .catch((err) => console.error('Failed to load incidents history', err))
         .finally(() => setIsLoadingIncidents(false));
     }
   }, [demoSubView]);
 
-  // Fetch detailed samples if a service is selected
+  // Fetch telemetry graph data for a specific service
   const fetchServiceDetails = useCallback(
-    async (serviceId: string, limitOverride?: number) => {
+    async (id: string, limit: number = sampleLimit) => {
       try {
-        const limit = limitOverride ?? sampleLimit;
-        const res = await fetch(
-          `/api/services/${serviceId}?limit=${limit}&t=${Date.now()}`,
-          { cache: 'no-store' }
-        );
-        const data = await res.json();
-        if (data.success) {
-          setSelectedService(data.service);
-          setServiceSamples(data.samples);
+        const [svcRes, samplesRes] = await Promise.all([
+          fetch(`/api/services/${id}`, { cache: 'no-store' }),
+          fetch(`/api/metrics/${id}?limit=${limit}`, { cache: 'no-store' }),
+        ]);
+
+        const svcData = await svcRes.json();
+        const samplesData = await samplesRes.json();
+
+        if (svcData.success) {
+          setSelectedService(svcData.service);
+        }
+        if (samplesData.success) {
+          setServiceSamples(samplesData.samples || []);
           setLastUpdatedTime(new Date().toLocaleTimeString());
         }
-      } catch (e) {
-        console.error('Failed to load service samples', e);
+      } catch (err) {
+        console.error('Failed to fetch service detail telemetry', err);
       }
     },
     [sampleLimit]
@@ -272,7 +274,7 @@ export function ObservatoryTelemetryEmbeddedView({
 
               {filteredServices.length === 0 ? (
                 <div className="p-8 text-center text-sm text-[#5e5e5e] border border-dashed border-[#c4c7c5] rounded-2xl bg-[#f8fafd]">
-                  No monitored targets match the current filter or search criteria.
+                  No monitored targets match the current filter or search criteria. Select APIs in Demo Settings to add them to this dashboard.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
@@ -299,109 +301,33 @@ export function ObservatoryTelemetryEmbeddedView({
                   Detected Outages, Timeouts, and Recovery Metrics
                 </p>
               </div>
+              <button
+                onClick={() => triggerPoll()}
+                disabled={isPolling}
+                className="px-4 py-1.5 rounded-full bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-semibold text-xs transition-colors flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isPolling ? 'animate-spin' : ''}`} />
+                <span>Refresh Audit Log</span>
+              </button>
             </div>
 
-            {isLoadingIncidents ? (
-              <div className="p-16 text-center font-sans font-medium text-sm border border-[#e0e2ec] rounded-2xl bg-[#f8fafd] text-[#5e5e5e]">
-                Loading incident logs...
-              </div>
-            ) : (
-              <IncidentHistoryTableContainer incidents={allIncidents} />
-            )}
+            <IncidentHistoryTableContainer
+              incidents={allIncidents}
+            />
           </div>
         ) : (
-          /* Settings View */
-          <div className="space-y-6 w-full max-w-3xl mx-auto py-2">
-            <div className="border-b border-[#e0e2ec] pb-3">
-              <h2 className="text-xl font-bold text-[#1f1f1f]">
-                Test Suite Configuration & Cloud Adapters
-              </h2>
-              <p className="text-xs text-[#5e5e5e]">
-                Connect Optional Private Credentials For Extended Telemetry Limits
-              </p>
-            </div>
-
-            <div className="border border-[#e0e2ec] rounded-2xl p-6 bg-white space-y-6 shadow-xs">
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 font-sans text-xs font-bold uppercase text-[#1f1f1f]">
-                  <Key className="w-3.5 h-3.5 text-[#0b57d0]" />
-                  <span>GitHub Personal Access Token (Optional)</span>
-                </label>
-                <p className="font-sans text-xs text-[#5e5e5e]">
-                  Increases rate limit from 60 to 5,000 requests/hour for GitHub API adapter.
-                </p>
-                <input
-                  type="password"
-                  value={githubToken}
-                  onChange={(e) => setGithubToken(e.target.value)}
-                  placeholder="ghp_..."
-                  className="w-full p-2.5 border border-[#c4c7c5] rounded-xl font-mono text-xs bg-[#f8fafd] text-[#1f1f1f] focus:bg-white focus:border-[#0b57d0] focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div className="space-y-4 border-t border-[#e0e2ec] pt-4">
-                <div>
-                  <label className="flex items-center gap-2 font-sans text-xs font-bold uppercase text-[#1f1f1f]">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#0b57d0]" />
-                    <span>AWS IAM Credentials (Optional)</span>
-                  </label>
-                  <p className="font-sans text-xs text-[#5e5e5e]">
-                    Enables live CloudWatch metric querying and EC2/RDS monitoring.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="block font-sans text-[11px] font-semibold text-[#5e5e5e] mb-1">
-                      ACCESS KEY ID
-                    </span>
-                    <input
-                      type="text"
-                      value={awsKeyId}
-                      onChange={(e) => setAwsKeyId(e.target.value)}
-                      placeholder="AKIA..."
-                      className="w-full p-2.5 border border-[#c4c7c5] rounded-xl font-mono text-xs bg-[#f8fafd] text-[#1f1f1f] focus:bg-white focus:border-[#0b57d0] focus:outline-none transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <span className="block font-sans text-[11px] font-semibold text-[#5e5e5e] mb-1">
-                      SECRET ACCESS KEY
-                    </span>
-                    <input
-                      type="password"
-                      value={awsSecret}
-                      onChange={(e) => setAwsSecret(e.target.value)}
-                      placeholder="••••••••••••••••"
-                      className="w-full p-2.5 border border-[#c4c7c5] rounded-xl font-mono text-xs bg-[#f8fafd] text-[#1f1f1f] focus:bg-white focus:border-[#0b57d0] focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 border-t border-[#e0e2ec] pt-4">
-                <label className="flex items-center gap-2 font-sans text-xs font-bold uppercase text-[#1f1f1f]">
-                  <Key className="w-3.5 h-3.5 text-[#0b57d0]" />
-                  <span>Cloudflare API Token (Optional)</span>
-                </label>
-                <p className="font-sans text-xs text-[#5e5e5e]">
-                  Enables live edge network latency and security intelligence metrics.
-                </p>
-                <input
-                  type="password"
-                  value={cloudflareToken}
-                  onChange={(e) => setCloudflareToken(e.target.value)}
-                  placeholder="cftoken_..."
-                  className="w-full p-2.5 border border-[#c4c7c5] rounded-xl font-mono text-xs bg-[#f8fafd] text-[#1f1f1f] focus:bg-white focus:border-[#0b57d0] focus:outline-none transition-colors"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-[#e0e2ec] flex justify-end">
-                <SaveCloudCredentialsButtonOnSettings
-                  onSave={handleSaveSettings}
-                  isSaved={isSaved}
-                />
-              </div>
-            </div>
-          </div>
+          /* Demo Settings View: Comprehensive Public APIs Catalog & Polling Control */
+          <DemoSettingsCatalogView
+            monitoredServices={services}
+            onServicesUpdated={onServicesUpdated}
+            isConstantPollingEnabled={isConstantPollingEnabled}
+            onToggleConstantPolling={onToggleConstantPolling}
+            constantPollingInterval={constantPollingInterval}
+            onChangeConstantPollingInterval={onChangeConstantPollingInterval}
+            onTriggerManualPoll={triggerPoll}
+            isPolling={isPolling}
+            hasWallpaper={hasWallpaper}
+          />
         )}
       </div>
     </div>
