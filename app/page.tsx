@@ -17,6 +17,7 @@ import {
   ThemeOption,
   PRESET_THEMES,
 } from '@/components/gmail/gmail_quick_settings_panel';
+import { GmailAccountFlyoutPanel } from '@/components/gmail/gmail_account_flyout_panel';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
 import { MessageSquare, Video } from 'lucide-react';
@@ -33,6 +34,8 @@ export default function ObservatoryGmailLayoutPage() {
 
   // Quick Settings State
   const [isQuickSettingsOpen, setIsQuickSettingsOpen] = useState(false);
+  // Google Account Flyout State
+  const [isAccountFlyoutOpen, setIsAccountFlyoutOpen] = useState(false);
   const [density, setDensity] = useState<DensityOption>('compact');
   const [activeTheme, setActiveTheme] = useState<ThemeOption>(PRESET_THEMES[0]);
 
@@ -180,6 +183,8 @@ export default function ObservatoryGmailLayoutPage() {
             setActiveRailTab(tab);
             if (tab === 'demo') {
               setDemoSubView('dashboard');
+            } else if (tab === 'metrics') {
+              setDemoSubView('metrics');
             }
           }}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
@@ -212,8 +217,16 @@ export default function ObservatoryGmailLayoutPage() {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             activeMode={activeRailTab}
-            onOpenSettings={() => setIsQuickSettingsOpen((prev) => !prev)}
+            onOpenSettings={() => {
+              setIsQuickSettingsOpen((prev) => !prev);
+              setIsAccountFlyoutOpen(false);
+            }}
             isSettingsOpen={isQuickSettingsOpen}
+            onOpenAccountMenu={() => {
+              setIsAccountFlyoutOpen((prev) => !prev);
+              setIsQuickSettingsOpen(false);
+            }}
+            isAccountMenuOpen={isAccountFlyoutOpen}
             showFlexboxBorders={showFlexboxBorders}
             onToggleFlexboxBorders={() => setShowFlexboxBorders((prev) => !prev)}
             isSidebarOpen={isSidebarOpen}
@@ -234,6 +247,14 @@ export default function ObservatoryGmailLayoutPage() {
             setActiveRailTab('demo');
             setDemoSubView('settings');
           }}
+        />
+
+        {/* Google Account Flyout Panel */}
+        <GmailAccountFlyoutPanel
+          isOpen={isAccountFlyoutOpen}
+          onClose={() => setIsAccountFlyoutOpen(false)}
+          userName="HemanT"
+          userEmail="hemantrillion@gmail.com"
         />
 
         {/* Body below Box 3: Horizontal flex row holding Box 2, 4, 5 */}
@@ -300,9 +321,22 @@ export default function ObservatoryGmailLayoutPage() {
                   density={density}
                   hasWallpaper={hasWallpaper}
                 />
+              ) : activeRailTab === 'metrics' ? (
+                <ObservatoryTelemetryEmbeddedView
+                  services={services}
+                  summary={summary}
+                  activeIncidents={activeIncidents}
+                  triggerPoll={triggerPoll}
+                  isPolling={isPolling}
+                  demoSubView="metrics"
+                  statusFilter={statusFilter}
+                  searchQuery={searchQuery}
+                  density={density}
+                  hasWallpaper={hasWallpaper}
+                />
               ) : activeRailTab === 'mail' ? (
                 <GmailInboxView density={density} hasWallpaper={hasWallpaper} />
-              ) : activeRailTab === 'chat' ? (
+              ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
                   <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
                     <MessageSquare className="w-8 h-8" />
@@ -310,22 +344,6 @@ export default function ObservatoryGmailLayoutPage() {
                   <h3 className="text-xl font-bold text-[#1f1f1f]">Google Chat</h3>
                   <p className="max-w-md text-sm text-[#444746]">
                     Direct messages and spaces for infrastructure incident response teams and DevOps notifications.
-                  </p>
-                  <button
-                    onClick={() => setActiveRailTab('demo')}
-                    className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs cursor-pointer"
-                  >
-                    Go to Telemetry Demo
-                  </button>
-                </div>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
-                    <Video className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold text-[#1f1f1f]">Google Meet</h3>
-                  <p className="max-w-md text-sm text-[#444746]">
-                    Instant secure video meetings for War Room incident coordination and engineering triage.
                   </p>
                   <button
                     onClick={() => setActiveRailTab('demo')}

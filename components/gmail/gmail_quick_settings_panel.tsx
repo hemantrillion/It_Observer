@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Check, Upload, Image as ImageIcon, Sparkles } from 'lucide-react';
 
 export type DensityOption = 'default' | 'comfortable' | 'compact';
@@ -95,6 +95,32 @@ export function GmailQuickSettingsPanel({
 }: GmailQuickSettingsPanelProps) {
   const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        const isTrigger = (event.target as HTMLElement)?.closest?.('[data-panel-trigger="quick-settings"]');
+        if (isTrigger) return;
+        onClose();
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -114,7 +140,10 @@ export function GmailQuickSettingsPanel({
   return (
     <>
       {/* Quick Settings Flyout Drawer */}
-      <div className="absolute top-16 right-4 z-50 w-80 bg-[#f0f4f9] rounded-2xl shadow-2xl border border-[#c4c7c5]/50 overflow-hidden flex flex-col font-sans select-none animate-in fade-in slide-in-from-top-2 duration-150">
+      <div
+        ref={panelRef}
+        className="absolute top-16 right-4 z-50 w-80 bg-[#f0f4f9] rounded-2xl shadow-2xl border border-[#c4c7c5]/50 overflow-hidden flex flex-col font-sans select-none animate-in fade-in slide-in-from-top-2 duration-150"
+      >
         {/* Header */}
         <div className="px-5 py-4 flex items-center justify-between border-b border-[#c4c7c5]/30">
           <h3 className="text-base font-medium text-[#1f1f1f]">

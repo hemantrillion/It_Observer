@@ -57,7 +57,7 @@ export function GmailLeftSidebar({
   totalServicesCount = 6,
   hasWallpaper = false,
 }: GmailLeftSidebarProps) {
-  const isDemo = activeTab === 'demo';
+  const isDemo = activeTab === 'demo' || activeTab === 'metrics';
 
   return (
     <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">

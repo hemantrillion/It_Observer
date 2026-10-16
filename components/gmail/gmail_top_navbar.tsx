@@ -15,6 +15,8 @@ interface GmailTopNavbarProps {
   activeMode?: string;
   onOpenSettings?: () => void;
   isSettingsOpen?: boolean;
+  onOpenAccountMenu?: () => void;
+  isAccountMenuOpen?: boolean;
   showFlexboxBorders?: boolean;
   onToggleFlexboxBorders?: () => void;
   isSidebarOpen?: boolean;
@@ -27,6 +29,8 @@ export function GmailTopNavbar({
   activeMode = 'demo',
   onOpenSettings,
   isSettingsOpen = false,
+  onOpenAccountMenu,
+  isAccountMenuOpen = false,
   showFlexboxBorders = true,
   onToggleFlexboxBorders,
   isSidebarOpen = true,
@@ -153,7 +157,9 @@ export function GmailTopNavbar({
         {/* Settings (40px circle with 22px icon) */}
         <button
           onClick={onOpenSettings}
+          data-panel-trigger="quick-settings"
           title="Settings"
+          aria-label="Settings"
           className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             isSettingsOpen
               ? hasWallpaper
@@ -170,6 +176,7 @@ export function GmailTopNavbar({
         {/* Google Apps 9-dots Grid (40px circle with 24px icon) */}
         <button
           title="Google apps"
+          aria-label="Google apps"
           className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             hasWallpaper
               ? 'hover:bg-white/15 text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
@@ -189,13 +196,23 @@ export function GmailTopNavbar({
           </svg>
         </button>
 
-        {/* User Profile Avatar (40px circle matching real Gmail) */}
-        <div className="relative cursor-pointer ml-1">
-          <div className="w-10 h-10 rounded-full bg-[#004d40] text-white font-medium text-base flex items-center justify-center shadow-xs">
+        {/* User Profile Avatar (40px circle matching real Gmail without dot) */}
+        <button
+          type="button"
+          onClick={onOpenAccountMenu}
+          data-panel-trigger="account-flyout"
+          title="Google Account"
+          aria-label="Google Account"
+          className="relative cursor-pointer ml-1 focus:outline-none"
+        >
+          <div
+            className={`w-10 h-10 rounded-full bg-[#004d40] text-white font-medium text-base flex items-center justify-center shadow-xs transition-transform hover:scale-105 ${
+              isAccountMenuOpen ? 'ring-2 ring-white/80' : ''
+            }`}
+          >
             H
           </div>
-          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#188038] ring-2 ring-white" />
-        </div>
+        </button>
       </div>
     </header>
   );
