@@ -78,14 +78,14 @@ export function GmailTopNavbar({
       {/* Spacer pushing controls to the far right, keeping search bar strictly left-aligned */}
       <div className="flex-1 min-w-4" />
 
-      {/* Right: Controls & Profile */}
-      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+      {/* Right: Controls & Profile (Enlarged to match real Gmail dimensions) */}
+      <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 pr-1">
         {/* Toggle Flexbox Boundaries Button: strictly 'Flex' text (Green = ON, Red = OFF) */}
         {onToggleFlexboxBorders && (
           <button
             onClick={onToggleFlexboxBorders}
             title={showFlexboxBorders ? 'Flex: ON (Green)' : 'Flex: OFF (Red)'}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
+            className={`h-10 px-4 rounded-full text-sm font-semibold transition-all cursor-pointer shadow-xs flex items-center justify-center ${
               showFlexboxBorders
                 ? 'bg-[#188038] text-white hover:bg-[#137333]'
                 : 'bg-[#d93025] text-white hover:bg-[#b3261e]'
@@ -95,40 +95,40 @@ export function GmailTopNavbar({
           </button>
         )}
 
-        {/* Status Pill */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#747775]/30 text-xs font-medium text-[#1f1f1f] hover:bg-black/5 cursor-pointer transition-colors">
+        {/* Status Pill (Active) */}
+        <div className="hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full border border-[#747775]/35 text-sm font-medium text-[#1f1f1f] hover:bg-black/5 cursor-pointer transition-colors">
           <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block" />
           <span>Active</span>
-          <ChevronDown className="w-3.5 h-3.5 text-[#444746]" />
+          <ChevronDown className="w-4 h-4 text-[#444746]" />
         </div>
 
-        {/* Support Help */}
+        {/* Support Help (40px circle with 22px icon) */}
         <button
           title="Support"
-          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
+          className="w-10 h-10 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
         >
-          <HelpCircle className="w-5 h-5" />
+          <HelpCircle className="w-[22px] h-[22px]" />
         </button>
 
-        {/* Settings */}
+        {/* Settings (40px circle with 22px icon) */}
         <button
           onClick={onOpenSettings}
           title="Settings"
-          className={`p-2 rounded-full transition-colors cursor-pointer ${
+          className={`w-10 h-10 rounded-full transition-colors cursor-pointer flex items-center justify-center ${
             isSettingsOpen
               ? 'bg-black/15 text-[#1f1f1f]'
-              : 'hover:bg-black/5 text-[#444746]'
+              : 'hover:bg-black/10 text-[#444746]'
           }`}
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-[22px] h-[22px]" />
         </button>
 
-        {/* Google Apps 9-dots Grid */}
+        {/* Google Apps 9-dots Grid (40px circle with 24px icon) */}
         <button
           title="Google apps"
-          className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
+          className="w-10 h-10 rounded-full hover:bg-black/10 text-[#444746] transition-colors cursor-pointer flex items-center justify-center"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="6" cy="6" r="2" />
             <circle cx="12" cy="6" r="2" />
             <circle cx="18" cy="6" r="2" />
@@ -141,12 +141,12 @@ export function GmailTopNavbar({
           </svg>
         </button>
 
-        {/* User Profile Avatar */}
+        {/* User Profile Avatar (40px circle matching real Gmail) */}
         <div className="relative cursor-pointer ml-1">
-          <div className="w-8 h-8 rounded-full bg-[#004d40] text-white font-semibold text-sm flex items-center justify-center ring-2 ring-white shadow-sm">
+          <div className="w-10 h-10 rounded-full bg-[#004d40] text-white font-medium text-base flex items-center justify-center shadow-xs">
             H
           </div>
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#188038] ring-2 ring-white" />
+          <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-[#188038] ring-2 ring-white" />
         </div>
       </div>
     </header>

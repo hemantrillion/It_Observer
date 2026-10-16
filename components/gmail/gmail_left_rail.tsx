@@ -41,19 +41,19 @@ export function GmailLeftRail({
   ];
 
   return (
-    <aside className="w-[72px] h-full flex flex-col items-center py-2 shrink-0 bg-[#f6f8fc] space-y-3 select-none">
-      {/* Collapse button on left (Hamburger menu) - Part of 1st Flexbox! */}
+    <aside className="w-[72px] h-full flex flex-col items-center py-2 shrink-0 bg-[#f6f8fc] space-y-4 select-none">
+      {/* Collapse button on left (Hamburger menu) - 48px circle with 24px icon */}
       <button
         onClick={onToggleSidebar}
         aria-label="Main menu"
         title="Main menu (Collapse / Expand Sidebar)"
-        className="p-3 rounded-full hover:bg-black/10 text-[#444746] transition-colors focus:outline-none cursor-pointer"
+        className="w-12 h-12 rounded-full hover:bg-black/10 text-[#444746] transition-colors flex items-center justify-center focus:outline-none cursor-pointer"
       >
-        <Menu className="w-5 h-5" />
+        <Menu className="w-6 h-6" />
       </button>
 
       {/* Navigation tabs */}
-      <div className="flex flex-col items-center space-y-3 w-full">
+      <div className="flex flex-col items-center space-y-3.5 w-full">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const IconComponent = tab.icon;
@@ -64,19 +64,19 @@ export function GmailLeftRail({
               onClick={() => onSelectTab(tab.id)}
               className="flex flex-col items-center group w-full py-1 cursor-pointer focus:outline-none"
             >
-              {/* Pill Capsule */}
+              {/* Pill Capsule (56px x 32px with 24px icon matching real Gmail) */}
               <div
-                className={`w-12 h-8 rounded-full flex items-center justify-center relative transition-colors ${
+                className={`w-14 h-8 rounded-full flex items-center justify-center relative transition-colors ${
                   isActive
                     ? 'bg-[#d3e3fd] text-[#041e49]'
                     : 'text-[#444746] group-hover:bg-black/5'
                 }`}
               >
-                <IconComponent className="w-5 h-5" />
+                <IconComponent className="w-6 h-6 stroke-[1.8]" />
 
                 {/* Red unread badge for mail */}
                 {tab.badge && tab.id === 'mail' && (
-                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-[#b3261e] text-white text-[10px] font-bold rounded-full leading-tight">
+                  <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 min-w-[20px] text-center bg-[#b3261e] text-white text-[11px] font-bold rounded-full leading-tight shadow-xs">
                     {tab.badge}
                   </span>
                 )}
@@ -84,7 +84,7 @@ export function GmailLeftRail({
 
               {/* Label below capsule */}
               <span
-                className={`text-[11px] mt-1 tracking-tight ${
+                className={`text-xs mt-1.5 tracking-tight ${
                   isActive
                     ? 'font-bold text-[#041e49]'
                     : 'font-medium text-[#444746] group-hover:text-[#1f1f1f]'
