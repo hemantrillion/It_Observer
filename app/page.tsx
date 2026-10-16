@@ -174,11 +174,6 @@ export default function ObservatoryGmailLayoutPage() {
             : ''
         } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
       >
-        {showFlexboxBorders && (
-          <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-red-600 bg-white/95 px-1 py-0.2 rounded border border-red-300 pointer-events-none z-30">
-            BOX 1
-          </span>
-        )}
         <GmailLeftRail
           activeTab={activeRailTab}
           onSelectTab={(tab) => {
@@ -208,11 +203,6 @@ export default function ObservatoryGmailLayoutPage() {
               : ''
           } ${hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'}`}
         >
-          {showFlexboxBorders && (
-            <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-amber-700 bg-white/95 px-1 py-0.2 rounded border border-amber-300 pointer-events-none z-30">
-              BOX 3
-            </span>
-          )}
           <GmailTopNavbar
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -221,6 +211,7 @@ export default function ObservatoryGmailLayoutPage() {
             isSettingsOpen={isQuickSettingsOpen}
             showFlexboxBorders={showFlexboxBorders}
             onToggleFlexboxBorders={() => setShowFlexboxBorders((prev) => !prev)}
+            isSidebarOpen={isSidebarOpen}
           />
         </div>
 
@@ -254,11 +245,6 @@ export default function ObservatoryGmailLayoutPage() {
                   : ''
               } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
             >
-              {showFlexboxBorders && (
-                <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-green-700 bg-white/95 px-1 py-0.2 rounded border border-green-300 pointer-events-none z-30">
-                  BOX 2
-                </span>
-              )}
               <GmailLeftSidebar
                 activeTab={activeRailTab}
                 demoSubView={demoSubView}
@@ -287,11 +273,6 @@ export default function ObservatoryGmailLayoutPage() {
                 : ''
             }`}
           >
-            {showFlexboxBorders && (
-              <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-blue-700 bg-white/95 px-1 py-0.2 rounded border border-blue-300 pointer-events-none z-30">
-                BOX 4
-              </span>
-            )}
             <main
               className={`flex-1 flex flex-col rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm ${
                 hasWallpaper ? 'bg-white/95 backdrop-blur-md shadow-xl' : 'bg-white'
@@ -358,11 +339,6 @@ export default function ObservatoryGmailLayoutPage() {
                 : ''
             } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
           >
-            {showFlexboxBorders && (
-              <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-purple-700 bg-white/95 px-1 py-0.2 rounded border border-purple-300 pointer-events-none z-30">
-                BOX 5
-              </span>
-            )}
             <GmailRightRail />
           </div>
         </div>

@@ -37,7 +37,6 @@ export function GmailLeftRail({
       id: 'demo' as RailTab,
       label: 'Demo',
       icon: Activity,
-      badge: '30A',
     },
   ];
 
@@ -86,13 +85,6 @@ export function GmailLeftRail({
                 {/* Red unread badge for mail */}
                 {tab.badge && tab.id === 'mail' && (
                   <span className="absolute -top-1 -right-1 px-1.5 py-0.2 bg-[#b3261e] text-white text-[10px] font-bold rounded-full leading-tight">
-                    {tab.badge}
-                  </span>
-                )}
-
-                {/* Subtle badge for demo */}
-                {tab.badge && tab.id === 'demo' && (
-                  <span className="absolute -top-1 -right-1 px-1 py-0.2 bg-[#0b57d0] text-white text-[9px] font-bold rounded-full leading-tight">
                     {tab.badge}
                   </span>
                 )}

@@ -7,7 +7,6 @@ import {
   HelpCircle,
   Settings,
   ChevronDown,
-  Layers,
 } from 'lucide-react';
 
 interface GmailTopNavbarProps {
@@ -18,6 +17,7 @@ interface GmailTopNavbarProps {
   isSettingsOpen?: boolean;
   showFlexboxBorders?: boolean;
   onToggleFlexboxBorders?: () => void;
+  isSidebarOpen?: boolean;
 }
 
 export function GmailTopNavbar({
@@ -28,30 +28,28 @@ export function GmailTopNavbar({
   isSettingsOpen = false,
   showFlexboxBorders = true,
   onToggleFlexboxBorders,
+  isSidebarOpen = true,
 }: GmailTopNavbarProps) {
   return (
     <header className="h-16 flex items-center justify-between px-4 bg-[#f6f8fc] shrink-0 border-b border-[#e0e2ec]/60 select-none">
-      {/* Left: InfraTrace Logo & Wordmark (In place of Gmail logo!) */}
-      <div className="flex items-center gap-3 cursor-pointer shrink-0 pl-1">
+      {/* Left: InfraTrace Logo & Wordmark (Aligned with Box 2 sidebar width) */}
+      <div
+        className={`${
+          isSidebarOpen ? 'w-64' : 'w-48'
+        } flex items-center gap-3 cursor-pointer shrink-0 pl-1 pr-3 transition-all duration-200`}
+      >
         <img
           src="/infra_trace_logo.png"
           alt="InfraTrace Logo"
           className="w-9 h-9 object-contain drop-shadow-sm transition-transform hover:scale-105"
         />
-        <div className="flex items-center gap-2">
-          <span className="text-[22px] font-semibold text-[#1f1f1f] tracking-tight font-sans">
-            InfraTrace
-          </span>
-          {activeMode === 'demo' && (
-            <span className="hidden sm:inline-block text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-[#eaf1fb] text-[#0b57d0] border border-[#d3e3fd]">
-              Observatory
-            </span>
-          )}
-        </div>
+        <span className="text-[22px] font-semibold text-[#1f1f1f] tracking-tight font-sans">
+          InfraTrace
+        </span>
       </div>
 
-      {/* Middle: Rounded Pill Search Box */}
-      <div className="flex-1 max-w-[720px] mx-4">
+      {/* Middle: Rounded Pill Search Box - Starts directly where Box 4 begins */}
+      <div className="flex-1 max-w-[720px] mr-4">
         <div className="bg-[#eaf1fb] hover:bg-[#e1e9f5] focus-within:bg-white focus-within:shadow-md transition-all rounded-full h-11 flex items-center px-4 gap-3 border border-transparent focus-within:border-[#c4c7c5]">
           <Search className="w-5 h-5 text-[#444746] shrink-0" />
           <input
@@ -77,19 +75,18 @@ export function GmailTopNavbar({
 
       {/* Right: Controls & Profile */}
       <div className="flex items-center gap-1 sm:gap-2">
-        {/* Toggle Flexbox Boundaries Button */}
+        {/* Toggle Flexbox Boundaries Button: strictly 'Flex' text (Green = ON, Red = OFF) */}
         {onToggleFlexboxBorders && (
           <button
             onClick={onToggleFlexboxBorders}
-            title="Toggle Flexbox 1-5 Boundaries"
-            className={`hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+            title={showFlexboxBorders ? 'Flex: ON (Green)' : 'Flex: OFF (Red)'}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs ${
               showFlexboxBorders
-                ? 'bg-red-50 text-red-700 border-red-300 shadow-2xs'
-                : 'bg-white text-[#444746] border-[#747775]/30 hover:bg-black/5'
+                ? 'bg-[#188038] text-white hover:bg-[#137333]'
+                : 'bg-[#d93025] text-white hover:bg-[#b3261e]'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Flexbox Boxes: {showFlexboxBorders ? 'ON' : 'OFF'}</span>
+            Flex
           </button>
         )}
 
@@ -119,31 +116,6 @@ export function GmailTopNavbar({
           }`}
         >
           <Settings className="w-5 h-5" />
-        </button>
-
-        {/* Gemini Star */}
-        <button
-          title="Gemini"
-          className="p-2 rounded-full hover:bg-black/5 transition-colors cursor-pointer"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M12 2L13.8 8.2L20 10L13.8 11.8L12 18L10.2 11.8L4 10L10.2 8.2L12 2Z"
-              fill="url(#gemini_grad)"
-            />
-            <defs>
-              <linearGradient id="gemini_grad" x1="4" y1="2" x2="20" y2="18" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#1B6EF3" />
-                <stop offset="0.5" stopColor="#7C3AED" />
-                <stop offset="1" stopColor="#EC4899" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </button>
-
-        {/* Upgrade Button */}
-        <button className="hidden sm:inline-flex items-center px-4 py-1.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-xs font-medium tracking-wide shadow-sm transition-colors cursor-pointer">
-          Upgrade
         </button>
 
         {/* Google Apps 9-dots Grid */}
