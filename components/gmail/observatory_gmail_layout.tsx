@@ -349,6 +349,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   onToggleConstantPolling={setIsConstantPollingEnabled}
                   constantPollingInterval={constantPollingInterval}
                   onChangeConstantPollingInterval={setConstantPollingInterval}
+                  onSelectDemoSubView={setDemoSubView}
+                  onSelectStatusFilter={setStatusFilter}
                 />
               ) : activeRailTab === 'metrics' ? (
                 <ObservatoryMetricsDomainView

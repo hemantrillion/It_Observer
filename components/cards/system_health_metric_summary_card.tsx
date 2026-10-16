@@ -7,6 +7,7 @@ interface SystemHealthMetricSummaryCardProps {
   value: string | number;
   subtext?: string;
   isWarning?: boolean;
+  onClick?: () => void;
 }
 
 export function SystemHealthMetricSummaryCard({
@@ -14,6 +15,7 @@ export function SystemHealthMetricSummaryCard({
   value,
   subtext,
   isWarning = false,
+  onClick,
 }: SystemHealthMetricSummaryCardProps) {
   const getAccentColor = () => {
     const l = label.toLowerCase();
@@ -25,7 +27,12 @@ export function SystemHealthMetricSummaryCard({
   };
 
   return (
-    <div className="border border-[#e0e2ec] hover:border-[#0b57d0]/40 rounded-2xl p-5 bg-white/90 backdrop-blur-xs flex flex-col justify-between h-full shadow-2xs hover:shadow-md transition-all">
+    <div
+      onClick={onClick}
+      className={`border border-[#e0e2ec] hover:border-[#0b57d0]/60 rounded-2xl p-5 bg-white/90 backdrop-blur-xs flex flex-col justify-between h-full shadow-2xs hover:shadow-md transition-all ${
+        onClick ? 'cursor-pointer hover:scale-[1.01]' : ''
+      }`}
+    >
       <div className="flex items-center justify-between mb-2">
         <span className="font-sans text-xs font-bold uppercase tracking-wider text-[#444746]">
           {label}

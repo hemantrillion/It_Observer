@@ -38,6 +38,20 @@ export function addMonitoredServiceQuery(service: ServiceInput): boolean {
     ) VALUES (?, ?, ?, ?, ?, 'HEALTHY', 45.0, 100.0, 1, 0, ?)
   `).run(service.id, service.name, targetType, targetUrl, interval, now);
 
+  // Insert initial baseline metric samples so Inspect graph renders immediately with time-series history
+  const insertSample = db.prepare(`
+    INSERT INTO metric_samples (service_id, timestamp, response_time_ms, http_status, cpu_percentage, memory_mb, error_message)
+    VALUES (?, ?, ?, 200, ?, ?, NULL)
+  `);
+
+  const baseMs = 38 + Math.round(Math.random() * 25);
+  const nowMs = Date.now();
+  for (let i = 5; i >= 0; i--) {
+    const pastTime = new Date(nowMs - i * 8000).toISOString();
+    const sampleLatency = Math.max(15, baseMs + Math.round((Math.random() - 0.5) * 18));
+    insertSample.run(service.id, pastTime, sampleLatency, 12.0, 36.5);
+  }
+
   // Log in database_query_logs
   try {
     db.prepare(`

@@ -14,7 +14,7 @@ import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_qu
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { DemoSubView, StatusFilter } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
-import { ArrowLeft, Activity, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Activity, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 interface ObservatoryTelemetryEmbeddedViewProps {
   services: MonitoredServiceRecord[];
@@ -38,6 +38,8 @@ interface ObservatoryTelemetryEmbeddedViewProps {
   onToggleConstantPolling?: (enabled: boolean) => void;
   constantPollingInterval?: number;
   onChangeConstantPollingInterval?: (intervalMs: number) => void;
+  onSelectDemoSubView?: (view: DemoSubView) => void;
+  onSelectStatusFilter?: (filter: StatusFilter) => void;
 }
 
 export function ObservatoryTelemetryEmbeddedView({
@@ -56,6 +58,8 @@ export function ObservatoryTelemetryEmbeddedView({
   onToggleConstantPolling = () => {},
   constantPollingInterval = 8000,
   onChangeConstantPollingInterval = () => {},
+  onSelectDemoSubView,
+  onSelectStatusFilter,
 }: ObservatoryTelemetryEmbeddedViewProps) {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null);
   const [selectedService, setSelectedService] = useState<MonitoredServiceRecord | null>(null);
@@ -65,46 +69,65 @@ export function ObservatoryTelemetryEmbeddedView({
   const [allIncidents, setAllIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isLoadingIncidents, setIsLoadingIncidents] = useState(false);
 
-  // Fetch incidents list when in incidents view
+  // Fetch incidents list always on mount and when in incidents view
+  const fetchIncidentsHistory = useCallback(() => {
+    setIsLoadingIncidents(true);
+    fetch('/api/incidents')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setAllIncidents(data.incidents || []);
+        }
+      })
+      .catch((err) => console.error('Failed to load incidents history', err))
+      .finally(() => setIsLoadingIncidents(false));
+  }, []);
+
   useEffect(() => {
-    if (demoSubView === 'incidents') {
-      setIsLoadingIncidents(true);
-      fetch('/api/incidents')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setAllIncidents(data.incidents || []);
-          }
-        })
-        .catch((err) => console.error('Failed to load incidents history', err))
-        .finally(() => setIsLoadingIncidents(false));
-    }
-  }, [demoSubView]);
+    fetchIncidentsHistory();
+  }, [fetchIncidentsHistory, demoSubView]);
 
   // Fetch telemetry graph data for a specific service
   const fetchServiceDetails = useCallback(
     async (id: string, limit: number = sampleLimit) => {
+      // Immediate fallback from props so inspect view renders instantly without blocking
+      const fallback = services.find((s) => s.id === id);
+      if (fallback) {
+        setSelectedService(fallback);
+      }
+
       try {
-        const [svcRes, samplesRes] = await Promise.all([
-          fetch(`/api/services/${id}`, { cache: 'no-store' }),
-          fetch(`/api/metrics/${id}?limit=${limit}`, { cache: 'no-store' }),
-        ]);
+        const res = await fetch(`/api/services/${id}?limit=${limit}`, { cache: 'no-store' });
+        const data = await res.json();
 
-        const svcData = await svcRes.json();
-        const samplesData = await samplesRes.json();
-
-        if (svcData.success) {
-          setSelectedService(svcData.service);
-        }
-        if (samplesData.success) {
-          setServiceSamples(samplesData.samples || []);
+        if (data.success) {
+          if (data.service) {
+            setSelectedService(data.service);
+          }
+          if (data.samples && data.samples.length > 0) {
+            setServiceSamples(data.samples);
+          } else if (fallback) {
+            // Seed a baseline sample so graph renders properly
+            setServiceSamples([
+              {
+                id: 1,
+                service_id: fallback.id,
+                timestamp: new Date().toISOString(),
+                response_time_ms: fallback.latest_response_time_ms || 45,
+                http_status: 200,
+                cpu_percentage: 12,
+                memory_mb: 35,
+                error_message: null,
+              },
+            ]);
+          }
           setLastUpdatedTime(new Date().toLocaleTimeString());
         }
       } catch (err) {
         console.error('Failed to fetch service detail telemetry', err);
       }
     },
-    [sampleLimit]
+    [sampleLimit, services]
   );
 
   useEffect(() => {
@@ -135,28 +158,28 @@ export function ObservatoryTelemetryEmbeddedView({
   });
 
   const densitySpacing =
-    density === 'compact' ? 'space-y-4 p-4 md:p-6' : density === 'comfortable' ? 'space-y-6 p-6 md:p-8' : 'space-y-8 p-6 md:p-10';
+    density === 'compact' ? 'space-y-5 p-5 md:p-7' : density === 'comfortable' ? 'space-y-6 p-6 md:p-8' : 'space-y-8 p-6 md:p-10';
 
   return (
     <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-white'} overflow-y-auto font-sans select-none`}>
       {/* Top Breadcrumb & Live Status Bar */}
-      <div className={`h-12 border-b border-[#e0e2ec]/70 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
+      <div className={`h-14 border-b border-[#e0e2ec]/80 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
         <div className="flex items-center gap-3">
           {selectedServiceId ? (
             <button
               onClick={() => setSelectedServiceId(null)}
-              className="inline-flex items-center gap-2 text-xs font-semibold text-[#0b57d0] hover:bg-[#e8f0fe] px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 text-sm font-bold text-[#0b57d0] hover:bg-[#e8f0fe] px-4 py-2 rounded-full transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back to all targets</span>
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#444746] uppercase tracking-wider">
-              <span className="text-[#1f1f1f] font-bold">
+            <div className="flex items-center gap-2.5 text-sm font-black text-[#1f1f1f] uppercase tracking-wider">
+              <span className="text-base font-black">
                 {demoSubView.toUpperCase()}
               </span>
               {statusFilter !== 'ALL' && (
-                <span className="ml-2 px-2.5 py-0.5 rounded-full text-xs bg-[#eaf1fb] text-[#0b57d0] font-bold">
+                <span className="ml-2 px-3 py-1 rounded-full text-xs bg-[#eaf1fb] text-[#0b57d0] font-black border border-[#0b57d0]/20">
                   {statusFilter}
                 </span>
               )}
@@ -165,12 +188,12 @@ export function ObservatoryTelemetryEmbeddedView({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e6f4ea] text-[#137333] text-xs font-semibold border border-[#a8dab5]">
-            <span className="w-2 h-2 rounded-full bg-[#137333] animate-ping inline-block" />
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e6f4ea] text-[#137333] text-xs sm:text-sm font-bold border border-[#a8dab5]">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#137333] animate-ping inline-block" />
             <span>Telemetry Active</span>
           </span>
           {lastUpdatedTime && (
-            <span className="text-xs text-[#5e5e5e] font-mono hidden sm:inline">
+            <span className="text-xs sm:text-sm text-[#444746] font-mono font-semibold hidden sm:inline">
               Probed: {lastUpdatedTime}
             </span>
           )}
@@ -181,19 +204,19 @@ export function ObservatoryTelemetryEmbeddedView({
       <div className={`${densitySpacing} flex-1`}>
         {/* If viewing a selected service's detail graph */}
         {selectedServiceId && selectedService ? (
-          <div className="space-y-5 w-full">
-            <div className="flex items-center justify-between border-b border-[#e0e2ec] pb-3">
+          <div className="space-y-6 w-full animate-in fade-in duration-150">
+            <div className="flex items-center justify-between border-b-2 border-black pb-4">
               <div>
-                <h3 className="text-xl font-bold tracking-tight text-[#1f1f1f]">
-                  {selectedService.name} &mdash; Telemetry Detail & Graph
+                <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
+                  {selectedService.name} &mdash; TELEMETRY DETAIL &amp; GRAPH
                 </h3>
-                <p className="text-xs text-[#5e5e5e]">
-                  Continuous Latency Probing & Historical Samples
+                <p className="text-sm sm:text-base font-semibold text-neutral-700 mt-1">
+                  Continuous Synthetic Latency Probing &amp; Real-Time Time-Series Samples
                 </p>
               </div>
               <button
                 onClick={() => setSelectedServiceId(null)}
-                className="px-4 py-1.5 rounded-full bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-semibold text-xs transition-colors"
+                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-neutral-800 font-bold text-xs sm:text-sm uppercase transition-colors cursor-pointer"
               >
                 Close Graph
               </button>
@@ -201,7 +224,7 @@ export function ObservatoryTelemetryEmbeddedView({
 
             <ServiceDetailInfoBlockCard service={selectedService} />
 
-            <div className="border border-[#e0e2ec] rounded-2xl p-4 bg-white shadow-xs">
+            <div className="border-2 border-black rounded-2xl p-5 bg-white/95 backdrop-blur-md shadow-sm">
               <LatencyMetricTimeseriesGraphCard
                 samples={serviceSamples}
                 service={selectedService}
@@ -221,10 +244,10 @@ export function ObservatoryTelemetryEmbeddedView({
             {/* Section: Overview Metrics Bar */}
             <section className="space-y-3 w-full">
               <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-                <h2 className="text-sm font-bold text-[#1f1f1f] uppercase tracking-wider">
+                <h2 className="text-base sm:text-lg font-bold text-[#1f1f1f] uppercase tracking-wider">
                   System Telemetry Overview
                 </h2>
-                <span className="text-xs text-[#5e5e5e]">Live Aggregates</span>
+                <span className="text-xs sm:text-sm font-semibold text-[#5e5e5e]">Live Aggregates &bull; Click card to filter</span>
               </div>
               <SystemOverviewMetricsBarContainer
                 total={summary.total}
@@ -232,20 +255,36 @@ export function ObservatoryTelemetryEmbeddedView({
                 degraded={summary.degraded}
                 down={summary.down}
                 activeAlerts={summary.activeAlerts}
+                onSelectIncidents={() => onSelectDemoSubView?.('incidents')}
+                onSelectStatusFilter={onSelectStatusFilter}
               />
             </section>
 
-            {/* Section: Active Critical Notifications */}
-            {activeIncidents.length > 0 && (
-              <section className="space-y-3 w-full">
-                <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-                  <h2 className="text-sm font-bold text-[#c5221f] uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#c5221f] animate-ping" />
-                    <span>Active Critical Notifications ({activeIncidents.length})</span>
+            {/* Section: Incidents Telemetry & Notifications (Always Visible) */}
+            <section className="space-y-3 w-full">
+              <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
+                <div className="flex items-center gap-2.5">
+                  {activeIncidents.length > 0 ? (
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#c5221f] animate-ping" />
+                  ) : (
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  )}
+                  <h2 className="text-base sm:text-lg font-bold text-[#1f1f1f] uppercase tracking-wider">
+                    Incident Telemetry &amp; Outage Notifications ({activeIncidents.length} Active / {allIncidents.length} Historical)
                   </h2>
-                  <span className="text-xs text-[#c5221f] font-semibold">Immediate Action Required</span>
                 </div>
-                <div className="space-y-2 w-full">
+                {onSelectDemoSubView && (
+                  <button
+                    onClick={() => onSelectDemoSubView('incidents')}
+                    className="text-xs sm:text-sm font-bold text-[#0b57d0] hover:underline cursor-pointer"
+                  >
+                    View Complete Audit Log &rarr;
+                  </button>
+                )}
+              </div>
+
+              {activeIncidents.length > 0 ? (
+                <div className="space-y-2.5 w-full">
                   {activeIncidents.map((incident) => (
                     <ActiveIncidentAlertNotificationCard
                       key={incident.id}
@@ -253,8 +292,28 @@ export function ObservatoryTelemetryEmbeddedView({
                     />
                   ))}
                 </div>
-              </section>
-            )}
+              ) : (
+                <div className="border border-[#e0e2ec] rounded-2xl p-5 bg-white/90 backdrop-blur-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+                  <div className="flex items-center gap-3.5">
+                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0" />
+                    <div>
+                      <h4 className="text-sm sm:text-base font-bold text-[#1f1f1f]">Zero Active Critical Outages</h4>
+                      <p className="text-xs sm:text-sm text-[#444746] font-medium leading-relaxed">
+                        All monitored production targets are passing synthetic health probes. {allIncidents.length} historical outage events recorded in the system audit ledger.
+                      </p>
+                    </div>
+                  </div>
+                  {onSelectDemoSubView && (
+                    <button
+                      onClick={() => onSelectDemoSubView('incidents')}
+                      className="px-5 py-2.5 rounded-xl bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-bold text-xs sm:text-sm shrink-0 transition-colors cursor-pointer border border-[#c4c7c5]"
+                    >
+                      Audit Incident History ({allIncidents.length})
+                    </button>
+                  )}
+                </div>
+              )}
+            </section>
 
             {/* Section: Interactive Chaos Testing Panel */}
             <section className="w-full">
@@ -264,25 +323,28 @@ export function ObservatoryTelemetryEmbeddedView({
             {/* Section: Monitored Targets Grid */}
             <section className="space-y-3 w-full">
               <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-                <h2 className="text-sm font-bold text-[#1f1f1f] uppercase tracking-wider">
+                <h2 className="text-base sm:text-lg font-bold text-[#1f1f1f] uppercase tracking-wider">
                   Test Suite Monitored Targets ({filteredServices.length})
                 </h2>
-                <span className="text-xs text-[#5e5e5e]">
+                <span className="text-xs sm:text-sm font-semibold text-[#5e5e5e]">
                   Click Any Card Or &ldquo;Inspect&rdquo; To Open Real-Time Latency Graph
                 </span>
               </div>
 
               {filteredServices.length === 0 ? (
-                <div className="p-8 text-center text-sm text-[#5e5e5e] border border-dashed border-[#c4c7c5] rounded-2xl bg-[#f8fafd]">
+                <div className="p-10 text-center text-sm sm:text-base text-[#444746] font-semibold border-2 border-dashed border-[#c4c7c5] rounded-2xl bg-[#f8fafd]">
                   No monitored targets match the current filter or search criteria. Select APIs in Demo Settings to add them to this dashboard.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
                   {filteredServices.map((service) => (
                     <MonitoredServiceStatusBlockCard
                       key={service.id}
                       service={service}
-                      onInspect={(id) => setSelectedServiceId(id)}
+                      onInspect={(id) => {
+                        setSelectedServiceId(id);
+                        fetchServiceDetails(id);
+                      }}
                     />
                   ))}
                 </div>
@@ -291,22 +353,25 @@ export function ObservatoryTelemetryEmbeddedView({
           </>
         ) : demoSubView === 'incidents' ? (
           /* Incidents View */
-          <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between pb-2 border-b border-[#e0e2ec]">
+          <div className="space-y-5 w-full">
+            <div className="flex items-center justify-between pb-3 border-b border-[#e0e2ec]">
               <div>
-                <h2 className="text-lg font-bold text-[#1f1f1f]">
-                  Incident History & Resolution Audit Log
+                <h2 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
+                  Incident History &amp; Resolution Audit Log
                 </h2>
-                <p className="text-xs text-[#5e5e5e]">
-                  Detected Outages, Timeouts, and Recovery Metrics
+                <p className="text-sm font-medium text-[#444746]">
+                  Detected Outages, Timeouts, and Recovery Timelines (Total Events: {allIncidents.length})
                 </p>
               </div>
               <button
-                onClick={() => triggerPoll()}
-                disabled={isPolling}
-                className="px-4 py-1.5 rounded-full bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-semibold text-xs transition-colors flex items-center gap-1.5"
+                onClick={() => {
+                  fetchIncidentsHistory();
+                  triggerPoll();
+                }}
+                disabled={isPolling || isLoadingIncidents}
+                className="px-5 py-2.5 rounded-full bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 cursor-pointer border border-[#c4c7c5]"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isPolling ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isPolling || isLoadingIncidents ? 'animate-spin' : ''}`} />
                 <span>Refresh Audit Log</span>
               </button>
             </div>
@@ -327,6 +392,10 @@ export function ObservatoryTelemetryEmbeddedView({
             onTriggerManualPoll={triggerPoll}
             isPolling={isPolling}
             hasWallpaper={hasWallpaper}
+            onInspectService={(id) => {
+              setSelectedServiceId(id);
+              fetchServiceDetails(id);
+            }}
           />
         )}
       </div>
