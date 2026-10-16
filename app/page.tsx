@@ -28,8 +28,8 @@ export default function ObservatoryGmailLayoutPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Flexbox Boundaries Visual Debugger (Default: ON as requested)
-  const [showFlexBoundaries, setShowFlexBoundaries] = useState(true);
+  // Flexbox Boundaries Visibility (Default: true as requested by user)
+  const [showFlexboxBorders, setShowFlexboxBorders] = useState(true);
 
   // Quick Settings State
   const [isQuickSettingsOpen, setIsQuickSettingsOpen] = useState(false);
@@ -158,217 +158,213 @@ export default function ObservatoryGmailLayoutPage() {
   return (
     <div
       style={hasWallpaper ? { background: activeTheme.backgroundStyle } : undefined}
-      className={`h-screen w-screen flex flex-col ${
+      className={`h-screen w-screen flex flex-row ${
         hasWallpaper ? 'bg-cover bg-center' : 'bg-[#f6f8fc]'
       } text-[#1f1f1f] overflow-hidden font-sans select-none relative`}
     >
-      {/* Zone 3: Top Navigation Bar Flexbox */}
+      {/* ======================================================== */}
+      {/* FLEXBOX 1: Far-Left Narrow Rail (Full Height)            */}
+      {/* Contains: Hamburger collapse button at top, Mail, Chat,   */}
+      {/*           Meet, Demo                                     */}
+      {/* ======================================================== */}
       <div
-        className={`relative shrink-0 ${
-          hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'
-        } ${
-          showFlexBoundaries
-            ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+        className={`relative h-full shrink-0 flex flex-col transition-all ${
+          showFlexboxBorders
+            ? 'border-2 border-red-500 m-0.5 rounded-sm'
             : ''
-        }`}
+        } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
       >
-        {/* Yellow Box 3 Indicator matching user's drawing */}
-        {showFlexBoundaries && (
-          <div className="absolute -top-3 left-4 bg-[#fde047] text-black font-extrabold text-[11px] px-3 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1.5 animate-pulse">
-            <span className="w-4 h-4 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[10px] font-black">
-              3
-            </span>
-            <span className="tracking-wide">FLEXBOX ZONE 3 (TOP NAVBAR)</span>
-          </div>
+        {showFlexboxBorders && (
+          <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-red-600 bg-white/95 px-1 py-0.2 rounded border border-red-300 pointer-events-none z-30">
+            BOX 1
+          </span>
         )}
-
-        <GmailTopNavbar
+        <GmailLeftRail
+          activeTab={activeRailTab}
+          onSelectTab={(tab) => {
+            setActiveRailTab(tab);
+            if (tab === 'demo') {
+              setDemoSubView('dashboard');
+            }
+          }}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          activeMode={activeRailTab}
-          onOpenSettings={() => setIsQuickSettingsOpen((prev) => !prev)}
-          isSettingsOpen={isQuickSettingsOpen}
-          showFlexBoundaries={showFlexBoundaries}
-          onToggleFlexBoundaries={() => setShowFlexBoundaries((prev) => !prev)}
         />
       </div>
 
-      {/* Quick Settings Panel Flyout */}
-      <GmailQuickSettingsPanel
-        isOpen={isQuickSettingsOpen}
-        onClose={() => setIsQuickSettingsOpen(false)}
-        density={density}
-        onDensityChange={handleDensityChange}
-        activeThemeId={activeTheme.id}
-        onSelectTheme={handleSelectTheme}
-        onUploadCustomWallpaper={handleUploadCustomWallpaper}
-        onSeeAllSettings={() => {
-          setActiveRailTab('demo');
-          setDemoSubView('settings');
-        }}
-      />
-
-      {/* Main Body Layout: Horizontal Flexbox Container */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Zone 1: Far-Left Narrow Rail (Mail, Chat, Meet, Demo) */}
+      {/* ======================================================== */}
+      {/* Right-Hand Workspace Container (Column: Box 3 top, then   */}
+      {/* Box 2, Box 4, Box 5 side-by-side)                         */}
+      {/* ======================================================== */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* ====================================================== */}
+        {/* FLEXBOX 3: Top Navigation Bar                          */}
+        {/* Starts with Gmail logo & wordmark, search, controls    */}
+        {/* (Does NOT contain the hamburger button!)               */}
+        {/* ====================================================== */}
         <div
-          className={`relative shrink-0 ${
-            hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'
-          } ${
-            showFlexBoundaries
-              ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+          className={`relative shrink-0 transition-all ${
+            showFlexboxBorders
+              ? 'border-2 border-amber-500 m-0.5 rounded-sm'
               : ''
-          }`}
+          } ${hasWallpaper ? 'bg-white/80 backdrop-blur-md' : 'bg-[#f6f8fc]'}`}
         >
-          {/* Yellow Box 1 Indicator matching user's drawing */}
-          {showFlexBoundaries && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#fde047] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1">
-              <span className="w-3.5 h-3.5 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[9px] font-black">
-                1
-              </span>
-              <span>RAIL</span>
-            </div>
+          {showFlexboxBorders && (
+            <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-amber-700 bg-white/95 px-1 py-0.2 rounded border border-amber-300 pointer-events-none z-30">
+              BOX 3
+            </span>
           )}
-
-          <GmailLeftRail
-            activeTab={activeRailTab}
-            onSelectTab={(tab) => {
-              setActiveRailTab(tab);
-              if (tab === 'demo') {
-                setDemoSubView('dashboard');
-              }
-            }}
+          <GmailTopNavbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeMode={activeRailTab}
+            onOpenSettings={() => setIsQuickSettingsOpen((prev) => !prev)}
+            isSettingsOpen={isQuickSettingsOpen}
+            showFlexboxBorders={showFlexboxBorders}
+            onToggleFlexboxBorders={() => setShowFlexboxBorders((prev) => !prev)}
           />
         </div>
 
-        {/* Zone 2: Collapsible Sidebar */}
-        {isSidebarOpen && (
+        {/* Quick Settings Panel Flyout */}
+        <GmailQuickSettingsPanel
+          isOpen={isQuickSettingsOpen}
+          onClose={() => setIsQuickSettingsOpen(false)}
+          density={density}
+          onDensityChange={handleDensityChange}
+          activeThemeId={activeTheme.id}
+          onSelectTheme={handleSelectTheme}
+          onUploadCustomWallpaper={handleUploadCustomWallpaper}
+          onSeeAllSettings={() => {
+            setActiveRailTab('demo');
+            setDemoSubView('settings');
+          }}
+        />
+
+        {/* Body below Box 3: Horizontal flex row holding Box 2, 4, 5 */}
+        <div className="flex-1 flex flex-row overflow-hidden">
+          {/* ==================================================== */}
+          {/* FLEXBOX 2: Left Collapsible Sidebar                  */}
+          {/* In Demo mode: Poll Now + Observatory nav + filters   */}
+          {/* In Mail mode: + Compose + Folders + Labels           */}
+          {/* ==================================================== */}
+          {isSidebarOpen && (
+            <div
+              className={`relative h-full shrink-0 flex flex-col transition-all ${
+                showFlexboxBorders
+                  ? 'border-2 border-green-600 m-0.5 rounded-sm'
+                  : ''
+              } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
+            >
+              {showFlexboxBorders && (
+                <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-green-700 bg-white/95 px-1 py-0.2 rounded border border-green-300 pointer-events-none z-30">
+                  BOX 2
+                </span>
+              )}
+              <GmailLeftSidebar
+                activeTab={activeRailTab}
+                demoSubView={demoSubView}
+                onSelectDemoSubView={setDemoSubView}
+                statusFilter={statusFilter}
+                onSelectStatusFilter={setStatusFilter}
+                onPoll={triggerPoll}
+                isPolling={isPolling}
+                incidentCount={activeIncidents.length}
+                healthyCount={summary.healthy}
+                degradedCount={summary.degraded}
+                downCount={summary.down}
+                totalServicesCount={summary.total}
+              />
+            </div>
+          )}
+
+          {/* ==================================================== */}
+          {/* FLEXBOX 4: Central Main Content Area                 */}
+          {/* White rounded card with either Demo Cockpit or Inbox */}
+          {/* ==================================================== */}
           <div
-            className={`relative shrink-0 ${
-              hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'
-            } ${
-              showFlexBoundaries
-                ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
+            className={`relative flex-1 h-full flex flex-col overflow-hidden transition-all ${
+              showFlexboxBorders
+                ? 'border-2 border-blue-600 m-0.5 rounded-sm'
                 : ''
             }`}
           >
-            {/* Yellow Box 2 Indicator matching user's drawing */}
-            {showFlexBoundaries && (
-              <div className="absolute -top-3 left-6 bg-[#fde047] text-black font-extrabold text-[11px] px-2.5 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[10px] font-black">
-                  2
-                </span>
-                <span className="tracking-wide">FLEXBOX ZONE 2 (SIDEBAR)</span>
-              </div>
+            {showFlexboxBorders && (
+              <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-blue-700 bg-white/95 px-1 py-0.2 rounded border border-blue-300 pointer-events-none z-30">
+                BOX 4
+              </span>
             )}
-
-            <GmailLeftSidebar
-              activeTab={activeRailTab}
-              demoSubView={demoSubView}
-              onSelectDemoSubView={setDemoSubView}
-              statusFilter={statusFilter}
-              onSelectStatusFilter={setStatusFilter}
-              onPoll={triggerPoll}
-              isPolling={isPolling}
-              incidentCount={activeIncidents.length}
-              healthyCount={summary.healthy}
-              degradedCount={summary.degraded}
-              downCount={summary.down}
-              totalServicesCount={summary.total}
-            />
+            <main
+              className={`flex-1 flex flex-col rounded-2xl mx-1 my-2 border border-[#e0e2ec] overflow-hidden shadow-sm ${
+                hasWallpaper ? 'bg-white/95 backdrop-blur-md shadow-xl' : 'bg-white'
+              }`}
+            >
+              {activeRailTab === 'demo' ? (
+                <ObservatoryTelemetryEmbeddedView
+                  services={services}
+                  summary={summary}
+                  activeIncidents={activeIncidents}
+                  triggerPoll={triggerPoll}
+                  isPolling={isPolling}
+                  demoSubView={demoSubView}
+                  statusFilter={statusFilter}
+                  searchQuery={searchQuery}
+                  density={density}
+                />
+              ) : activeRailTab === 'mail' ? (
+                <GmailInboxView density={density} />
+              ) : activeRailTab === 'chat' ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
+                    <MessageSquare className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#1f1f1f]">Google Chat</h3>
+                  <p className="max-w-md text-sm text-[#444746]">
+                    Direct messages and spaces for infrastructure incident response teams and DevOps notifications.
+                  </p>
+                  <button
+                    onClick={() => setActiveRailTab('demo')}
+                    className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    Go to Telemetry Demo
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
+                    <Video className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#1f1f1f]">Google Meet</h3>
+                  <p className="max-w-md text-sm text-[#444746]">
+                    Instant secure video meetings for War Room incident coordination and engineering triage.
+                  </p>
+                  <button
+                    onClick={() => setActiveRailTab('demo')}
+                    className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    Go to Telemetry Demo
+                  </button>
+                </div>
+              )}
+            </main>
           </div>
-        )}
 
-        {/* Zone 4: Central Main Content Workspace Card */}
-        <main
-          className={`relative flex-1 flex flex-col rounded-2xl mx-1 my-1 overflow-hidden min-w-0 ${
-            hasWallpaper ? 'bg-white/95 backdrop-blur-md shadow-xl' : 'bg-white'
-          } ${
-            showFlexBoundaries
-              ? 'border-4 border-[#10b981] shadow-xl ring-2 ring-[#10b981]/40'
-              : 'border border-[#e0e2ec] shadow-sm'
-          }`}
-        >
-          {/* Yellow Box 4 Indicator matching user's drawing */}
-          {showFlexBoundaries && (
-            <div className="absolute top-2 right-4 bg-[#fde047] text-black font-extrabold text-[11px] px-3 py-1 rounded-full shadow-lg z-40 border-2 border-black flex items-center gap-1.5 animate-pulse">
-              <span className="w-4 h-4 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[10px] font-black">
-                4
+          {/* ==================================================== */}
+          {/* FLEXBOX 5: Far-Right Companion Rail                  */}
+          {/* Contains: Calendar, Keep, Tasks, Contacts, +, >      */}
+          {/* ==================================================== */}
+          <div
+            className={`relative h-full shrink-0 flex flex-col transition-all ${
+              showFlexboxBorders
+                ? 'border-2 border-purple-600 m-0.5 rounded-sm'
+                : ''
+            } ${hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'}`}
+          >
+            {showFlexboxBorders && (
+              <span className="absolute top-0.5 right-0.5 text-[8px] font-mono font-bold text-purple-700 bg-white/95 px-1 py-0.2 rounded border border-purple-300 pointer-events-none z-30">
+                BOX 5
               </span>
-              <span className="tracking-wide">FLEXBOX ZONE 4 (MAIN WORKSPACE: DEMO / INBOX)</span>
-            </div>
-          )}
-
-          {activeRailTab === 'demo' ? (
-            <ObservatoryTelemetryEmbeddedView
-              services={services}
-              summary={summary}
-              activeIncidents={activeIncidents}
-              triggerPoll={triggerPoll}
-              isPolling={isPolling}
-              demoSubView={demoSubView}
-              statusFilter={statusFilter}
-              searchQuery={searchQuery}
-              density={density}
-            />
-          ) : activeRailTab === 'mail' ? (
-            <GmailInboxView density={density} />
-          ) : activeRailTab === 'chat' ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
-                <MessageSquare className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-[#1f1f1f]">Google Chat</h3>
-              <p className="max-w-md text-sm text-[#444746]">
-                Direct messages and spaces for infrastructure incident response teams and DevOps notifications.
-              </p>
-              <button
-                onClick={() => setActiveRailTab('demo')}
-                className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs"
-              >
-                Go to Telemetry Demo
-              </button>
-            </div>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
-              <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
-                <Video className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-bold text-[#1f1f1f]">Google Meet</h3>
-              <p className="max-w-md text-sm text-[#444746]">
-                Instant secure video meetings for War Room incident coordination and engineering triage.
-              </p>
-              <button
-                onClick={() => setActiveRailTab('demo')}
-                className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs"
-              >
-                Go to Telemetry Demo
-              </button>
-            </div>
-          )}
-        </main>
-
-        {/* Zone 5: Far-Right Companion Rail */}
-        <div
-          className={`relative shrink-0 ${
-            hasWallpaper ? 'bg-white/60 backdrop-blur-sm' : 'bg-[#f6f8fc]'
-          } ${
-            showFlexBoundaries
-              ? 'border-4 border-[#10b981] m-1 rounded-2xl shadow-lg ring-2 ring-[#10b981]/40'
-              : ''
-          }`}
-        >
-          {/* Yellow Box 5 Indicator matching user's drawing */}
-          {showFlexBoundaries && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#fde047] text-black font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-lg z-50 border-2 border-black flex items-center gap-1">
-              <span className="w-3.5 h-3.5 rounded-full bg-black text-yellow-300 flex items-center justify-center text-[9px] font-black">
-                5
-              </span>
-            </div>
-          )}
-
-          <GmailRightRail />
+            )}
+            <GmailRightRail />
+          </div>
         </div>
       </div>
     </div>

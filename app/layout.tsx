@@ -2,8 +2,11 @@ import './globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Infrastructure Observatory // 30-A',
-  description: 'Monochrome Neo-Brutalist Telemetry & Health Monitoring Platform',
+  title: 'InfraTrace // Gmail Telemetry Observatory',
+  description: 'Enterprise Infrastructure Observatory in Gmail Shell',
+  icons: {
+    icon: '/infra_trace_logo.png',
+  },
 };
 
 export default function RootLayout({
