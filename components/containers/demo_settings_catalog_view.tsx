@@ -34,6 +34,7 @@ interface DemoSettingsCatalogViewProps {
   isPolling: boolean;
   hasWallpaper?: boolean;
   onInspectService?: (serviceId: string) => void;
+  searchQuery?: string;
 }
 
 const ALPHABETS = [
@@ -61,8 +62,8 @@ export function DemoSettingsCatalogView({
   isPolling,
   hasWallpaper = false,
   onInspectService,
+  searchQuery: externalSearchQuery = '',
 }: DemoSettingsCatalogViewProps) {
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [togglingServiceId, setTogglingServiceId] = useState<string | null>(null);
   const [unselectableTooltip, setUnselectableTooltip] = useState<string | null>(null);
@@ -101,9 +102,9 @@ export function DemoSettingsCatalogView({
     }
   };
 
-  // Filter catalog items by search query
+  // Filter catalog items by search query (unified with Box 3 Top Nav Search Bar)
   const filteredCatalog = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = (externalSearchQuery || '').trim().toLowerCase();
     return PREMADE_APIS_CATALOG.filter((item) => {
       if (!q) return true;
       return (
@@ -115,7 +116,7 @@ export function DemoSettingsCatalogView({
         item.metrics.some((m) => m.name.toLowerCase().includes(q))
       );
     });
-  }, [searchQuery]);
+  }, [externalSearchQuery]);
 
   // Group items by alphabet letter
   const groupedByLetter = useMemo(() => {
@@ -317,45 +318,17 @@ export function DemoSettingsCatalogView({
       </div>
 
       {/* ======================================================== */}
-      {/* 2. SEARCH BAR (NEO-BRUTALIST GRAPH STYLE WITH LARGE FONT)*/}
+      {/* 2. CATALOG STATUS & GLOBAL FILTER INFO                   */}
       {/* ======================================================== */}
-      <div className="space-y-3">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-black">
-            <Search className="w-6 h-6 text-black" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search public & cloud APIs by company (e.g. AWS, Stripe, GitHub), endpoint URL, or metric name..."
-            className="w-full pl-13 pr-12 py-4 rounded-xl border-2 border-black bg-white/90 backdrop-blur-md font-bold text-base sm:text-lg text-black shadow-sm focus:outline-none focus:bg-white placeholder:text-neutral-500 placeholder:font-medium transition-all"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 pr-4 flex items-center text-black hover:opacity-70 cursor-pointer"
-            >
-              <X className="w-5 h-5 text-black" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between text-xs sm:text-sm text-neutral-700 px-1 font-bold">
-          <span>
-            SHOWING <strong>{filteredCatalog.length}</strong> TARGET APIS ACROSS {ALPHABETS.length} ALPHABETICAL CATEGORIES
+      <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm text-neutral-800 px-1 font-bold gap-2">
+        <span className="uppercase tracking-wide">
+          SHOWING <strong>{filteredCatalog.length}</strong> TARGET APIS ACROSS {ALPHABETS.length} ALPHABETICAL CATEGORIES
+        </span>
+        {externalSearchQuery && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-black text-white text-xs font-black uppercase shadow-xs">
+            <span>FILTERED BY TOP SEARCH: &ldquo;{externalSearchQuery}&rdquo;</span>
           </span>
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="text-black underline font-black uppercase cursor-pointer"
-            >
-              Clear search filter
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* ======================================================== */}
@@ -458,8 +431,8 @@ export function DemoSettingsCatalogView({
                 </span>
               </div>
 
-              {/* Tabulated Card Grid (High Contrast Neo-Brutalist + Translucent Background) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Tabulated Card Grid (Smaller Compact Cards - Neo-Brutalist + Translucent) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {items.map((item) => {
                   const isMonitored = monitoredIdSet.has(item.id);
                   const isToggling = togglingServiceId === item.id;
@@ -468,25 +441,20 @@ export function DemoSettingsCatalogView({
                   return (
                     <div
                       key={item.id}
-                      className={`rounded-2xl border-2 transition-all duration-150 p-6 space-y-5 ${
+                      className={`rounded-xl border-2 transition-all duration-150 p-4 space-y-3 ${
                         isMonitored
                           ? 'bg-white/95 backdrop-blur-md border-black shadow-md ring-2 ring-black'
                           : 'bg-white/80 backdrop-blur-md border-black hover:bg-white/95 shadow-xs'
                       }`}
                     >
-                      {/* Top Row: Provider & Access Tag */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-black opacity-70">
-                              {item.company}
-                            </span>
-                            <span className="text-black font-bold">&bull;</span>
-                            <span className="text-xs sm:text-sm font-bold uppercase text-neutral-600">
-                              {item.category}
-                            </span>
-                          </div>
-                          <h3 className="text-lg sm:text-xl font-black text-black tracking-tight">
+                      {/* Top Row: Provider, Title & Access Tag on one compact row */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-black uppercase text-neutral-600 truncate">
+                            {item.company}
+                          </span>
+                          <span className="text-neutral-400 font-bold">&bull;</span>
+                          <h3 className="text-base font-black text-black tracking-tight truncate">
                             {item.name}
                           </h3>
                         </div>
@@ -494,101 +462,98 @@ export function DemoSettingsCatalogView({
                         {/* Public vs Private Badge */}
                         <div className="shrink-0">
                           {isPrivate ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-black uppercase bg-amber-100 text-black border border-black">
-                              <Lock className="w-3.5 h-3.5 text-black" />
-                              <span>PRIVATE VPC</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black uppercase bg-amber-100 text-black border border-black">
+                              <Lock className="w-3 h-3 text-black" />
+                              <span>PRIVATE</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-black uppercase bg-emerald-100 text-black border border-black">
-                              <Globe className="w-3.5 h-3.5 text-black" />
-                              <span>PUBLIC API</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black uppercase bg-emerald-100 text-black border border-black">
+                              <Globe className="w-3 h-3 text-black" />
+                              <span>PUBLIC</span>
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Target Endpoint & Description */}
-                      <div className="space-y-2 bg-neutral-100/90 rounded-xl p-3.5 border border-black">
-                        <div className="font-mono text-xs sm:text-sm font-bold text-black truncate">
+                      {/* Target Endpoint & Description in compact box */}
+                      <div className="space-y-1 bg-neutral-100/90 rounded-lg p-2.5 border border-black text-xs">
+                        <div className="font-mono font-bold text-black truncate text-[11px] sm:text-xs">
                           {item.target_url}
                         </div>
-                        <p className="text-xs sm:text-sm font-semibold text-neutral-800 leading-relaxed">
+                        <p className="font-semibold text-neutral-800 line-clamp-2 text-xs leading-relaxed">
                           {item.description}
                         </p>
                       </div>
 
                       {/* Exposed Metric Measurements (Tabulated List) */}
-                      <div className="space-y-2.5 border-t-2 border-black/20 pt-3.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-black">
-                            EXPOSED METRIC MEASUREMENTS
+                      <div className="space-y-2 border-t-2 border-black/20 pt-2.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black uppercase tracking-wider text-black text-[11px] sm:text-xs">
+                            EXPOSED METRICS
                           </span>
-                          <span className="text-xs font-bold text-neutral-600 uppercase">
-                            HTTP Probe Latency Measurable
+                          <span className="font-bold text-neutral-600 uppercase text-[10px] sm:text-[11px]">
+                            HTTP Latency Measurable
                           </span>
                         </div>
 
-                        <div className="space-y-2 divide-y divide-black/10">
+                        <div className="space-y-1.5">
                           {item.metrics.map((metric) => {
                             if (metric.selectable) {
                               // Functional Checkbox for Response Time Latency
                               return (
                                 <div
                                   key={metric.id}
-                                  className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all select-none ${
+                                  className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all select-none ${
                                     isMonitored
                                       ? 'bg-neutral-50/95 border-black shadow-xs'
-                                      : 'border-transparent hover:bg-neutral-100/80'
+                                      : 'border-neutral-300 hover:border-black bg-white/70'
                                   }`}
                                 >
-                                  <label className="flex items-center gap-3.5 cursor-pointer flex-1">
+                                  <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0">
                                     <input
                                       type="checkbox"
                                       checked={isMonitored}
                                       onChange={() => handleToggleService(item)}
                                       disabled={isToggling}
-                                      className="w-5 h-5 rounded border-2 border-black text-black focus:ring-black cursor-pointer accent-black"
+                                      className="w-4 h-4 rounded border-2 border-black text-black focus:ring-black cursor-pointer accent-black shrink-0"
                                     />
-                                    <div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-sm sm:text-base font-black text-black">
+                                    <div className="min-w-0 truncate">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-xs sm:text-sm font-black text-black truncate">
                                           {metric.name}
                                         </span>
-                                        <span className="text-xs px-2 py-0.5 rounded border border-black font-mono font-bold bg-white text-black">
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded border border-black font-mono font-bold bg-white text-black shrink-0">
                                           {metric.unit}
                                         </span>
                                       </div>
-                                      <p className="text-xs sm:text-sm font-semibold text-neutral-700">
-                                        {metric.description}
-                                      </p>
                                     </div>
                                   </label>
 
                                   {/* Actions & Status Tag */}
-                                  <div className="shrink-0 flex items-center gap-2">
+                                  <div className="shrink-0 flex items-center gap-1.5 ml-2">
                                     {isToggling ? (
-                                      <RefreshCw className="w-4 h-4 animate-spin text-black" />
+                                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-black" />
                                     ) : isMonitored ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-black uppercase bg-black text-white border border-black">
-                                          <Check className="w-3.5 h-3.5 text-white" />
-                                          <span>ACTIVE IN DASHBOARD</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-black uppercase bg-black text-white border border-black">
+                                          <Check className="w-3 h-3 text-white" />
+                                          <span>ACTIVE</span>
                                         </span>
                                         {onInspectService && (
                                           <button
                                             type="button"
                                             onClick={() => onInspectService(item.id)}
-                                            className="px-2.5 py-1 rounded-md text-xs font-black uppercase bg-white hover:bg-neutral-100 text-black border border-black flex items-center gap-1 cursor-pointer"
+                                            className="px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-black uppercase bg-white hover:bg-neutral-100 text-black border border-black flex items-center gap-1 cursor-pointer"
                                             title="Inspect live time-series graph"
                                           >
-                                            <LineChart className="w-3.5 h-3.5" />
+                                            <LineChart className="w-3 h-3" />
                                             <span>GRAPH</span>
                                           </button>
                                         )}
                                       </div>
                                     ) : (
-                                      <span className="text-xs font-bold uppercase text-neutral-600 px-2 py-1 rounded border border-neutral-300">
-                                        Click to include
+                                      <span className="text-[10px] sm:text-xs font-bold uppercase text-neutral-600 px-2 py-0.5 rounded border border-neutral-300">
+                                        Include
                                       </span>
                                     )}
                                   </div>
@@ -605,31 +570,26 @@ export function DemoSettingsCatalogView({
                                     `"${metric.name}" cannot be checked: Synthetic HTTP probing can only measure Response Time / Latency. Host telemetry agent required for internal metrics.`
                                   )
                                 }
-                                className="flex items-center justify-between p-2.5 rounded-xl opacity-60 hover:opacity-100 transition-opacity cursor-not-allowed select-none"
+                                className="flex items-center justify-between p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-opacity cursor-not-allowed select-none text-xs"
                               >
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 min-w-0">
                                   <input
                                     type="checkbox"
                                     disabled
                                     checked={false}
-                                    className="w-4 h-4 rounded text-neutral-400 border-neutral-400 cursor-not-allowed"
+                                    className="w-3.5 h-3.5 rounded text-neutral-400 border-neutral-400 cursor-not-allowed shrink-0"
                                   />
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs sm:text-sm font-bold text-neutral-700 line-through">
-                                        {metric.name}
-                                      </span>
-                                      <span className="text-xs px-1.5 py-0.5 rounded bg-neutral-200 font-mono text-neutral-700">
-                                        {metric.unit}
-                                      </span>
-                                    </div>
-                                    <p className="text-xs text-neutral-600">
-                                      {metric.description}
-                                    </p>
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="text-xs font-bold text-neutral-700 line-through truncate">
+                                      {metric.name}
+                                    </span>
+                                    <span className="text-[10px] px-1 rounded bg-neutral-200 font-mono text-neutral-700 shrink-0">
+                                      {metric.unit}
+                                    </span>
                                   </div>
                                 </div>
 
-                                <span className="text-xs font-bold text-neutral-600 px-2.5 py-0.5 rounded border border-neutral-300 bg-neutral-100 shrink-0 uppercase">
+                                <span className="text-[10px] font-bold text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-300 bg-neutral-100 shrink-0 uppercase ml-2">
                                   Agent Required
                                 </span>
                               </div>

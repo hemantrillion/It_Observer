@@ -392,6 +392,7 @@ export function ObservatoryTelemetryEmbeddedView({
             onTriggerManualPoll={triggerPoll}
             isPolling={isPolling}
             hasWallpaper={hasWallpaper}
+            searchQuery={searchQuery}
             onInspectService={(id) => {
               setSelectedServiceId(id);
               fetchServiceDetails(id);

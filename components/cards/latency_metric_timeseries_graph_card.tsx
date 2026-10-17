@@ -94,17 +94,22 @@ export function LatencyMetricTimeseriesGraphCard({
   const [containerWidth, setContainerWidth] = useState<number>(1000);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  // Measure exact container width for 1:1 pixel aspect ratio (no text stretching)
+  // Measure exact container width dynamically using ResizeObserver for full-width edge-to-edge rendering
   useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        const w = containerRef.current.clientWidth;
-        if (w > 0) setContainerWidth(w);
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        if (w > 0) {
+          setContainerWidth(Math.round(w));
+        }
       }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    });
+    observer.observe(containerRef.current);
+    if (containerRef.current.clientWidth > 0) {
+      setContainerWidth(containerRef.current.clientWidth);
+    }
+    return () => observer.disconnect();
   }, []);
 
   // 1. Sort samples chronologically (oldest -> newest, left -> right)
@@ -141,14 +146,14 @@ export function LatencyMetricTimeseriesGraphCard({
     return { min, max, avg, p95, latest };
   }, [latencies]);
 
-  // SVG Coordinate Geometry with Generous Height to Avoid Squished Look
-  const svgWidth = Math.max(600, containerWidth);
+  // SVG Coordinate Geometry: Occupies full width from left padding to right edge
+  const svgWidth = Math.max(300, containerWidth);
   const svgHeight = 380;
-  const paddingLeft = 85;
-  const paddingRight = 45;
-  const paddingTop = 30;
-  const paddingBottom = 60;
-  const plotWidth = Math.max(300, svgWidth - paddingLeft - paddingRight);
+  const paddingLeft = 72;
+  const paddingRight = 18;
+  const paddingTop = 28;
+  const paddingBottom = 55;
+  const plotWidth = Math.max(100, svgWidth - paddingLeft - paddingRight);
   const plotHeight = Math.max(150, svgHeight - paddingTop - paddingBottom);
   const plotBaseline = paddingTop + plotHeight;
 
@@ -474,7 +479,8 @@ export function LatencyMetricTimeseriesGraphCard({
                 width="100%"
                 height="100%"
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="w-full h-full overflow-visible"
+                preserveAspectRatio="none"
+                className="w-full h-full block overflow-visible"
               >
                 <defs>
                   {/* Subtle Gradient Area Fill under the line (Light translucent tint on pure white) */}

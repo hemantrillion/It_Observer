@@ -559,190 +559,194 @@ export function ObservatoryMetricsDomainView({
   return (
     <div
       ref={containerRef}
-      className="flex-1 flex flex-col h-full overflow-y-auto bg-white select-text"
+      className="flex-1 flex flex-col h-full overflow-y-auto bg-transparent select-text p-5 sm:p-8 space-y-6 max-w-7xl mx-auto w-full font-sans"
     >
       {/* ======================================================== */}
-      {/* 1. DOMAIN HERO HEADER (BIG, SHARP, HIGH-CONTRAST)        */}
+      {/* 1. DOMAIN HERO HEADER (MATCHING DEMO SETTINGS BOX 4)     */}
       {/* ======================================================== */}
-      <div className="p-6 sm:p-8 border-b border-[#e0e2ec] shrink-0 bg-[#f8fafd]">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
-          <div className="space-y-3 max-w-4xl">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0] shadow-xs">
-                <IconComp className="w-7 h-7 stroke-[2.2]" />
-              </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#1f1f1f] tracking-tight">
-                {meta.title}
-              </h1>
-
-            </div>
-
-            <p className="text-base sm:text-xl text-[#3c4043] font-medium leading-relaxed">
-              {meta.description}
-            </p>
-          </div>
-
-          {/* Quick status badge */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#c4c7c5] text-xs sm:text-sm font-bold text-[#1f1f1f] shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Live Ingestion Ready</span>
+      <div className="bg-white/85 backdrop-blur-md rounded-2xl border-2 border-black p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3">
+            <span className="w-10 h-10 rounded-lg bg-black text-white flex items-center justify-center font-bold text-lg shadow-xs">
+              <IconComp className="w-5 h-5 text-white" />
             </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-black uppercase tracking-tight">
+              {meta.title}
+            </h1>
           </div>
+          <p className="text-sm sm:text-base font-semibold text-neutral-800 max-w-4xl leading-relaxed">
+            {meta.description}
+          </p>
+        </div>
+
+        {/* Quick status badge */}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-white/90 border-2 border-black text-xs sm:text-sm font-black uppercase text-black shadow-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>INGESTION ACTIVE</span>
+          </span>
         </div>
       </div>
 
       {/* ======================================================== */}
-      {/* 2. SUBOPTIONS SECTIONS (AWS, AZURE, GCP, MOBILE, WEB...)  */}
+      {/* 2. SUBOPTIONS SECTIONS (COMPACT NEO-BRUTALIST CARDS)     */}
       {/* ======================================================== */}
-      <div className="p-6 sm:p-8 space-y-12">
-        {meta.suboptions && meta.suboptions.length > 0 ? (
-          meta.suboptions.map((sub) => {
-            const isTargeted = activeSuboption === sub.id;
+      {meta.suboptions && meta.suboptions.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-black">
+              {meta.title} SUB-CATEGORIES ({meta.suboptions.length})
+            </span>
+            <span className="text-xs font-semibold text-neutral-600">
+              Compact Timeseries Graph Workspaces
+            </span>
+          </div>
 
-            return (
-              <section
-                key={sub.id}
-                id={sub.id}
-                className={`scroll-mt-8 p-6 sm:p-8 rounded-3xl border transition-all duration-300 ${
-                  isTargeted
-                    ? 'border-[#0b57d0] bg-[#f8fafd] shadow-lg ring-2 ring-[#0b57d0]/20'
-                    : 'border-[#e0e2ec] bg-[#fbfcfe] shadow-xs hover:border-[#c4c7c5]'
-                }`}
-              >
-                {/* Heading & Small Detail */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="text-2xl sm:text-3xl font-black text-[#1f1f1f] tracking-tight flex items-center gap-3">
-                      <span>{sub.title}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {meta.suboptions.map((sub) => {
+              const isTargeted = activeSuboption === sub.id;
+
+              return (
+                <section
+                  key={sub.id}
+                  id={sub.id}
+                  className={`scroll-mt-8 p-4 sm:p-5 rounded-xl border-2 transition-all duration-200 space-y-3.5 ${
+                    isTargeted
+                      ? 'bg-white/95 backdrop-blur-md border-black shadow-md ring-2 ring-black'
+                      : 'bg-white/80 backdrop-blur-md border-black hover:bg-white/95 shadow-xs'
+                  }`}
+                >
+                  {/* Top bar: title, id, status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h2 className="text-base sm:text-lg font-black text-black tracking-tight truncate">
+                        {sub.title}
+                      </h2>
                       {isTargeted && (
-                        <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#0b57d0] text-white">
-                          Selected
+                        <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded bg-black text-white shrink-0">
+                          SELECTED
                         </span>
                       )}
-                    </h2>
-                    <span className="text-xs sm:text-sm font-mono font-bold text-[#0b57d0] px-3 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                    </div>
+                    <span className="text-xs font-mono font-bold text-black px-2 py-0.5 rounded border border-black bg-neutral-100 shrink-0">
                       #{sub.id}
                     </span>
                   </div>
 
-                  <p className="text-base sm:text-lg text-[#3c4043] font-medium leading-relaxed max-w-5xl">
+                  <p className="text-xs sm:text-sm text-neutral-800 font-semibold line-clamp-2 leading-relaxed">
                     {sub.description}
                   </p>
 
-                  {/* Key Metrics Chips */}
-                  <div className="flex flex-wrap gap-3 pt-2">
+                  {/* Key Metrics Chips: compact badges */}
+                  <div className="flex flex-wrap gap-2">
                     {sub.keyMetrics.map((km, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white border border-[#e0e2ec] text-xs sm:text-sm font-semibold shadow-2xs"
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-neutral-100/90 border border-black text-[11px] sm:text-xs font-bold text-black"
                       >
-                        <span className="text-[#5e5e5e]">{km.label}:</span>
-                        <span className="text-[#1f1f1f] font-mono font-bold">{km.value}</span>
+                        <span className="opacity-70">{km.label}:</span>
+                        <span className="font-mono font-black">{km.value}</span>
                       </div>
                     ))}
                   </div>
-                </div>
 
-                {/* EMPTY WHITE BOX (As space left for graph - User Requested) */}
-                <div className="w-full h-72 sm:h-80 bg-white border-2 border-dashed border-[#c4c7c5] hover:border-[#0b57d0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-xs transition-colors group">
-                  <div className="w-14 h-14 rounded-full bg-[#f0f4f9] group-hover:bg-[#e8f0fe] flex items-center justify-center text-[#0b57d0] mb-3 transition-colors">
-                    <Activity className="w-7 h-7 stroke-[2.2]" />
+                  {/* Compact Graph Canvas Placeholder */}
+                  <div className="w-full h-32 sm:h-36 bg-white border-2 border-dashed border-black rounded-lg flex flex-col items-center justify-center p-3 text-center shadow-xs transition-colors group">
+                    <div className="w-8 h-8 rounded-md bg-black text-white flex items-center justify-center mb-1.5 shadow-xs">
+                      <Activity className="w-4 h-4 text-white" />
+                    </div>
+                    <h4 className="text-xs sm:text-sm font-black text-black uppercase tracking-tight">
+                      {sub.graphPlaceholderTitle}
+                    </h4>
+                    <p className="text-[11px] text-neutral-600 font-semibold max-w-sm mt-0.5 line-clamp-1">
+                      {sub.graphPlaceholderSubtitle}
+                    </p>
+                    <span className="mt-1 text-[10px] font-black uppercase tracking-wider text-black bg-neutral-100 px-2 py-0.5 rounded border border-black">
+                      Timeseries Canvas Space
+                    </span>
                   </div>
-                  <h4 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
-                    {sub.graphPlaceholderTitle}
-                  </h4>
-                  <p className="text-sm sm:text-base text-[#5e5e5e] font-medium max-w-lg mt-2 leading-relaxed">
-                    {sub.graphPlaceholderSubtitle}
-                  </p>
-                  <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0b57d0] bg-[#e8f0fe] px-3.5 py-1 rounded-full">
-                    Canvas Graph Rendering Area
-                  </span>
-                </div>
-              </section>
-            );
-          })
-        ) : (
-          /* Default category view for categories without suboptions (with big fonts & graph placeholder) */
-          <section className="p-6 sm:p-8 rounded-3xl border border-[#e0e2ec] bg-[#fbfcfe] shadow-xs space-y-6">
-            <div className="space-y-3">
-              <h2 className="text-2xl sm:text-3xl font-black text-[#1f1f1f] tracking-tight">
-                {meta.title} Timeseries Analytics
-              </h2>
-              <p className="text-base sm:text-lg text-[#3c4043] font-medium leading-relaxed max-w-5xl">
-                {meta.description}
-              </p>
-            </div>
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        /* Default category view for categories without suboptions (with compact graph placeholder) */
+        <section className="bg-white/80 backdrop-blur-md p-5 sm:p-6 rounded-2xl border-2 border-black shadow-xs space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-xl sm:text-2xl font-black text-black tracking-tight">
+              {meta.title} Timeseries Analytics
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-800 font-semibold leading-relaxed max-w-4xl">
+              {meta.description}
+            </p>
+          </div>
 
-            {/* EMPTY WHITE BOX FOR GRAPH */}
-            <div className="w-full h-80 sm:h-96 bg-white border-2 border-dashed border-[#c4c7c5] hover:border-[#0b57d0] rounded-2xl flex flex-col items-center justify-center p-8 text-center shadow-xs transition-colors">
-              <div className="w-14 h-14 rounded-full bg-[#f0f4f9] flex items-center justify-center text-[#0b57d0] mb-3">
-                <Activity className="w-7 h-7 stroke-[2.2]" />
-              </div>
-              <h4 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
-                {meta.title} Telemetry Graph Space
-              </h4>
-              <p className="text-sm sm:text-base text-[#5e5e5e] font-medium max-w-lg mt-2 leading-relaxed">
-                Real-time timeseries canvas placeholder for {meta.prometheusPrefix} metric streams
-              </p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0b57d0] bg-[#e8f0fe] px-3.5 py-1 rounded-full">
-                Canvas Graph Rendering Area
-              </span>
+          {/* Compact Graph Canvas Placeholder */}
+          <div className="w-full h-40 sm:h-48 bg-white border-2 border-dashed border-black rounded-xl flex flex-col items-center justify-center p-4 text-center shadow-xs transition-colors">
+            <div className="w-9 h-9 rounded-md bg-black text-white flex items-center justify-center mb-2 shadow-xs">
+              <Activity className="w-5 h-5 text-white" />
             </div>
-          </section>
-        )}
-
-        {/* Telemetry Dictionary Table with sharp, big fonts */}
-        <div className="space-y-4 pt-4 border-t border-[#e0e2ec]">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
-              {activeCategory} Metrics Dictionary & Schema Spec
-            </h3>
-            <span className="text-xs sm:text-sm font-semibold text-[#5e5e5e]">
-              OpenTelemetry Standard
+            <h4 className="text-sm sm:text-base font-black text-black uppercase tracking-tight">
+              {meta.title} Telemetry Graph Space
+            </h4>
+            <p className="text-xs text-neutral-600 font-semibold max-w-md mt-0.5 leading-relaxed">
+              Real-time timeseries canvas placeholder for {meta.prometheusPrefix} metric streams
+            </p>
+            <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-black bg-neutral-100 px-2.5 py-0.5 rounded border border-black">
+              Timeseries Canvas Space
             </span>
           </div>
+        </section>
+      )}
 
-          <div className="border border-[#e0e2ec] rounded-2xl overflow-hidden shadow-xs bg-white">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#f0f4f9] text-[#444746] text-xs sm:text-sm font-bold border-b border-[#e0e2ec]">
-                  <th className="py-3.5 px-5">Metric Name</th>
-                  <th className="py-3.5 px-5">Type</th>
-                  <th className="py-3.5 px-5">Unit</th>
-                  <th className="py-3.5 px-5">Description</th>
-                  <th className="py-3.5 px-5 text-right">Latest Sample</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e0e2ec] text-xs sm:text-sm">
-                {meta.sampleMetrics.map((m) => (
-                  <tr key={m.name} className="hover:bg-[#f8fafd] transition-colors">
-                    <td className="py-3.5 px-5 font-mono font-bold text-[#0b57d0]">
-                      {m.name}
-                    </td>
-                    <td className="py-3.5 px-5">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                          m.type === 'Gauge'
-                            ? 'bg-[#e8f0fe] text-[#0b57d0]'
-                            : m.type === 'Counter'
-                            ? 'bg-[#e6f4ea] text-[#137333]'
-                            : 'bg-[#fef7e0] text-[#b06000]'
-                        }`}
-                      >
-                        {m.type}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-5 text-[#5e5e5e] font-semibold">{m.unit}</td>
-                    <td className="py-3.5 px-5 text-[#2d3135] font-medium max-w-md">{m.description}</td>
-                    <td className="py-3.5 px-5 font-mono font-black text-[#1f1f1f] text-right">
-                      {m.sampleValue}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* ======================================================== */}
+      {/* 3. METRICS DICTIONARY TABLE (NEO-BRUTALIST GRAPH STYLE)  */}
+      {/* ======================================================== */}
+      <div className="bg-white/85 backdrop-blur-md rounded-2xl border-2 border-black p-5 sm:p-6 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between border-b-2 border-black/20 pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 bg-black inline-block" />
+            <h3 className="text-lg sm:text-xl font-black text-black uppercase tracking-tight">
+              {activeCategory} METRICS DICTIONARY &amp; SCHEMA SPEC
+            </h3>
           </div>
+          <span className="text-xs font-black uppercase text-black px-2.5 py-1 rounded border border-black bg-neutral-100">
+            OPENTELEMETRY STANDARD
+          </span>
+        </div>
+
+        <div className="border-2 border-black rounded-xl overflow-hidden bg-white shadow-xs">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-black text-white text-xs sm:text-sm font-black uppercase border-b-2 border-black">
+                <th className="py-2.5 px-4">Metric Name</th>
+                <th className="py-2.5 px-4">Type</th>
+                <th className="py-2.5 px-4">Unit</th>
+                <th className="py-2.5 px-4">Description</th>
+                <th className="py-2.5 px-4 text-right">Latest Sample</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/15 text-xs sm:text-sm font-semibold">
+              {meta.sampleMetrics.map((m) => (
+                <tr key={m.name} className="hover:bg-neutral-50 transition-colors">
+                  <td className="py-2.5 px-4 font-mono font-bold text-black">
+                    {m.name}
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <span className="px-2 py-0.5 rounded border border-black text-[11px] font-black uppercase bg-neutral-100 text-black">
+                      {m.type}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-4 text-neutral-700">{m.unit}</td>
+                  <td className="py-2.5 px-4 text-neutral-800 max-w-md">{m.description}</td>
+                  <td className="py-2.5 px-4 font-mono font-black text-black text-right">
+                    {m.sampleValue}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

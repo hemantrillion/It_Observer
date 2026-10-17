@@ -86,11 +86,7 @@ export function GmailTopNavbar({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            placeholder={
-              activeMode === 'demo'
-                ? 'Search InfraTrace telemetry, services, metrics...'
-                : 'Search in InfraTrace'
-            }
+            placeholder="Search InfraTrace telemetry, services, metrics..."
             className={`w-full bg-transparent text-sm outline-none font-sans ${
               hasWallpaper
                 ? 'text-white placeholder:text-white/70 group-focus-within:text-[#1f1f1f] group-focus-within:placeholder:text-[#5e5e5e]'

@@ -148,9 +148,7 @@ export function GmailLeftSidebar({
   activeUserSection = 'accounts',
   onSelectUserSection,
 }: GmailLeftSidebarProps) {
-  const [expandedMetricsCategory, setExpandedMetricsCategory] = React.useState<MetricsCategory | null>(
-    activeMetricsCategory || 'Cloud'
-  );
+  const [expandedMetricsCategory, setExpandedMetricsCategory] = React.useState<MetricsCategory | null>(null);
 
   const handleToggleCategory = (cat: MetricsCategory) => {
     onSelectMetricsCategory?.(cat);
