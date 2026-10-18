@@ -330,95 +330,97 @@ export function GmailLeftSidebar({
 
 
 
-          {/* Telemetry Filters Section */}
-          <div
-            className={`pt-4 border-t mt-3 ${
-              hasWallpaper ? 'border-white/20' : 'border-[#e0e2ec]'
-            }`}
-          >
+          {/* Telemetry Filters Section: Only visible when on the dashboard subview of Demo */}
+          {demoSubView === 'dashboard' && (
             <div
-              className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center justify-between ${
-                hasWallpaper ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]' : 'text-[#444746]'
+              className={`pt-4 border-t mt-3 ${
+                hasWallpaper ? 'border-white/20' : 'border-[#e0e2ec]'
               }`}
             >
-              <span>Status Filters</span>
+              <div
+                className={`px-4 py-1.5 text-xs font-bold uppercase tracking-wider flex items-center justify-between ${
+                  hasWallpaper ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]' : 'text-[#444746]'
+                }`}
+              >
+                <span>Status Filters</span>
+              </div>
+
+              <div className="mt-1 space-y-0.5">
+                <button
+                  onClick={() => onSelectStatusFilter('ALL')}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                    statusFilter === 'ALL'
+                      ? hasWallpaper
+                        ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                        : 'bg-[#eaf1fb] text-[#041e49]'
+                      : hasWallpaper
+                      ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                  }`}
+                >
+                  <span>All Targets</span>
+                  <span className="font-bold">{totalServicesCount}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectStatusFilter('HEALTHY')}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                    statusFilter === 'HEALTHY'
+                      ? hasWallpaper
+                        ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                        : 'bg-[#eaf1fb] text-[#041e49]'
+                      : hasWallpaper
+                      ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-xs" />
+                    <span>Healthy</span>
+                  </div>
+                  <span className="font-bold">{healthyCount}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectStatusFilter('DEGRADED')}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                    statusFilter === 'DEGRADED'
+                      ? hasWallpaper
+                        ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                        : 'bg-[#eaf1fb] text-[#041e49]'
+                      : hasWallpaper
+                      ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-xs" />
+                    <span>Degraded</span>
+                  </div>
+                  <span className="font-bold">{degradedCount}</span>
+                </button>
+
+                <button
+                  onClick={() => onSelectStatusFilter('DOWN')}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                    statusFilter === 'DOWN'
+                      ? hasWallpaper
+                        ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                        : 'bg-[#eaf1fb] text-[#041e49]'
+                      : hasWallpaper
+                      ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs" />
+                    <span>Down</span>
+                  </div>
+                  <span className="font-bold">{downCount}</span>
+                </button>
+              </div>
             </div>
-
-            <div className="mt-1 space-y-0.5">
-              <button
-                onClick={() => onSelectStatusFilter('ALL')}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-                  statusFilter === 'ALL'
-                    ? hasWallpaper
-                      ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                      : 'bg-[#eaf1fb] text-[#041e49]'
-                    : hasWallpaper
-                    ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                    : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-                }`}
-              >
-                <span>All Targets</span>
-                <span className="font-bold">{totalServicesCount}</span>
-              </button>
-
-              <button
-                onClick={() => onSelectStatusFilter('HEALTHY')}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-                  statusFilter === 'HEALTHY'
-                    ? hasWallpaper
-                      ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                      : 'bg-[#eaf1fb] text-[#041e49]'
-                    : hasWallpaper
-                    ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                    : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow-xs" />
-                  <span>Healthy</span>
-                </div>
-                <span className="font-bold">{healthyCount}</span>
-              </button>
-
-              <button
-                onClick={() => onSelectStatusFilter('DEGRADED')}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-                  statusFilter === 'DEGRADED'
-                    ? hasWallpaper
-                      ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                      : 'bg-[#eaf1fb] text-[#041e49]'
-                    : hasWallpaper
-                    ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                    : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow-xs" />
-                  <span>Degraded</span>
-                </div>
-                <span className="font-bold">{degradedCount}</span>
-              </button>
-
-              <button
-                onClick={() => onSelectStatusFilter('DOWN')}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-                  statusFilter === 'DOWN'
-                    ? hasWallpaper
-                      ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                      : 'bg-[#eaf1fb] text-[#041e49]'
-                    : hasWallpaper
-                    ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                    : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block shadow-xs" />
-                  <span>Down</span>
-                </div>
-                <span className="font-bold">{downCount}</span>
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       </aside>
     );

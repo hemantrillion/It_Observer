@@ -163,8 +163,8 @@ export function ObservatoryTelemetryEmbeddedView({
 
   return (
     <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-slate-50/60'} overflow-y-auto font-sans select-text w-full`}>
-      {/* Top Header Bar: Only render if not inspecting and statusFilter is active */}
-      {!selectedServiceId && statusFilter !== 'ALL' && (
+      {/* Top Header Bar: Only render if not inspecting, in dashboard subview, and statusFilter is active */}
+      {!selectedServiceId && demoSubView === 'dashboard' && statusFilter !== 'ALL' && (
         <div className={`h-10 border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-bold border border-blue-200">

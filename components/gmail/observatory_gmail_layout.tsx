@@ -15,6 +15,7 @@ import { GmailInboxView } from '@/components/gmail/gmail_inbox_view';
 import { ObservatoryTelemetryEmbeddedView } from '@/components/gmail/observatory_telemetry_embedded_view';
 import { ObservatoryUsersDatabaseView } from '@/components/gmail/observatory_users_database_view';
 import { ObservatoryMetricsDomainView } from '@/components/gmail/observatory_metrics_domain_view';
+import { SystemOverviewMetricsBarContainer } from '@/components/containers/system_overview_metrics_bar_container';
 import {
   GmailQuickSettingsPanel,
   DensityOption,
@@ -24,7 +25,7 @@ import {
 import { GmailAccountFlyoutPanel } from '@/components/gmail/gmail_account_flyout_panel';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
-import { MessageSquare, Video } from 'lucide-react';
+import { MessageSquare, Video, Terminal } from 'lucide-react';
 
 interface ObservatoryGmailLayoutProps {
   onNavigateLanding?: () => void;
@@ -369,21 +370,50 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                 />
               ) : activeRailTab === 'mail' ? (
                 <GmailInboxView density={density} hasWallpaper={hasWallpaper} />
+              ) : activeRailTab === 'chat' ? (
+                <div
+                  className={`flex-1 flex flex-col h-full ${
+                    hasWallpaper ? 'bg-transparent' : 'bg-slate-50/60'
+                  } overflow-y-auto font-sans select-text w-full p-6 space-y-6`}
+                >
+                  {/* System Telemetry Overview Header (Matching Demo Dashboard, Empty) */}
+                  <section className="space-y-2.5 w-full">
+                    <div className="flex items-center justify-between pb-1">
+                      <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                        System Telemetry Overview
+                      </h2>
+                    </div>
+                    <SystemOverviewMetricsBarContainer
+                      total={0}
+                      healthy={0}
+                      degraded={0}
+                      down={0}
+                      activeAlerts={0}
+                    />
+                  </section>
+
+                  {/* Empty Console Telemetry State Card */}
+                  <div className="flex-1 bg-white border border-slate-200/90 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-2xs">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 mb-3">
+                      <Terminal className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      No Console Telemetry Active
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-sm mt-1 leading-relaxed">
+                      Attach a telemetry target or configure a probe to monitor realtime console activity.
+                    </p>
+                  </div>
+                </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
                   <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">
-                    <MessageSquare className="w-8 h-8" />
+                    <Video className="w-8 h-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#1f1f1f]">Google Chat</h3>
+                  <h3 className="text-xl font-bold text-[#1f1f1f]">Google Meet</h3>
                   <p className="max-w-md text-sm text-[#444746]">
-                    Direct messages and spaces for infrastructure incident response teams and DevOps notifications.
+                    Real-time video meetings and war room collaboration for live outages.
                   </p>
-                  <button
-                    onClick={() => setActiveRailTab('demo')}
-                    className="px-5 py-2 rounded-full bg-[#0b57d0] text-white text-xs font-semibold shadow-xs cursor-pointer"
-                  >
-                    Go to Telemetry Demo
-                  </button>
                 </div>
               )}
             </main>

@@ -6,6 +6,7 @@ import {
   Globe,
   Key,
   FileText,
+  ShieldCheck,
 } from 'lucide-react';
 import { UserSection } from './gmail_left_sidebar';
 
@@ -31,9 +32,6 @@ export function ObservatoryUsersDatabaseView({
               {activeSection === 'apikeys' && 'API Access Tokens & Notification Webhooks'}
               {activeSection === 'audit' && 'User Security & Session Audit Trail'}
             </h2>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-              Database Schema
-            </span>
           </div>
 
           <p className="text-xs text-slate-500 mt-1.5 max-w-2xl leading-relaxed font-medium">
@@ -133,54 +131,19 @@ export function ObservatoryUsersDatabaseView({
                   <th className="py-2.5 px-4">Assigned Users</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                <tr className="hover:bg-slate-50/70">
-                  <td className="py-3 px-4 font-bold text-blue-600">Platform Admin</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Full Control
-                    </span>
+              <tbody>
+                <tr>
+                  <td colSpan={4} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+                        <ShieldCheck className="w-5 h-5" />
+                      </div>
+                      <h4 className="text-sm font-bold text-slate-900">No Roles Configured</h4>
+                      <p className="text-xs text-slate-500 max-w-md font-medium">
+                        Role definitions and access control policies have not been decided yet. Custom user roles and capabilities will be displayed here once established.
+                      </p>
+                    </div>
                   </td>
-                  <td className="py-3 px-4 text-slate-600">
-                    Cluster administration, raw database queries, chaos injection testing, role assignment.
-                  </td>
-                  <td className="py-3 px-4 font-mono text-slate-400">0 users</td>
-                </tr>
-                <tr className="hover:bg-slate-50/70">
-                  <td className="py-3 px-4 font-bold text-slate-900">SRE / Operator</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                      Operational Write
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">
-                    Add/edit monitored websites, trigger manual polling, acknowledge incident alerts.
-                  </td>
-                  <td className="py-3 px-4 font-mono text-slate-400">0 users</td>
-                </tr>
-                <tr className="hover:bg-slate-50/70">
-                  <td className="py-3 px-4 font-bold text-slate-900">Security Auditor</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                      Audit Read-Only
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">
-                    Inspect database query logs, session audit trail, and compliance reports.
-                  </td>
-                  <td className="py-3 px-4 font-mono text-slate-400">0 users</td>
-                </tr>
-                <tr className="hover:bg-slate-50/70">
-                  <td className="py-3 px-4 font-bold text-slate-900">Viewer / Developer</td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                      Metrics Read-Only
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-600">
-                    View real-time telemetry dashboards and latency graphs for authorized websites.
-                  </td>
-                  <td className="py-3 px-4 font-mono text-slate-400">0 users</td>
                 </tr>
               </tbody>
             </table>

@@ -267,33 +267,6 @@ export function GmailQuickSettingsPanel({
 
           <div className="border-t border-[#c4c7c5]/40" />
 
-          {/* Section: Graph Visualization Format (Static Setting for actual metrics) */}
-          <div className="space-y-3">
-            <span className="text-xs font-semibold text-[#444746] tracking-wide uppercase">
-              Graph Visualization Format
-            </span>
-            <div className="space-y-1.5">
-              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-[#0b57d0] flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-[#0b57d0]" />
-                  </div>
-                  <span className="text-xs font-medium text-[#1f1f1f]">Smooth Area Curve</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">Default</span>
-              </label>
-              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-[#747775]" />
-                  <span className="text-xs font-medium text-[#1f1f1f]">Vertical Bar Histogram</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">Discrete</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="border-t border-[#c4c7c5]/40" />
-
           {/* Section: Theme */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -351,6 +324,33 @@ export function GmailQuickSettingsPanel({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div className="border-t border-[#c4c7c5]/40" />
+
+          {/* Section: Graph Visualization Format (Static Setting for actual metrics - Placed Below Theme) */}
+          <div className="space-y-3">
+            <span className="text-xs font-semibold text-[#444746] tracking-wide uppercase">
+              Graph Visualization Format
+            </span>
+            <div className="space-y-1.5">
+              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full border-2 border-[#0b57d0] flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-[#0b57d0]" />
+                  </div>
+                  <span className="text-xs font-medium text-[#1f1f1f]">Smooth Area Curve</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">Default</span>
+              </label>
+              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full border-2 border-[#747775]" />
+                  <span className="text-xs font-medium text-[#1f1f1f]">Vertical Bar Histogram</span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">Discrete</span>
+              </label>
             </div>
           </div>
         </div>

@@ -1,12 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Search,
   SlidersHorizontal,
   HelpCircle,
   Settings,
   ChevronDown,
+  Lock,
+  Plus,
 } from 'lucide-react';
 
 interface GmailTopNavbarProps {
@@ -38,6 +40,25 @@ export function GmailTopNavbar({
   hasWallpaper = false,
   onNavigateLanding,
 }: GmailTopNavbarProps) {
+  const [isPrivateApiMenuOpen, setIsPrivateApiMenuOpen] = useState(false);
+  const privateApiMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        privateApiMenuRef.current &&
+        !privateApiMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsPrivateApiMenuOpen(false);
+      }
+    }
+    if (isPrivateApiMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPrivateApiMenuOpen]);
   return (
     <header className="h-16 flex items-center pr-4 pl-0 bg-transparent shrink-0 select-none">
       {/* Left: InfraTrace Logo & Wordmark (Exact width matching Box 2 so search aligns with Box 4) */}
@@ -127,19 +148,94 @@ export function GmailTopNavbar({
           </button>
         )}
 
-        {/* Status Pill (Active) */}
-        <div
-          className={`hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
-            hasWallpaper
-              ? 'bg-white/15 hover:bg-white/25 border border-white/25 text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-              : 'border border-[#747775]/35 text-[#1f1f1f] hover:bg-black/5'
-          }`}
-        >
-          <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block shadow-xs" />
-          <span>Active</span>
-          <ChevronDown
-            className={`w-4 h-4 ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
-          />
+        {/* Private API Dropdown Trigger & Popover */}
+        <div className="relative" ref={privateApiMenuRef}>
+          <button
+            type="button"
+            onClick={() => setIsPrivateApiMenuOpen((prev) => !prev)}
+            className={`hidden md:flex items-center gap-2.5 h-10 px-4 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
+              hasWallpaper
+                ? 'bg-white/15 hover:bg-white/25 border border-white/25 text-white backdrop-blur-md drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'border border-[#747775]/35 text-[#1f1f1f] hover:bg-black/5'
+            }`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full bg-[#188038] inline-block shadow-xs" />
+            <span>Private API</span>
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${
+                isPrivateApiMenuOpen ? 'rotate-180' : ''
+              } ${hasWallpaper ? 'text-white' : 'text-[#444746]'}`}
+            />
+          </button>
+
+          {/* Private API Popover Box (similar to settings/profile popover) */}
+          {isPrivateApiMenuOpen && (
+            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-3 px-3 z-50 animate-in fade-in zoom-in-95 text-slate-900 font-sans select-none">
+              <div className="px-3 pb-2.5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Private APIs</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    Internal VPC & microservice health endpoints
+                  </p>
+                </div>
+                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600">
+                  Samples
+                </span>
+              </div>
+
+              {/* Sample unclickable APIs */}
+              <div className="py-2 space-y-1.5">
+                <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-100 space-y-1 cursor-default">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      Sample Private API Health API
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Sample
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-mono text-slate-500 truncate">
+                    https://auth.internal.vpc/healthz
+                  </p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium pt-0.5">
+                    <span>Port 8443</span>
+                    <span>&bull;</span>
+                    <span>VPC Private Subnet</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-100 space-y-1 cursor-default">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      Cloud API Sample
+                    </span>
+                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Sample
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-mono text-slate-500 truncate">
+                    https://cloud.internal-mesh.aws/metrics
+                  </p>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium pt-0.5">
+                    <span>Port 9090</span>
+                    <span>&bull;</span>
+                    <span>Service Mesh Gateway</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Unclickable option saying "add new private api" */}
+              <div className="pt-2 border-t border-slate-100">
+                <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 text-slate-400 text-xs font-bold cursor-not-allowed select-none">
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add new private API</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Support Help (40px circle with 22px icon) */}
