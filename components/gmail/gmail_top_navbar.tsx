@@ -65,9 +65,7 @@ export function GmailTopNavbar({
         onClick={onNavigateLanding}
         title="InfraTrace - Click to view Landing Page"
         className={`${
-          isSidebarOpen
-            ? (showFlexboxBorders ? 'w-[262px]' : 'w-64')
-            : 'w-48'
+          showFlexboxBorders ? 'w-[262px]' : 'w-64'
         } flex items-center gap-3 cursor-pointer shrink-0 pl-3 pr-2 transition-all duration-200 group`}
       >
         <img
@@ -256,21 +254,25 @@ export function GmailTopNavbar({
           </svg>
         </button>
 
-        {/* User Profile Avatar (40px circle matching real Gmail without dot) */}
+        {/* User Profile Avatar (InfraTrace Logo) */}
         <button
           type="button"
           onClick={onOpenAccountMenu}
           data-panel-trigger="account-flyout"
-          title="Google Account"
-          aria-label="Google Account"
+          title="Account"
+          aria-label="Account"
           className="relative cursor-pointer ml-1 focus:outline-none"
         >
           <div
-            className={`w-10 h-10 rounded-full bg-[#004d40] text-white font-medium text-base flex items-center justify-center shadow-xs transition-transform hover:scale-105 ${
-              isAccountMenuOpen ? 'ring-2 ring-white/80' : ''
+            className={`w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-xs transition-transform hover:scale-105 border border-slate-200/90 overflow-hidden ${
+              isAccountMenuOpen ? 'ring-2 ring-blue-500' : ''
             }`}
           >
-            H
+            <img
+              src="/infra_trace_logo.png"
+              alt="Test User"
+              className="w-7 h-7 object-contain"
+            />
           </div>
         </button>
       </div>

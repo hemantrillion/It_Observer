@@ -271,8 +271,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
         <GmailAccountFlyoutPanel
           isOpen={isAccountFlyoutOpen}
           onClose={() => setIsAccountFlyoutOpen(false)}
-          userName="HemanT"
-          userEmail="hemantrillion@gmail.com"
+          userName="Test User"
+          userEmail="xyztestuser@gmail.com"
         />
 
         {/* Body below Box 3: Horizontal flex row holding Box 2, 4, 5 */}
@@ -386,11 +386,11 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                       </h2>
                     </div>
                     <SystemOverviewMetricsBarContainer
-                      total={summary.total}
-                      healthy={summary.healthy}
-                      degraded={summary.degraded}
-                      down={summary.down}
-                      activeAlerts={summary.activeAlerts}
+                      total={0}
+                      healthy={0}
+                      degraded={0}
+                      down={0}
+                      activeAlerts={0}
                       onSelectIncidents={() => {
                         setActiveRailTab('demo');
                         setDemoSubView('incidents');
@@ -405,12 +405,12 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
 
                   {/* 2. Interactive Chaos Injection Panel (Box A) & Outage Notifications (Box B) Side-by-Side */}
                   <section className="w-full flex flex-col md:flex-row gap-4">
-                    {/* Box A: Chaos Injection Panel */}
+                    {/* Box A: Chaos Injection Panel (Console Standalone) */}
                     <div className="w-full md:w-80 lg:w-96 shrink-0">
-                      <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
+                      <ChaosTestingControlPanelContainer onChaosTriggered={() => {}} />
                     </div>
 
-                    {/* Box B: Outage Notifications */}
+                    {/* Box B: Outage Notifications (Console has zero active outages since no endpoints configured) */}
                     <div className="flex-1 flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
                       <div>
                         {/* Header with Title and Severity Legend */}
@@ -419,11 +419,6 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                             <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
                               Outage Notifications
                             </h3>
-                            {activeIncidents.length > 0 && (
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                                {activeIncidents.length} active
-                              </span>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
@@ -440,18 +435,9 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
 
                         {/* Active Outages List */}
                         <div className="mt-2.5 space-y-2">
-                          {activeIncidents.length > 0 ? (
-                            activeIncidents.slice(0, 2).map((incident) => (
-                              <ActiveIncidentAlertNotificationCard
-                                key={incident.id}
-                                incident={incident}
-                              />
-                            ))
-                          ) : (
-                            <div className="py-6 text-center text-xs text-slate-500 font-medium">
-                              Zero active outages &mdash; all monitored endpoints operating normally.
-                            </div>
-                          )}
+                          <div className="py-6 text-center text-xs text-slate-500 font-medium">
+                            Zero active outages &mdash; all monitored endpoints operating normally.
+                          </div>
                         </div>
                       </div>
 

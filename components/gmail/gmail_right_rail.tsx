@@ -12,7 +12,7 @@ export function GmailRightRail({ hasWallpaper = false }: GmailRightRailProps) {
 
   if (isCollapsed) {
     return (
-      <aside className="w-6 flex flex-col items-center justify-end py-3 shrink-0 bg-transparent select-none">
+      <aside className="w-6 h-full flex flex-col items-center justify-end py-3 shrink-0 bg-transparent select-none">
         <button
           onClick={() => setIsCollapsed(false)}
           title="Show side panel"
@@ -29,7 +29,7 @@ export function GmailRightRail({ hasWallpaper = false }: GmailRightRailProps) {
   }
 
   return (
-    <aside className="w-14 flex flex-col items-center py-3 shrink-0 bg-transparent justify-between select-none">
+    <aside className="w-14 h-full flex flex-col items-center py-3 shrink-0 bg-transparent justify-between select-none">
       {/* Top App Icons */}
       <div className="flex flex-col items-center gap-4">
         {/* Google Calendar */}
@@ -113,7 +113,7 @@ export function GmailRightRail({ hasWallpaper = false }: GmailRightRailProps) {
       </div>
 
       {/* Bottom Collapse Button */}
-      <div className="pb-1">
+      <div className="pb-1 mt-auto">
         <button
           onClick={() => setIsCollapsed(true)}
           title="Hide side panel"
