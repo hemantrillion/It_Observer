@@ -129,7 +129,7 @@ export function initializeObservatoryTables(): void {
   }
 
   // Seed default Test User if not present
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM platform_users WHERE email = "xyztestuser@gmail.com"').get() as { count: number };
+  const userCount = db.prepare('SELECT COUNT(*) as count FROM platform_users WHERE email = ?').get('xyztestuser@gmail.com') as { count: number };
   if (userCount.count === 0) {
     const now = new Date().toISOString();
     db.prepare(`
@@ -139,7 +139,7 @@ export function initializeObservatoryTables(): void {
   }
 
   // Seed initial mailbox welcoming test user if empty
-  const mailCount = db.prepare('SELECT COUNT(*) as count FROM platform_mailbox WHERE recipient_email = "xyztestuser@gmail.com"').get() as { count: number };
+  const mailCount = db.prepare('SELECT COUNT(*) as count FROM platform_mailbox WHERE recipient_email = ?').get('xyztestuser@gmail.com') as { count: number };
   if (mailCount.count === 0) {
     const now = new Date().toISOString();
     db.prepare(`

@@ -8,6 +8,8 @@ import {
   Filter,
   Layers,
   Search,
+  Cloud,
+  Plus,
 } from 'lucide-react';
 import { MetricsCategory } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
@@ -25,6 +27,7 @@ interface ObservatoryMetricsDomainViewProps {
   hasWallpaper?: boolean;
   searchQuery?: string;
   onSelectSuboption?: (subId: string) => void;
+  userEmail?: string;
 }
 
 const TIME_RANGES = [
@@ -43,6 +46,7 @@ export function ObservatoryMetricsDomainView({
   hasWallpaper = false,
   searchQuery = '',
   onSelectSuboption,
+  userEmail = 'xyztestuser@gmail.com',
 }: ObservatoryMetricsDomainViewProps) {
   // Category Metadata from Excel Catalogue
   const meta = useMemo(() => getCategoryMetadata(activeCategory), [activeCategory]);
@@ -219,7 +223,27 @@ export function ObservatoryMetricsDomainView({
           </div>
         )}
 
-        {metricGroups.length === 0 ? (
+        {userEmail && userEmail !== 'xyztestuser@gmail.com' ? (
+          <div className="p-12 text-center text-slate-500 bg-white border border-slate-200/90 rounded-2xl shadow-2xs space-y-4 max-w-xl mx-auto my-8">
+            <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+              <Cloud className="w-7 h-7" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-slate-900">No Private Metrics Configured Yet</h4>
+              <p className="text-xs text-slate-500 max-w-md mx-auto">
+                Dummy metric graphs are hidden for real user accounts. Register your private API suite or AWS cloud endpoints to start capturing real-time metrics.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.location.href = '/private-api'}
+              className="px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs inline-flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add New Private API Suite</span>
+            </button>
+          </div>
+        ) : metricGroups.length === 0 ? (
           <div className="p-12 text-center text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-2">
             <Filter className="w-8 h-8 text-slate-400 mx-auto" />
             <h4 className="text-sm font-bold text-slate-700">No matching metrics found</h4>

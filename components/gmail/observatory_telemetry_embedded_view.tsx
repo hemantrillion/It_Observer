@@ -203,61 +203,21 @@ export function ObservatoryTelemetryEmbeddedView({
             </div>
           </div>
         ) : demoSubView === 'dashboard' ? (
-          userEmail && userEmail !== 'xyztestuser@gmail.com' ? (
-            /* Clean Empty Dashboard for Real User until private APIs are registered */
-            <div className="space-y-5 w-full">
-              <section className="space-y-2.5 w-full">
-                <div className="flex items-center justify-between pb-1">
-                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                    Private Telemetry Overview
-                  </h2>
-                </div>
-                <SystemOverviewMetricsBarContainer
-                  total={0}
-                  healthy={0}
-                  degraded={0}
-                  down={0}
-                  activeAlerts={0}
-                />
-              </section>
-
-              <div className="p-12 rounded-3xl bg-white border border-slate-200/90 shadow-2xs text-center space-y-4 my-4">
-                <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-                  <Cloud className="w-7 h-7" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-base font-bold text-slate-900">No Private APIs Configured Yet</h3>
-                  <p className="text-xs text-slate-500 max-w-md mx-auto">
-                    Dummy telemetry graphs are hidden for real user accounts. Register your private API suite or AWS cloud endpoints to start capturing real-time metrics.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => window.location.href = '/private-api'}
-                  className="px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs inline-flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add New Private API Suite</span>
-                </button>
+          <>
+            {/* Section: Overview Metrics Bar */}
+            <section className="space-y-2.5 w-full">
+              <div className="flex items-center justify-between pb-1">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  System Telemetry Overview
+                </h2>
               </div>
-            </div>
-          ) : (
-            /* Main Dashboard Content for Test User */
-            <>
-              {/* Section: Overview Metrics Bar */}
-              <section className="space-y-2.5 w-full">
-                <div className="flex items-center justify-between pb-1">
-                  <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                    System Telemetry Overview
-                  </h2>
-                </div>
-                <SystemOverviewMetricsBarContainer
-                  total={summary.total}
-                  healthy={summary.healthy}
-                  degraded={summary.degraded}
-                  down={summary.down}
-                  activeAlerts={summary.activeAlerts}
-                  onSelectIncidents={() => onSelectDemoSubView?.('incidents')}
+              <SystemOverviewMetricsBarContainer
+                total={summary.total}
+                healthy={summary.healthy}
+                degraded={summary.degraded}
+                down={summary.down}
+                activeAlerts={summary.activeAlerts}
+                onSelectIncidents={() => onSelectDemoSubView?.('incidents')}
                   onSelectStatusFilter={onSelectStatusFilter}
                 />
               </section>
@@ -357,8 +317,7 @@ export function ObservatoryTelemetryEmbeddedView({
               )}
             </section>
           </>
-        )
-      ) : demoSubView === 'incidents' ? (
+        ) : demoSubView === 'incidents' ? (
           /* Incidents View: Outages at Top, Historical Incident Logs Below */
           <div className="space-y-4 w-full">
             {/* Outage Notifications at Top */}

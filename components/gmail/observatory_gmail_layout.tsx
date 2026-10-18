@@ -400,6 +400,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   hasWallpaper={hasWallpaper}
                   searchQuery={searchQuery}
                   onSelectSuboption={setActiveMetricsSuboption}
+                  userEmail={activeAccount.email}
                 />
               ) : activeRailTab === 'users' ? (
                 <ObservatoryUsersDatabaseView
