@@ -7,7 +7,6 @@ import {
   HelpCircle,
   Settings,
   ChevronDown,
-  Lock,
   Plus,
 } from 'lucide-react';
 
@@ -168,67 +167,32 @@ export function GmailTopNavbar({
             />
           </button>
 
-          {/* Private API Popover Box (similar to settings/profile popover) */}
+          {/* Private API Popover Box */}
           {isPrivateApiMenuOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-3 px-3 z-50 animate-in fade-in zoom-in-95 text-slate-900 font-sans select-none">
-              <div className="px-3 pb-2.5 border-b border-slate-100 flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Private APIs</span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                    Internal VPC & microservice health endpoints
-                  </p>
-                </div>
-                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-slate-100 text-slate-600">
-                  Samples
-                </span>
-              </div>
-
+            <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2.5 z-50 animate-in fade-in zoom-in-95 text-slate-900 font-sans select-none">
               {/* Sample unclickable APIs */}
-              <div className="py-2 space-y-1.5">
-                <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-100 space-y-1 cursor-default">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">
-                      Sample Private API Health API
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Sample
-                    </span>
+              <div className="space-y-1.5">
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5 cursor-default">
+                  <div className="text-xs font-bold text-slate-800">
+                    api case sample 1
                   </div>
-                  <p className="text-[11px] font-mono text-slate-500 truncate">
-                    https://auth.internal.vpc/healthz
-                  </p>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium pt-0.5">
-                    <span>Port 8443</span>
-                    <span>&bull;</span>
-                    <span>VPC Private Subnet</span>
+                  <div className="text-[11px] font-mono text-slate-500 truncate">
+                    https://sample-api-1.internal/health
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-slate-50/80 border border-slate-100 space-y-1 cursor-default">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-800">
-                      Cloud API Sample
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Sample
-                    </span>
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5 cursor-default">
+                  <div className="text-xs font-bold text-slate-800">
+                    api case sample 2
                   </div>
-                  <p className="text-[11px] font-mono text-slate-500 truncate">
-                    https://cloud.internal-mesh.aws/metrics
-                  </p>
-                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium pt-0.5">
-                    <span>Port 9090</span>
-                    <span>&bull;</span>
-                    <span>Service Mesh Gateway</span>
+                  <div className="text-[11px] font-mono text-slate-500 truncate">
+                    https://sample-api-2.internal/health
                   </div>
                 </div>
               </div>
 
               {/* Unclickable option saying "add new private api" */}
-              <div className="pt-2 border-t border-slate-100">
+              <div className="pt-2 mt-1.5 border-t border-slate-100">
                 <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 text-slate-400 text-xs font-bold cursor-not-allowed select-none">
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add new private API</span>

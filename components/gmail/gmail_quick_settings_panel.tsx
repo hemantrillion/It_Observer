@@ -335,21 +335,23 @@ export function GmailQuickSettingsPanel({
               Graph Visualization Format
             </span>
             <div className="space-y-1.5">
-              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
+              <label className="flex items-center p-2 rounded-xl hover:bg-black/5 cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-[#0b57d0] flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-[#0b57d0]" />
+                  <div className="w-5 h-5 rounded-full border-2 border-[#0b57d0] flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#0b57d0]" />
                   </div>
-                  <span className="text-xs font-medium text-[#1f1f1f]">Smooth Area Curve</span>
+                  <span className="text-sm font-medium text-[#1f1f1f]">
+                    Smooth Area Curve
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-mono">Default</span>
               </label>
-              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
+              <label className="flex items-center p-2 rounded-xl hover:bg-black/5 cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-[#747775]" />
-                  <span className="text-xs font-medium text-[#1f1f1f]">Vertical Bar Histogram</span>
+                  <div className="w-5 h-5 rounded-full border-2 border-[#747775] flex items-center justify-center" />
+                  <span className="text-sm font-medium text-[#1f1f1f]">
+                    Vertical Bar Histogram
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-mono">Discrete</span>
               </label>
             </div>
           </div>

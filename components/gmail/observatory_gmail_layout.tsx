@@ -16,6 +16,8 @@ import { ObservatoryTelemetryEmbeddedView } from '@/components/gmail/observatory
 import { ObservatoryUsersDatabaseView } from '@/components/gmail/observatory_users_database_view';
 import { ObservatoryMetricsDomainView } from '@/components/gmail/observatory_metrics_domain_view';
 import { SystemOverviewMetricsBarContainer } from '@/components/containers/system_overview_metrics_bar_container';
+import { ChaosTestingControlPanelContainer } from '@/components/containers/chaos_testing_control_panel_container';
+import { ActiveIncidentAlertNotificationCard } from '@/components/cards/active_incident_alert_notification_card';
 import {
   GmailQuickSettingsPanel,
   DensityOption,
@@ -25,7 +27,7 @@ import {
 import { GmailAccountFlyoutPanel } from '@/components/gmail/gmail_account_flyout_panel';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
-import { MessageSquare, Video, Terminal } from 'lucide-react';
+import { MessageSquare, Video } from 'lucide-react';
 
 interface ObservatoryGmailLayoutProps {
   onNavigateLanding?: () => void;
@@ -374,9 +376,9 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                 <div
                   className={`flex-1 flex flex-col h-full ${
                     hasWallpaper ? 'bg-transparent' : 'bg-slate-50/60'
-                  } overflow-y-auto font-sans select-text w-full p-6 space-y-6`}
+                  } overflow-y-auto font-sans select-text w-full p-4 md:p-6 space-y-4`}
                 >
-                  {/* System Telemetry Overview Header (Matching Demo Dashboard, Empty) */}
+                  {/* 1. Overview Metrics Bar */}
                   <section className="space-y-2.5 w-full">
                     <div className="flex items-center justify-between pb-1">
                       <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
@@ -384,26 +386,91 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                       </h2>
                     </div>
                     <SystemOverviewMetricsBarContainer
-                      total={0}
-                      healthy={0}
-                      degraded={0}
-                      down={0}
-                      activeAlerts={0}
+                      total={summary.total}
+                      healthy={summary.healthy}
+                      degraded={summary.degraded}
+                      down={summary.down}
+                      activeAlerts={summary.activeAlerts}
+                      onSelectIncidents={() => {
+                        setActiveRailTab('demo');
+                        setDemoSubView('incidents');
+                      }}
+                      onSelectStatusFilter={(filter) => {
+                        setActiveRailTab('demo');
+                        setDemoSubView('dashboard');
+                        setStatusFilter(filter);
+                      }}
                     />
                   </section>
 
-                  {/* Empty Console Telemetry State Card */}
-                  <div className="flex-1 bg-white border border-slate-200/90 rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-2xs">
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 mb-3">
-                      <Terminal className="w-6 h-6" />
+                  {/* 2. Interactive Chaos Injection Panel (Box A) & Outage Notifications (Box B) Side-by-Side */}
+                  <section className="w-full flex flex-col md:flex-row gap-4">
+                    {/* Box A: Chaos Injection Panel */}
+                    <div className="w-full md:w-80 lg:w-96 shrink-0">
+                      <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900">
-                      No Console Telemetry Active
-                    </h3>
-                    <p className="text-xs text-slate-500 max-w-sm mt-1 leading-relaxed">
-                      Attach a telemetry target or configure a probe to monitor realtime console activity.
-                    </p>
-                  </div>
+
+                    {/* Box B: Outage Notifications */}
+                    <div className="flex-1 flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+                      <div>
+                        {/* Header with Title and Severity Legend */}
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
+                              Outage Notifications
+                            </h3>
+                            {activeIncidents.length > 0 && (
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                                {activeIncidents.length} active
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-amber-500" />
+                              <span>Warning</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-rose-500" />
+                              <span>Critical</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Active Outages List */}
+                        <div className="mt-2.5 space-y-2">
+                          {activeIncidents.length > 0 ? (
+                            activeIncidents.slice(0, 2).map((incident) => (
+                              <ActiveIncidentAlertNotificationCard
+                                key={incident.id}
+                                incident={incident}
+                              />
+                            ))
+                          ) : (
+                            <div className="py-6 text-center text-xs text-slate-500 font-medium">
+                              Zero active outages &mdash; all monitored endpoints operating normally.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer link: more */}
+                      <div className="pt-2 border-t border-slate-100 flex justify-end">
+                        <button
+                          onClick={() => {
+                            setActiveRailTab('demo');
+                            setDemoSubView('incidents');
+                          }}
+                          className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                        >
+                          more
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Rest of the screen is kept empty, no extra boxes */}
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
