@@ -23,6 +23,8 @@ interface GmailTopNavbarProps {
   isSidebarOpen?: boolean;
   hasWallpaper?: boolean;
   onNavigateLanding?: () => void;
+  onNavigatePrivateApi?: () => void;
+  userAvatarUrl?: string;
 }
 
 export function GmailTopNavbar({
@@ -38,6 +40,8 @@ export function GmailTopNavbar({
   isSidebarOpen = true,
   hasWallpaper = false,
   onNavigateLanding,
+  onNavigatePrivateApi,
+  userAvatarUrl = '/infra_trace_logo.png',
 }: GmailTopNavbarProps) {
   const [isPrivateApiMenuOpen, setIsPrivateApiMenuOpen] = useState(false);
   const privateApiMenuRef = useRef<HTMLDivElement>(null);
@@ -189,12 +193,23 @@ export function GmailTopNavbar({
                 </div>
               </div>
 
-              {/* Unclickable option saying "add new private api" */}
+              {/* Clickable option saying "add new private api" */}
               <div className="pt-2 mt-1.5 border-t border-slate-100">
-                <div className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 text-slate-400 text-xs font-bold cursor-not-allowed select-none">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsPrivateApiMenuOpen(false);
+                    if (onNavigatePrivateApi) {
+                      onNavigatePrivateApi();
+                    } else {
+                      window.location.href = '/private-api';
+                    }
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-blue-400 bg-blue-50/60 hover:bg-blue-100/80 text-blue-700 text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add new private API</span>
-                </div>
+                </button>
               </div>
             </div>
           )}
@@ -254,7 +269,7 @@ export function GmailTopNavbar({
           </svg>
         </button>
 
-        {/* User Profile Avatar (InfraTrace Logo) */}
+        {/* User Profile Avatar (InfraTrace Logo / Active Avatar) */}
         <button
           type="button"
           onClick={onOpenAccountMenu}
@@ -269,8 +284,8 @@ export function GmailTopNavbar({
             }`}
           >
             <img
-              src="/infra_trace_logo.png"
-              alt="Test User"
+              src={userAvatarUrl}
+              alt="Account"
               className="w-6 h-6 object-contain"
             />
           </div>

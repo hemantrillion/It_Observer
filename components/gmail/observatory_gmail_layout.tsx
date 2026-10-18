@@ -27,13 +27,17 @@ import {
 import { GmailAccountFlyoutPanel } from '@/components/gmail/gmail_account_flyout_panel';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
-import { MessageSquare, Video } from 'lucide-react';
+import { MessageSquare, Video, Plus, Cloud } from 'lucide-react';
+import { InspectView } from '@/frontend/box/inspect/box4';
+import { DeliveryView } from '@/frontend/box/delivery/box4';
+import { getActiveAccount, UserAccount, DEFAULT_TEST_USER } from '@/lib/auth/accounts_manager';
 
 interface ObservatoryGmailLayoutProps {
   onNavigateLanding?: () => void;
 }
 
 export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLayoutProps) {
+  const [activeAccount, setActiveAccountState] = useState<UserAccount>(DEFAULT_TEST_USER);
   const [activeRailTab, setActiveRailTab] = useState<RailTab>('demo');
   const [demoSubView, setDemoSubView] = useState<DemoSubView>('dashboard');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -42,6 +46,39 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [activeUserSection, setActiveUserSection] = useState<UserSection>('accounts');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Browser History & Back button synchronization
+  useEffect(() => {
+    setActiveAccountState(getActiveAccount());
+
+    if (typeof window !== 'undefined' && !window.history.state) {
+      window.history.replaceState({ tab: 'demo', subView: 'dashboard' }, '');
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state) {
+        if (e.state.tab) setActiveRailTab(e.state.tab);
+        if (e.state.subView) setDemoSubView(e.state.subView);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTab = (newTab: RailTab) => {
+    setActiveRailTab(newTab);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ tab: newTab, subView: demoSubView }, '', `?tab=${newTab}`);
+    }
+  };
+
+  const navigateDemoSubView = (newView: DemoSubView) => {
+    setDemoSubView(newView);
+    if (typeof window !== 'undefined') {
+      window.history.pushState({ tab: 'demo', subView: newView }, '', `?tab=demo&view=${newView}`);
+    }
+  };
 
   // Flexbox Boundaries Visibility (Default: false as requested)
   const [showFlexboxBorders, setShowFlexboxBorders] = useState(false);
@@ -249,6 +286,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
             isSidebarOpen={isSidebarOpen}
             hasWallpaper={hasWallpaper}
             onNavigateLanding={onNavigateLanding}
+            onNavigatePrivateApi={() => window.location.href = '/private-api'}
+            userAvatarUrl={activeAccount.avatarUrl || '/infra_trace_logo.png'}
           />
         </div>
 
@@ -262,8 +301,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
           onSelectTheme={handleSelectTheme}
           onUploadCustomWallpaper={handleUploadCustomWallpaper}
           onSeeAllSettings={() => {
-            setActiveRailTab('demo');
-            setDemoSubView('settings');
+            navigateTab('demo');
+            navigateDemoSubView('settings');
           }}
         />
 
@@ -271,12 +310,32 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
         <GmailAccountFlyoutPanel
           isOpen={isAccountFlyoutOpen}
           onClose={() => setIsAccountFlyoutOpen(false)}
-          userName="Test User"
-          userEmail="xyztestuser@gmail.com"
+          onNavigateLanding={onNavigateLanding}
+          onNavigateAccount={() => window.location.href = '/account'}
+          onNavigateAddAccount={() => window.location.href = '/signup'}
+          onAccountChanged={(acc) => setActiveAccountState(acc)}
         />
 
         {/* Body below Box 3: Horizontal flex row holding Box 2, 4, 5 */}
         <div className="flex-1 flex flex-row overflow-hidden">
+          {/* ==================================================== */}
+          {/* FLEXBOX 1: Left Navigation Rail                      */}
+          {/* ==================================================== */}
+          <div
+            className={`relative h-full shrink-0 flex flex-col transition-all ${
+              showFlexboxBorders
+                ? 'border-2 border-red-500 m-0.5 rounded-sm'
+                : ''
+            }`}
+          >
+            <GmailLeftRail
+              activeTab={activeRailTab}
+              onSelectTab={navigateTab}
+              onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+              hasWallpaper={hasWallpaper}
+            />
+          </div>
+
           {/* ==================================================== */}
           {/* FLEXBOX 2: Left Collapsible Sidebar                  */}
           {/* ==================================================== */}
@@ -291,7 +350,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
               <GmailLeftSidebar
                 activeTab={activeRailTab}
                 demoSubView={demoSubView}
-                onSelectDemoSubView={setDemoSubView}
+                onSelectDemoSubView={navigateDemoSubView}
                 statusFilter={statusFilter}
                 onSelectStatusFilter={setStatusFilter}
                 onPoll={triggerPoll}
@@ -352,8 +411,9 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   onToggleConstantPolling={setIsConstantPollingEnabled}
                   constantPollingInterval={constantPollingInterval}
                   onChangeConstantPollingInterval={setConstantPollingInterval}
-                  onSelectDemoSubView={setDemoSubView}
+                  onSelectDemoSubView={navigateDemoSubView}
                   onSelectStatusFilter={setStatusFilter}
+                  userEmail={activeAccount.email}
                 />
               ) : activeRailTab === 'metrics' ? (
                 <ObservatoryMetricsDomainView
@@ -371,7 +431,11 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   hasWallpaper={hasWallpaper}
                 />
               ) : activeRailTab === 'mail' ? (
-                <GmailInboxView density={density} hasWallpaper={hasWallpaper} />
+                <GmailInboxView density={density} hasWallpaper={hasWallpaper} userEmail={activeAccount.email} />
+              ) : activeRailTab === 'inspect' ? (
+                <InspectView />
+              ) : activeRailTab === 'delivery' ? (
+                <DeliveryView />
               ) : activeRailTab === 'chat' ? (
                 <div
                   className={`flex-1 flex flex-col h-full ${

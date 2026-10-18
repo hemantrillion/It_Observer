@@ -39,6 +39,8 @@ import {
   GitFork,
 } from 'lucide-react';
 import { RailTab } from './gmail_left_rail';
+import { InspectSidebar } from '@/frontend/box/inspect/box2';
+import { DeliverySidebar } from '@/frontend/box/delivery/box2';
 
 export type DemoSubView = 'dashboard' | 'incidents' | 'settings';
 export type StatusFilter = 'ALL' | 'HEALTHY' | 'DEGRADED' | 'DOWN';
@@ -135,6 +137,17 @@ export function GmailLeftSidebar({
   activeUserSection = 'accounts',
   onSelectUserSection,
 }: GmailLeftSidebarProps) {
+  // ==========================================================
+  // VIEW: INSPECT & DELIVERY MODES
+  // ==========================================================
+  if (activeTab === 'inspect') {
+    return <InspectSidebar hasWallpaper={hasWallpaper} />;
+  }
+
+  if (activeTab === 'delivery') {
+    return <DeliverySidebar hasWallpaper={hasWallpaper} />;
+  }
+
   // ==========================================================
   // VIEW 1: METRICS MODE (Clean list with right arrow when active, matching Image 4)
   // ==========================================================

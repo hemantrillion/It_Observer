@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Menu, Mail, Terminal, Gauge, Activity, Users } from 'lucide-react';
+import { Menu, Mail, Terminal, Gauge, Activity, Users, ScanSearch, PackageCheck } from 'lucide-react';
 
-export type RailTab = 'mail' | 'chat' | 'metrics' | 'demo' | 'users' | 'meet';
+export type RailTab = 'mail' | 'chat' | 'metrics' | 'inspect' | 'delivery' | 'demo' | 'users' | 'meet';
 
 interface GmailLeftRailProps {
   activeTab: RailTab;
@@ -33,6 +33,16 @@ export function GmailLeftRail({
       id: 'metrics' as RailTab,
       label: 'Metrics',
       icon: Gauge,
+    },
+    {
+      id: 'inspect' as RailTab,
+      label: 'Inspect',
+      icon: ScanSearch,
+    },
+    {
+      id: 'delivery' as RailTab,
+      label: 'Delivery',
+      icon: PackageCheck,
     },
     {
       id: 'demo' as RailTab,

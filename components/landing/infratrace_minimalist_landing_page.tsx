@@ -93,7 +93,7 @@ export function InfratraceMinimalistLandingPage({
 
             {/* Sign in Button */}
             <button
-              onClick={() => setAuthModalType('signin')}
+              onClick={() => router.push('/signin')}
               className="text-sm sm:text-base font-semibold text-[#1f1f1f] hover:text-[#0b57d0] px-3.5 py-2 rounded-full hover:bg-black/5 transition-colors cursor-pointer"
             >
               Sign in
@@ -101,7 +101,7 @@ export function InfratraceMinimalistLandingPage({
 
             {/* Sign up Button */}
             <button
-              onClick={() => setAuthModalType('signup')}
+              onClick={() => router.push('/signup')}
               className="hidden sm:inline-flex text-sm sm:text-base font-semibold text-[#444746] hover:text-[#1f1f1f] px-4 py-2 rounded-full border border-[#c4c7c5] hover:bg-black/5 transition-colors cursor-pointer"
             >
               Create account

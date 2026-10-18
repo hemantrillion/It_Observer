@@ -23,3 +23,9 @@ export * as UserBox4 from './box/user/box4';
 
 export * as MetricsBox2 from './box/metrics/box2';
 export * as MetricsBox4 from './box/metrics/box4';
+
+export * as InspectBox2 from './box/inspect/box2';
+export * as InspectBox4 from './box/inspect/box4';
+
+export * as DeliveryBox2 from './box/delivery/box2';
+export * as DeliveryBox4 from './box/delivery/box4';

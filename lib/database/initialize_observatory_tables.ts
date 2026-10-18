@@ -46,10 +46,50 @@ export function initializeObservatoryTables(): void {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       email TEXT UNIQUE NOT NULL,
+      password_hash TEXT,
       role TEXT DEFAULT 'Admin',
       status TEXT DEFAULT 'ACTIVE',
+      avatar_url TEXT DEFAULT '/infra_trace_logo.png',
+      company TEXT,
+      job_title TEXT,
+      phone TEXT,
+      country TEXT,
+      interests TEXT,
       created_at TEXT NOT NULL,
       last_active_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS email_otp_verifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT NOT NULL,
+      otp_hash TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      attempts INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS platform_mailbox (
+      id TEXT PRIMARY KEY,
+      recipient_email TEXT NOT NULL,
+      sender TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      snippet TEXT NOT NULL,
+      body TEXT NOT NULL,
+      sent_at TEXT NOT NULL,
+      is_read INTEGER DEFAULT 0,
+      tag TEXT DEFAULT 'INBOX'
+    );
+
+    CREATE TABLE IF NOT EXISTS private_api_suites (
+      id TEXT PRIMARY KEY,
+      user_email TEXT NOT NULL,
+      name TEXT NOT NULL,
+      suite_type TEXT NOT NULL,
+      csp_provider TEXT,
+      service_category TEXT,
+      endpoints_json TEXT NOT NULL,
+      status TEXT DEFAULT 'ACTIVE',
+      created_at TEXT NOT NULL
     );
 
     CREATE TABLE IF NOT EXISTS database_query_logs (
@@ -62,6 +102,15 @@ export function initializeObservatoryTables(): void {
       status TEXT DEFAULT 'SUCCESS'
     );
   `);
+
+  // Safely ensure all columns exist on platform_users for backwards compatibility
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN avatar_url TEXT DEFAULT "/infra_trace_logo.png"'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN password_hash TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN company TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN job_title TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN phone TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN country TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN interests TEXT'); } catch (_) {}
 
   // Seed default test suite targets if empty
   const countRow = db.prepare('SELECT COUNT(*) as count FROM monitored_services').get() as { count: number };
@@ -79,8 +128,33 @@ export function initializeObservatoryTables(): void {
     insertService.run('cloudflare_edge', 'Cloudflare Edge Analytics', 'cloud_provider', 'https://api.cloudflare.com/client/v4/radar/http/summary/bot', 15, 'HEALTHY');
   }
 
-  // Clear any dummy users so table starts completely empty as requested
-  db.exec('DELETE FROM platform_users');
+  // Seed default Test User if not present
+  const userCount = db.prepare('SELECT COUNT(*) as count FROM platform_users WHERE email = "xyztestuser@gmail.com"').get() as { count: number };
+  if (userCount.count === 0) {
+    const now = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO platform_users (id, name, email, role, status, avatar_url, company, job_title, country, created_at, last_active_at)
+      VALUES ('usr_test_001', 'Test User', 'xyztestuser@gmail.com', 'Admin', 'ACTIVE', '/infra_trace_logo.png', 'InfraTrace Internal', 'Observability Lead', 'India', ?, ?)
+    `).run(now, now);
+  }
+
+  // Seed initial mailbox welcoming test user if empty
+  const mailCount = db.prepare('SELECT COUNT(*) as count FROM platform_mailbox WHERE recipient_email = "xyztestuser@gmail.com"').get() as { count: number };
+  if (mailCount.count === 0) {
+    const now = new Date().toISOString();
+    db.prepare(`
+      INSERT INTO platform_mailbox (id, recipient_email, sender, subject, snippet, body, sent_at, is_read, tag)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'INBOX')
+    `).run(
+      'mail_welcome_test',
+      'xyztestuser@gmail.com',
+      'InfraTrace Team <noreply@infratrace.internal>',
+      'Welcome to InfraTrace Telemetry & Observability',
+      'Your Test User account has full access to the live monitoring cockpit, Prometheus charts, and chaos simulator...',
+      'Welcome to InfraTrace!\n\nYour Test User account is pre-configured with full administrative rights to monitor simulated cloud workloads, public APIs, and chaos engineering triggers.\n\nEnjoy the observatory experience.',
+      now
+    );
+  }
 
   // Seed initial database query logs if empty
   const logCountRow = db.prepare('SELECT COUNT(*) as count FROM database_query_logs').get() as { count: number };

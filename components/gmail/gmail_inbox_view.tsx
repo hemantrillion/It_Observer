@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   RotateCw,
   MoreVertical,
@@ -201,15 +201,49 @@ type CategoryTab = 'primary' | 'promotions' | 'social' | 'updates';
 interface GmailInboxViewProps {
   density?: DensityOption;
   hasWallpaper?: boolean;
+  userEmail?: string;
 }
 
 export function GmailInboxView({
   density = 'compact',
   hasWallpaper = false,
+  userEmail = 'xyztestuser@gmail.com',
 }: GmailInboxViewProps) {
-  const [emails, setEmails] = useState<EmailItem[]>(INITIAL_EMAILS);
+  const [emails, setEmails] = useState<EmailItem[]>(() => {
+    const isTest = !userEmail || userEmail === 'xyztestuser@gmail.com';
+    return isTest ? INITIAL_EMAILS : [];
+  });
   const [activeTab, setActiveTab] = useState<CategoryTab>('primary');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const isTest = !userEmail || userEmail === 'xyztestuser@gmail.com';
+    fetch(`/api/mail?email=${encodeURIComponent(userEmail)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.mails)) {
+          const formattedMails: EmailItem[] = data.mails.map((m: any) => ({
+            id: m.id,
+            sender: m.sender.split('<')[0].trim() || m.sender,
+            subject: m.subject,
+            snippet: m.snippet,
+            date: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isUnread: !m.is_read,
+          }));
+
+          if (isTest) {
+            // Deduplicate by ID
+            const existingIds = new Set(formattedMails.map((m) => m.id));
+            const remainingInitial = INITIAL_EMAILS.filter((m) => !existingIds.has(m.id));
+            setEmails([...formattedMails, ...remainingInitial]);
+          } else {
+            // Clear all dummy mails for real users as requested
+            setEmails(formattedMails);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [userEmail]);
 
   const toggleSelectAll = () => {
     if (selectedIds.size === emails.length) {
