@@ -2,10 +2,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_query';
-import { BarChart2, Filter } from 'lucide-react';
+import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
+import { BarChart2 } from 'lucide-react';
 
 interface IncidentHistoryTableContainerProps {
   incidents: IncidentAlertRecord[];
+  monitoredServices?: MonitoredServiceRecord[];
 }
 
 function formatIncidentDate(isoString: string): string {
@@ -25,81 +27,83 @@ function formatIncidentDate(isoString: string): string {
   }
 }
 
-export function IncidentHistoryTableContainer({ incidents }: IncidentHistoryTableContainerProps) {
+export function IncidentHistoryTableContainer({
+  incidents,
+  monitoredServices = [],
+}: IncidentHistoryTableContainerProps) {
   const [selectedTarget, setSelectedTarget] = useState<string>('ALL');
 
-  // Extract unique targets for filter pills
+  // Filter options: picked from checked/monitored services
   const targetOptions = useMemo(() => {
+    if (monitoredServices && monitoredServices.length > 0) {
+      return monitoredServices.map((s) => s.name);
+    }
     const set = new Set<string>();
     incidents.forEach((inc) => {
       const name = inc.service_name || inc.service_id;
       if (name) set.add(name);
     });
     return Array.from(set).sort();
-  }, [incidents]);
+  }, [monitoredServices, incidents]);
 
-  // Filtered incidents
+  // Filter incidents only showing triggered events for the selected target
   const filteredIncidents = useMemo(() => {
-    if (selectedTarget === 'ALL') return incidents;
-    return incidents.filter(
+    // Only show incidents where an actual issue was triggered (warning or critical)
+    const valid = incidents.filter((inc) => {
+      const sev = inc.severity?.toUpperCase();
+      return sev === 'CRITICAL' || sev === 'WARNING';
+    });
+
+    if (selectedTarget === 'ALL') return valid;
+    return valid.filter(
       (inc) => (inc.service_name || inc.service_id) === selectedTarget
     );
   }, [incidents, selectedTarget]);
 
   return (
-    <div className="space-y-3.5 w-full font-sans">
-      {/* Header and Filter Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1">
-        <div>
-          <h3 className="font-sans font-bold text-base text-slate-900 tracking-tight">
-            Historical Incident Logs
-          </h3>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Audit history of detected outages and recovery timelines (Total: {filteredIncidents.length})
-          </p>
-        </div>
-
-        {/* Filter Pills */}
-        {targetOptions.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 mr-1">
-              <Filter className="w-3 h-3" />
-              <span>Target:</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setSelectedTarget('ALL')}
-              className={`px-2.5 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer ${
-                selectedTarget === 'ALL'
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-              }`}
-            >
-              ALL
-            </button>
-            {targetOptions.map((tgt) => (
-              <button
-                key={tgt}
-                type="button"
-                onClick={() => setSelectedTarget(tgt)}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                  selectedTarget === tgt
-                    ? 'bg-slate-900 text-white font-bold'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                }`}
-              >
-                {tgt}
-              </button>
-            ))}
-          </div>
-        )}
+    /* Entire historical logs section enclosed in a single rectangular card */
+    <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs space-y-3.5 w-full font-sans">
+      {/* Title */}
+      <div className="pb-1">
+        <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
+          Historical Incident Logs
+        </h3>
       </div>
 
-      {/* Compact Table */}
-      <div className="border border-slate-200/90 rounded-xl bg-white overflow-hidden shadow-2xs">
+      {/* Target Options - written below, scrollable left to right without :Target: label */}
+      <div className="overflow-x-auto pb-1 flex items-center gap-1.5 scrollbar-thin">
+        <button
+          type="button"
+          onClick={() => setSelectedTarget('ALL')}
+          className={`px-3 py-1 rounded-md text-xs font-bold transition-colors cursor-pointer shrink-0 ${
+            selectedTarget === 'ALL'
+              ? 'bg-slate-900 text-white'
+              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+          }`}
+        >
+          ALL
+        </button>
+        {targetOptions.map((tgt) => (
+          <button
+            key={tgt}
+            type="button"
+            onClick={() => setSelectedTarget(tgt)}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+              selectedTarget === tgt
+                ? 'bg-slate-900 text-white font-bold'
+                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+            }`}
+          >
+            {tgt}
+          </button>
+        ))}
+      </div>
+
+      {/* Table: STATUS, TARGET, REASON (empty), TIMESTAMP. No SEVERITY column, no DURATION column */}
+      <div className="border border-slate-200/90 rounded-lg overflow-hidden bg-white">
         {filteredIncidents.length === 0 ? (
           <div className="p-8 text-center text-xs font-medium text-slate-500">
-            Zero recorded incidents for the selected filter &mdash; all monitored targets operational.
+            No incident events recorded for the selected filter.
           </div>
         ) : (
           <div className="overflow-x-auto w-full">
@@ -108,38 +112,31 @@ export function IncidentHistoryTableContainer({ incidents }: IncidentHistoryTabl
                 <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
                   <th className="py-2.5 px-3.5">Status</th>
                   <th className="py-2.5 px-3.5">Target</th>
-                  <th className="py-2.5 px-3.5">Severity</th>
                   <th className="py-2.5 px-3.5">Reason</th>
                   <th className="py-2.5 px-3.5">Timestamp</th>
-                  <th className="py-2.5 px-3.5">Duration</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredIncidents.map((incident) => {
-                  const isCritical = incident.severity === 'CRITICAL';
+                  const r = (incident.reason || '').toLowerCase();
+                  const isCritical =
+                    incident.severity === 'CRITICAL' ||
+                    r.includes('503') ||
+                    r.includes('unreachable') ||
+                    r.includes('down') ||
+                    r.includes('crash');
+
                   return (
                     <tr
                       key={incident.id}
                       className="hover:bg-slate-50/70 transition-colors text-slate-700 font-medium"
                     >
                       <td className="py-2 px-3.5 whitespace-nowrap">
-                        {incident.is_active ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            Resolved
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3.5 font-bold text-slate-900 whitespace-nowrap">
-                        {incident.service_name || incident.service_id}
-                      </td>
-                      <td className="py-2 px-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 text-[11px] font-bold ${
-                            isCritical ? 'text-rose-600' : 'text-amber-600'
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold ${
+                            isCritical
+                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
                           }`}
                         >
                           <span
@@ -147,17 +144,18 @@ export function IncidentHistoryTableContainer({ incidents }: IncidentHistoryTabl
                               isCritical ? 'bg-rose-500' : 'bg-amber-500'
                             }`}
                           />
-                          <span>{incident.severity}</span>
+                          <span>{isCritical ? 'critical' : 'warning'}</span>
                         </span>
                       </td>
-                      <td className="py-2 px-3.5 max-w-sm truncate text-slate-600" title={incident.reason}>
-                        {incident.reason}
+                      <td className="py-2 px-3.5 font-bold text-slate-900 whitespace-nowrap">
+                        {incident.service_name || incident.service_id}
+                      </td>
+                      {/* Reason column kept but empty as requested */}
+                      <td className="py-2 px-3.5 text-slate-400 font-mono text-[11px]">
+                        &mdash;
                       </td>
                       <td className="py-2 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-600">
                         {formatIncidentDate(incident.started_at)}
-                      </td>
-                      <td className="py-2 px-3.5 whitespace-nowrap font-mono text-[11px] text-slate-500">
-                        {incident.is_active ? 'Ongoing' : `${incident.duration_seconds}s`}
                       </td>
                     </tr>
                   );
@@ -168,7 +166,7 @@ export function IncidentHistoryTableContainer({ incidents }: IncidentHistoryTabl
         )}
       </div>
 
-      {/* Bottom Footer with Relocated "Raw Metrics" button */}
+      {/* Bottom Footer with Showing count and relocated Raw Metrics button */}
       <div className="flex items-center justify-between pt-1">
         <span className="text-xs text-slate-400 font-medium">
           Showing {filteredIncidents.length} event records

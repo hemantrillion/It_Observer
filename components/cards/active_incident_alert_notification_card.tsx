@@ -11,7 +11,13 @@ interface ActiveIncidentAlertNotificationCardProps {
 export function ActiveIncidentAlertNotificationCard({
   incident,
 }: ActiveIncidentAlertNotificationCardProps) {
-  const isCritical = incident.severity === 'CRITICAL';
+  const r = (incident.reason || '').toLowerCase();
+  const isCritical =
+    incident.severity === 'CRITICAL' ||
+    r.includes('503') ||
+    r.includes('unreachable') ||
+    r.includes('down') ||
+    r.includes('crash');
 
   const formatTriggered = (iso: string) => {
     try {

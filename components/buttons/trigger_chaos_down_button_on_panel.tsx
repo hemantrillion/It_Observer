@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { AlertOctagon } from 'lucide-react';
 
 interface TriggerChaosDownButtonProps {
   onTrigger: () => void;
@@ -16,7 +15,7 @@ export function TriggerChaosDownButtonOnPanel({
     <button
       onClick={onTrigger}
       disabled={isLoading}
-      className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-sans font-semibold text-xs rounded-lg border border-slate-300 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
+      className="w-full py-2 px-3 bg-white hover:bg-slate-100 text-slate-800 font-sans font-semibold text-xs rounded-lg border border-slate-300 transition-all cursor-pointer disabled:opacity-50 shadow-2xs text-center"
     >
       Crash Service
     </button>

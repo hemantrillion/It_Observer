@@ -62,8 +62,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [activeIncidents, setActiveIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isPolling, setIsPolling] = useState(false);
 
-  // Constant Polling State (Default: false as requested by user)
-  const [isConstantPollingEnabled, setIsConstantPollingEnabled] = useState(false);
+  // Constant Polling State (Default: true as requested by user)
+  const [isConstantPollingEnabled, setIsConstantPollingEnabled] = useState(true);
   const [constantPollingInterval, setConstantPollingInterval] = useState(8000); // 8s by default
 
   // Restore saved theme and density on mount

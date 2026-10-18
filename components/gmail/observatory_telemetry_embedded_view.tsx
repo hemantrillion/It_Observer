@@ -14,7 +14,6 @@ import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_qu
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { DemoSubView, StatusFilter } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
-import { X } from 'lucide-react';
 
 interface ObservatoryTelemetryEmbeddedViewProps {
   services: MonitoredServiceRecord[];
@@ -86,6 +85,11 @@ export function ObservatoryTelemetryEmbeddedView({
   useEffect(() => {
     fetchIncidentsHistory();
   }, [fetchIncidentsHistory, demoSubView]);
+
+  // Reset inspect mode whenever demoSubView changes (e.g. clicking Incidents or Settings in sidebar)
+  useEffect(() => {
+    setSelectedServiceId(null);
+  }, [demoSubView]);
 
   // Fetch telemetry graph data for a specific service
   const fetchServiceDetails = useCallback(
@@ -159,53 +163,26 @@ export function ObservatoryTelemetryEmbeddedView({
 
   return (
     <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-slate-50/60'} overflow-y-auto font-sans select-text w-full`}>
-      {/* Top Header Bar */}
-      <div className={`h-13 border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
-        <div className="flex items-center gap-2.5">
-          {selectedServiceId ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-bold text-slate-900">
-                {selectedService?.name || 'Service Telemetry Detail'}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              {statusFilter !== 'ALL' && (
-                <span className="px-2.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-bold border border-blue-200">
-                  {statusFilter}
-                </span>
-              )}
-            </div>
-          )}
+      {/* Top Header Bar: Only render if not inspecting and statusFilter is active */}
+      {!selectedServiceId && statusFilter !== 'ALL' && (
+        <div className={`h-10 border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-bold border border-blue-200">
+              {statusFilter}
+            </span>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {selectedServiceId ? (
-            /* Simple X close button for inspect page (no Back to all targets, no Telemetry active badge) */
-            <button
-              onClick={() => setSelectedServiceId(null)}
-              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-              title="Close telemetry graph"
-              aria-label="Close telemetry graph"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          ) : (
-            lastUpdatedTime && (
-              <span className="text-xs text-slate-400 font-mono font-medium hidden sm:inline">
-                Probed: {lastUpdatedTime}
-              </span>
-            )
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Main Observatory Content Body */}
       <div className={`${densitySpacing} flex-1 w-full`}>
         {/* If viewing a selected service's detail graph */}
         {selectedServiceId && selectedService ? (
           <div className="space-y-4 w-full animate-in fade-in duration-150">
-            <ServiceDetailInfoBlockCard service={selectedService} />
+            <ServiceDetailInfoBlockCard
+              service={selectedService}
+              onClose={() => setSelectedServiceId(null)}
+            />
 
             {/* Direct clean graph card (outer darker rectangle removed) */}
             <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs">
@@ -243,72 +220,70 @@ export function ObservatoryTelemetryEmbeddedView({
               />
             </section>
 
-            {/* Section: Chaos Injection Panel (Box A) & Outage Notifications (Box B) Side-by-Side in Single Rectangular Area */}
-            <section className="w-full">
-              <div className="border border-slate-200/90 rounded-2xl p-3.5 bg-slate-100/60 flex flex-col md:flex-row gap-3.5 w-full shadow-2xs">
-                {/* Box A: Chaos Injection Panel (Square-ish on Left, only taking as much space as needed) */}
-                <div className="w-full md:w-80 lg:w-96 shrink-0">
-                  <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
-                </div>
+            {/* Section: Chaos Injection Panel (Box A) & Outage Notifications (Box B) Side-by-Side as direct siblings */}
+            <section className="w-full flex flex-col md:flex-row gap-4">
+              {/* Box A: Chaos Injection Panel (Square-ish on Left, only taking as much space as needed) */}
+              <div className="w-full md:w-80 lg:w-96 shrink-0">
+                <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
+              </div>
 
-                {/* Box B: Outage Notifications (Rectangular taking rest of space on right) */}
-                <div className="flex-1 flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
-                  <div>
-                    {/* Header with Title and Severity Legend */}
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
-                          Outage Notifications
-                        </h3>
-                        {activeIncidents.length > 0 && (
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
-                            {activeIncidents.length} active
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Legend: Yellow for Warning, Red for Critical */}
-                      <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span>Warning</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-rose-500" />
-                          <span>Critical</span>
-                        </div>
-                      </div>
+              {/* Box B: Outage Notifications (Rectangular taking rest of space on right) */}
+              <div className="flex-1 flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+                <div>
+                  {/* Header with Title and Severity Legend */}
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
+                        Outage Notifications
+                      </h3>
+                      {activeIncidents.length > 0 && (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                          {activeIncidents.length} active
+                        </span>
+                      )}
                     </div>
 
-                    {/* Active Outages List */}
-                    <div className="mt-2.5 space-y-2 max-h-[140px] overflow-y-auto pr-1">
-                      {activeIncidents.length > 0 ? (
-                        activeIncidents.map((incident) => (
-                          <ActiveIncidentAlertNotificationCard
-                            key={incident.id}
-                            incident={incident}
-                          />
-                        ))
-                      ) : (
-                        <div className="py-6 text-center text-xs text-slate-500 font-medium">
-                          Zero active outages &mdash; all monitored endpoints operating normally.
-                        </div>
-                      )}
+                    {/* Legend: Yellow for Warning, Red for Critical */}
+                    <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span>Warning</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span>Critical</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Footer link to complete history */}
-                  {onSelectDemoSubView && (
-                    <div className="pt-2 border-t border-slate-100 flex justify-end">
-                      <button
-                        onClick={() => onSelectDemoSubView('incidents')}
-                        className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
-                      >
-                        View Complete Audit Log ({allIncidents.length}) &rarr;
-                      </button>
-                    </div>
-                  )}
+                  {/* Active Outages List (Only 2 in dashboard) */}
+                  <div className="mt-2.5 space-y-2">
+                    {activeIncidents.length > 0 ? (
+                      activeIncidents.slice(0, 2).map((incident) => (
+                        <ActiveIncidentAlertNotificationCard
+                          key={incident.id}
+                          incident={incident}
+                        />
+                      ))
+                    ) : (
+                      <div className="py-6 text-center text-xs text-slate-500 font-medium">
+                        Zero active outages &mdash; all monitored endpoints operating normally.
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Footer link: simple "more" (no arrow) */}
+                {onSelectDemoSubView && (
+                  <div className="pt-2 border-t border-slate-100 flex justify-end">
+                    <button
+                      onClick={() => onSelectDemoSubView('incidents')}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                    >
+                      more
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -385,9 +360,10 @@ export function ObservatoryTelemetryEmbeddedView({
               </div>
             </div>
 
-            {/* Historical Incident Logs with Filter Bar and Relocated Raw Metrics button */}
+            {/* Historical Incident Logs with Filter Bar and checked targets */}
             <IncidentHistoryTableContainer
               incidents={allIncidents}
+              monitoredServices={services}
             />
           </div>
         ) : (
@@ -401,7 +377,6 @@ export function ObservatoryTelemetryEmbeddedView({
             onChangeConstantPollingInterval={onChangeConstantPollingInterval}
             onTriggerManualPoll={triggerPoll}
             isPolling={isPolling}
-            hasWallpaper={hasWallpaper}
             searchQuery={searchQuery}
             onInspectService={(id) => {
               setSelectedServiceId(id);

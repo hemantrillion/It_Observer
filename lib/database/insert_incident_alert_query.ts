@@ -17,6 +17,11 @@ export function insertIncidentAlertQuery(input: IncidentAlertInput): number {
   `).get(input.serviceId) as { id: number } | undefined;
 
   if (existing) {
+    db.prepare(`
+      UPDATE incident_alerts
+      SET severity = ?, reason = ?
+      WHERE id = ?
+    `).run(input.severity, input.reason, existing.id);
     return existing.id;
   }
 
