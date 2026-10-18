@@ -35,7 +35,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [demoSubView, setDemoSubView] = useState<DemoSubView>('dashboard');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [activeMetricsCategory, setActiveMetricsCategory] = useState<MetricsCategory>('Cloud');
-  const [activeMetricsSuboption, setActiveMetricsSuboption] = useState<string | null>(null);
+  const [activeMetricsSuboption, setActiveMetricsSuboption] = useState<string | null>('aws');
   const [activeUserSection, setActiveUserSection] = useState<UserSection>('accounts');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -358,6 +358,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   activeSuboption={activeMetricsSuboption}
                   density={density}
                   hasWallpaper={hasWallpaper}
+                  searchQuery={searchQuery}
+                  onSelectSuboption={setActiveMetricsSuboption}
                 />
               ) : activeRailTab === 'users' ? (
                 <ObservatoryUsersDatabaseView

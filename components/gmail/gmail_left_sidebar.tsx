@@ -34,6 +34,9 @@ import {
   Server,
   Activity,
   CreditCard,
+  Database,
+  Radio,
+  GitFork,
 } from 'lucide-react';
 import { RailTab } from './gmail_left_rail';
 
@@ -51,51 +54,35 @@ export const METRICS_CATEGORIES = [
   'Service',
   'Synthetic',
   'Billing',
+  'Database',
+  'Security',
+  'Queues',
+  'Reliability & Alerts',
 ] as const;
 
 export type MetricsCategory = (typeof METRICS_CATEGORIES)[number];
 
-export interface MetricsSuboption {
-  id: string;
-  label: string;
-}
-
 export interface MetricsCategoryItem {
   id: MetricsCategory;
   label: string;
-  suboptions?: MetricsSuboption[];
+  icon: React.ElementType;
 }
 
 export const METRICS_NAVIGATION: MetricsCategoryItem[] = [
-  {
-    id: 'Cloud',
-    label: 'Cloud',
-    suboptions: [
-      { id: 'aws', label: 'AWS' },
-      { id: 'azure', label: 'Azure' },
-      { id: 'cloud-foundry', label: 'Cloud Foundry' },
-      { id: 'cloud-gcp', label: 'Cloud GCP' },
-    ],
-  },
-  {
-    id: 'Containers',
-    label: 'Containers',
-  },
-  {
-    id: 'Frontend',
-    label: 'Frontend',
-    suboptions: [
-      { id: 'mobile', label: 'Mobile' },
-      { id: 'web', label: 'Web' },
-    ],
-  },
-  { id: 'Infrastructure', label: 'Infrastructure' },
-  { id: 'Kubernetes', label: 'Kubernetes' },
-  { id: 'Process', label: 'Process' },
-  { id: 'Runtime', label: 'Runtime' },
-  { id: 'Service', label: 'Service' },
-  { id: 'Synthetic', label: 'Synthetic' },
-  { id: 'Billing', label: 'Billing' },
+  { id: 'Cloud', label: 'Cloud', icon: Cloud },
+  { id: 'Containers', label: 'Containers', icon: Box },
+  { id: 'Frontend', label: 'Frontend', icon: Layers },
+  { id: 'Infrastructure', label: 'Infrastructure', icon: Server },
+  { id: 'Kubernetes', label: 'Kubernetes', icon: Cpu },
+  { id: 'Process', label: 'Process', icon: Activity },
+  { id: 'Runtime', label: 'Runtime', icon: Gauge },
+  { id: 'Service', label: 'Service', icon: Radio },
+  { id: 'Synthetic', label: 'Synthetic', icon: CheckCircle2 },
+  { id: 'Billing', label: 'Billing', icon: CreditCard },
+  { id: 'Database', label: 'Database', icon: Database },
+  { id: 'Security', label: 'Security', icon: ShieldCheck },
+  { id: 'Queues', label: 'Queues', icon: GitFork },
+  { id: 'Reliability & Alerts', label: 'Reliability & Alerts', icon: AlertTriangle },
 ];
 
 export type UserSection =
@@ -148,19 +135,8 @@ export function GmailLeftSidebar({
   activeUserSection = 'accounts',
   onSelectUserSection,
 }: GmailLeftSidebarProps) {
-  const [expandedMetricsCategory, setExpandedMetricsCategory] = React.useState<MetricsCategory | null>(null);
-
-  const handleToggleCategory = (cat: MetricsCategory) => {
-    onSelectMetricsCategory?.(cat);
-    if (expandedMetricsCategory === cat) {
-      setExpandedMetricsCategory(null);
-    } else {
-      setExpandedMetricsCategory(cat);
-    }
-  };
-
   // ==========================================================
-  // VIEW 1: METRICS MODE (Expandable / Collapsible Lists like Demo)
+  // VIEW 1: METRICS MODE (Clean list with right arrow when active, matching Image 4)
   // ==========================================================
   if (activeTab === 'metrics') {
     return (
@@ -168,63 +144,38 @@ export function GmailLeftSidebar({
         <div className="space-y-1 px-2">
           {METRICS_NAVIGATION.map((catItem) => {
             const isSelected = activeMetricsCategory === catItem.id;
-            const isExpanded = expandedMetricsCategory === catItem.id;
-            const hasSuboptions = !!(catItem.suboptions && catItem.suboptions.length > 0);
+            const Icon = catItem.icon;
 
             return (
-              <div key={catItem.id} className="space-y-0.5">
-                <button
-                  type="button"
-                  onClick={() => handleToggleCategory(catItem.id)}
-                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-                    isSelected
-                      ? hasWallpaper
-                        ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                        : 'bg-[#d3e3fd] text-[#041e49]'
-                      : hasWallpaper
-                      ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                      : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-                  }`}
-                >
-                  <span className="font-bold text-sm tracking-tight">{catItem.label}</span>
-                  {hasSuboptions ? (
-                    isExpanded ? (
-                      <ChevronDown className="w-4 h-4 transition-transform duration-200" />
-                    ) : (
-                      <ChevronUp className="w-4 h-4 transition-transform duration-200" />
-                    )
-                  ) : null}
-                </button>
-
-                {/* Suboptions dropdown inside a white box with dividing lines */}
-                {isExpanded && catItem.suboptions && (
-                  <div className="mx-2 my-1.5 bg-white rounded-xl shadow-md border border-[#e0e2ec] overflow-hidden divide-y divide-[#e0e2ec] animate-in fade-in duration-150">
-                    {catItem.suboptions.map((sub) => {
-                      const isSubSelected =
-                        activeMetricsCategory === catItem.id && activeMetricsSuboption === sub.id;
-
-                      return (
-                        <button
-                          key={sub.id}
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectMetricsCategory?.(catItem.id);
-                            onSelectMetricsSuboption?.(catItem.id, sub.id);
-                          }}
-                          className={`w-full flex items-center justify-between px-4 py-2.5 text-xs sm:text-sm font-semibold transition-colors cursor-pointer text-left ${
-                            isSubSelected
-                              ? 'bg-[#d3e3fd] text-[#041e49] font-black'
-                              : 'text-[#1f1f1f] hover:bg-[#f0f4f9] hover:text-[#0b57d0]'
-                          }`}
-                        >
-                          <span>{sub.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+              <button
+                key={catItem.id}
+                type="button"
+                onClick={() => {
+                  onSelectMetricsCategory?.(catItem.id);
+                  if (catItem.id === 'Cloud') {
+                    onSelectMetricsSuboption?.('Cloud', 'aws');
+                  } else {
+                    onSelectMetricsSuboption?.(catItem.id, 'all');
+                  }
+                }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                  isSelected
+                    ? hasWallpaper
+                      ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      : 'bg-[#d3e3fd] text-[#041e49]'
+                    : hasWallpaper
+                    ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                    : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="font-semibold text-sm tracking-tight truncate">{catItem.label}</span>
+                </div>
+                {isSelected && (
+                  <ChevronRight className="w-4 h-4 shrink-0 transition-transform text-[#041e49]" />
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
