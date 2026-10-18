@@ -14,8 +14,10 @@ import {
   Sparkles,
   ShieldCheck,
   Check,
+  KeyRound,
 } from 'lucide-react';
-import { setActiveAccount } from '@/lib/auth/accounts_manager';
+import { setActiveAccount, UserAccount } from '@/lib/auth/accounts_manager';
+import { GoogleAuthModal } from '@/components/auth/google_auth_modal';
 
 interface CreateAccountViewProps {
   onBack?: () => void;
@@ -36,7 +38,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
   const [otpCountdown, setOtpCountdown] = useState(60);
   const [canResendOtp, setCanResendOtp] = useState(false);
   const [otpError, setOtpError] = useState('');
-  const [otpPreviewNotification, setOtpPreviewNotification] = useState('');
+  const [otpPreviewCode, setOtpPreviewCode] = useState('');
 
   // Step 2 Form State
   const [password, setPassword] = useState('');
@@ -48,11 +50,11 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
   const [company, setCompany] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [phone, setPhone] = useState('');
-  const [referralCode, setReferralCode] = useState('');
   const [interest, setInterest] = useState('Infrastructure Monitoring');
 
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState('');
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -98,7 +100,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
       const checkRes = await fetch('/api/auth/check-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
       });
       const checkData = await checkRes.json();
 
@@ -112,16 +114,17 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
       const otpRes = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
       });
       const otpData = await otpRes.json();
 
       if (otpData.success) {
         if (otpData.otpPreview) {
-          setOtpPreviewNotification(`Verification Code: ${otpData.otpPreview}`);
+          setOtpPreviewCode(otpData.otpPreview);
         }
         setOtpCountdown(60);
         setCanResendOtp(false);
+        setOtpValues(['', '', '', '', '', '']);
         setCurrentStep('otp');
       } else {
         setGeneralError(otpData.error || 'Failed to send verification code.');
@@ -163,6 +166,15 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
     }
   };
 
+  // Auto-fill OTP from preview code
+  const handleAutoFillOtp = () => {
+    if (otpPreviewCode && otpPreviewCode.length === 6) {
+      const digits = otpPreviewCode.split('');
+      setOtpValues(digits);
+      otpInputRefs.current[5]?.focus();
+    }
+  };
+
   // Verify OTP
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,7 +190,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
       const res = await fetch('/api/auth/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: fullOtp }),
+        body: JSON.stringify({ email: email.toLowerCase().trim(), otp: fullOtp }),
       });
       const data = await res.json();
 
@@ -202,12 +214,12 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
       const res = await fetch('/api/auth/otp/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
       });
       const data = await res.json();
       if (data.success) {
         if (data.otpPreview) {
-          setOtpPreviewNotification(`Verification Code: ${data.otpPreview}`);
+          setOtpPreviewCode(data.otpPreview);
         }
         setOtpCountdown(60);
         setCanResendOtp(false);
@@ -236,7 +248,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email,
+          email: email.toLowerCase().trim(),
           password,
           firstName,
           lastName,
@@ -258,7 +270,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
           } else {
             router.push('/demo');
           }
-        }, 2800);
+        }, 2600);
       } else {
         setGeneralError(data.error || 'Failed to complete registration.');
       }
@@ -269,46 +281,30 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
     }
   };
 
-  // Google Sign-Up Trigger
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true);
-    try {
-      // In dev mode, simulate Google account picker with custom or default Google identity
-      const googleUserEmail = email && email.includes('@') ? email : 'googleuser@gmail.com';
-      const googleName = googleUserEmail.split('@')[0];
-
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: googleUserEmail,
-          name: googleName,
-          avatarUrl: '/infra_trace_logo.png',
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setActiveAccount(data.user);
-        setCurrentStep('provisioning');
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            router.push('/demo');
-          }
-        }, 2500);
+  // Handle Google Auth Success from Modal
+  const handleGoogleSuccess = (user: UserAccount) => {
+    setCurrentStep('provisioning');
+    setTimeout(() => {
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push('/demo');
       }
-    } catch (err: any) {
-      setGeneralError('Google Sign-In failed.');
-    } finally {
-      setIsLoading(false);
-    }
+    }, 2200);
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0c44ac] text-white font-sans antialiased flex flex-col justify-between p-4 sm:p-6 select-none relative overflow-x-hidden">
-      {/* Top Bar: Logo & Login */}
+    <div
+      style={{
+        backgroundColor: '#0047bb',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+      className="w-full text-white font-sans antialiased p-4 sm:p-6 select-none relative overflow-x-hidden"
+    >
+      {/* Top Bar: Brand Logo & Login Button (Exact Dynatrace Alignment) */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between pt-2">
         <div
           onClick={onBack || (() => router.push('/'))}
@@ -320,36 +316,45 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
 
         <button
           onClick={() => onGoToSignIn ? onGoToSignIn() : router.push('/signin')}
-          className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/20 transition-colors cursor-pointer shadow-xs"
+          className="px-5 py-2 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
         >
           Login
         </button>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-xl w-full mx-auto my-auto py-8">
-        {/* Step Heading */}
+      {/* Main Centered Container */}
+      <main
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+        className="w-full max-w-xl mx-auto py-8 my-auto"
+      >
+        {/* Step Heading (Bold White) */}
         <div className="text-center mb-6">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
             Try with your data
           </h1>
-          <p className="text-xs text-blue-200 mt-1.5 font-medium">
+          <p className="text-xs text-blue-100 mt-1.5 font-medium">
             Start observing your infrastructure and APIs in minutes.
           </p>
         </div>
 
         {/* Global Error Banner */}
         {generalError && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-rose-500/90 border border-rose-300 text-white text-xs font-semibold text-center">
+          <div className="w-full max-w-[540px] mb-4 p-3.5 rounded-2xl bg-rose-500 border border-rose-300 text-white text-xs font-semibold text-center shadow-lg">
             {generalError}
           </div>
         )}
 
         {/* ======================================================== */}
-        {/* CARD 1: STEP 1 OF 2 (Image 1)                            */}
+        {/* CARD 1: STEP 1 OF 2                                      */}
         {/* ======================================================== */}
         {currentStep === 'step1' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
+          <div className="w-full max-w-[540px] bg-white rounded-2xl p-7 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
             <form onSubmit={handleStep1Submit} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-800">Your email *</label>
@@ -358,7 +363,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-sm outline-none transition-all"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-sm outline-none transition-all text-slate-900"
                   required
                 />
               </div>
@@ -369,7 +374,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                   type="checkbox"
                   checked={agreedToTerms}
                   onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                 />
                 <span className="text-xs text-slate-600 leading-relaxed">
                   I have read and agree to the <strong className="text-slate-900 underline">InfraTrace Terms of Use</strong> (including any future modifications).
@@ -380,7 +385,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
               <div className="pt-1">
                 <button
                   type="button"
-                  onClick={handleGoogleSignUp}
+                  onClick={() => setIsGoogleModalOpen(true)}
                   className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors cursor-pointer shadow-2xs"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -393,21 +398,22 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                 </button>
               </div>
 
-              {/* Bottom Card Controls */}
+              {/* Bottom Card Controls (Exact Dynatrace Buttons) */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <span className="text-xs text-slate-400 font-semibold">Step 1 of 2</span>
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={onBack || (() => router.push('/'))}
-                    className="px-5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                    className="px-5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors cursor-pointer"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-75 shadow-xs"
+                    style={{ backgroundColor: '#0047bb' }}
+                    className="px-6 py-2.5 rounded-lg hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-75 shadow-xs"
                   >
                     {isLoading ? 'Checking...' : 'Continue'}
                   </button>
@@ -418,10 +424,10 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
         )}
 
         {/* ======================================================== */}
-        {/* CARD 2: ACCOUNT ALREADY EXISTS (Image 2)                 */}
+        {/* CARD 2: ACCOUNT ALREADY EXISTS                           */}
         {/* ======================================================== */}
         {currentStep === 'account_exists' && (
-          <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-2xl text-slate-900 border border-slate-100 space-y-6 text-center animate-in fade-in duration-200">
+          <div className="w-full max-w-[540px] bg-white rounded-2xl p-8 sm:p-10 shadow-2xl text-slate-900 border border-slate-100 space-y-6 text-center animate-in fade-in duration-200">
             <h2 className="text-2xl font-bold text-slate-900">Account already exists</h2>
             <p className="text-sm text-slate-600">
               An account with email <strong className="text-slate-900">{email}</strong> already exists.
@@ -430,8 +436,9 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
               <button
                 type="button"
-                onClick={() => onGoToSignIn ? onGoToSignIn(email) : router.push('/signin')}
-                className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                onClick={() => onGoToSignIn ? onGoToSignIn(email) : router.push(`/signin?email=${encodeURIComponent(email)}`)}
+                style={{ backgroundColor: '#0047bb' }}
+                className="w-full sm:w-auto px-6 py-3 rounded-xl hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
               >
                 Log in instead
               </button>
@@ -453,18 +460,36 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
         {/* CARD 3: OTP VERIFICATION                                  */}
         {/* ======================================================== */}
         {currentStep === 'otp' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
-            {otpPreviewNotification && (
-              <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-mono font-bold flex items-center justify-between">
-                <span>{otpPreviewNotification}</span>
-                <span className="text-[10px] text-blue-600 uppercase">Dev Mode Preview</span>
+          <div className="w-full max-w-[540px] bg-white rounded-2xl p-6 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
+            {/* Prominent Instant Code Banner */}
+            {otpPreviewCode && (
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <KeyRound className="w-4 h-4 text-amber-600" />
+                    <span className="text-xs font-bold">Verification Code:</span>
+                    <span className="font-mono text-base font-extrabold tracking-widest text-blue-700 bg-white px-2 py-0.5 rounded border border-amber-300">
+                      {otpPreviewCode}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-amber-800">
+                    Also delivered to your email and platform inbox.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAutoFillOtp}
+                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-2xs"
+                >
+                  Auto-fill Code
+                </button>
               </div>
             )}
 
             <div className="text-center space-y-1">
               <h2 className="text-xl font-bold text-slate-900">Verify your email address</h2>
               <p className="text-xs text-slate-500">
-                We sent a 6-digit cryptographic verification code to <span className="font-semibold text-slate-800">{email}</span>. Check your inbox and platform mailbox.
+                Enter the 6-digit code sent to <span className="font-semibold text-slate-800">{email}</span>
               </p>
             </div>
 
@@ -513,14 +538,15 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                 <button
                   type="button"
                   onClick={() => setCurrentStep('step1')}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800"
+                  className="text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer"
                 >
                   Edit email
                 </button>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-75 shadow-xs"
+                  style={{ backgroundColor: '#0047bb' }}
+                  className="px-6 py-2.5 rounded-lg hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-75 shadow-xs"
                 >
                   {isLoading ? 'Verifying...' : 'Verify & Continue'}
                 </button>
@@ -530,13 +556,13 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
         )}
 
         {/* ======================================================== */}
-        {/* CARD 4: STEP 2 OF 2 (User Details & Password - Images 3/4) */}
+        {/* CARD 4: STEP 2 OF 2 (User Details & Password)            */}
         {/* ======================================================== */}
         {currentStep === 'step2' && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
+          <div className="w-full max-w-[540px] bg-white rounded-2xl p-6 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
             <form onSubmit={handleStep2Submit} className="space-y-5">
               {/* Verified Email Banner */}
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="min-w-0">
                   <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">Your email</span>
                   <span className="text-sm font-semibold text-slate-800 truncate block">{email}</span>
@@ -559,13 +585,13 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create your password"
-                    className="w-full px-4 py-3 pr-10 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-sm outline-none transition-all"
+                    className="w-full px-4 py-3 pr-10 rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 text-sm outline-none transition-all text-slate-900"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -598,7 +624,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                 <select
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-sm outline-none focus:border-blue-600"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-white text-sm outline-none focus:border-blue-600 text-slate-900 cursor-pointer"
                 >
                   <option value="India">India</option>
                   <option value="United States">United States</option>
@@ -611,11 +637,11 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
               </div>
 
               {/* Accordion: Additional Information (Optional) */}
-              <div className="border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
-                  className="w-full p-4 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 transition-colors"
+                  className="w-full p-3.5 bg-slate-50 hover:bg-slate-100 flex items-center justify-between text-xs font-bold text-slate-700 transition-colors cursor-pointer"
                 >
                   <span>Additional information (optional)</span>
                   {showAdditionalInfo ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -631,7 +657,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
                           placeholder="First name"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none"
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none text-slate-900"
                         />
                       </div>
                       <div>
@@ -641,7 +667,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                           value={lastName}
                           onChange={(e) => setLastName(e.target.value)}
                           placeholder="Last name"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none"
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none text-slate-900"
                         />
                       </div>
                     </div>
@@ -653,7 +679,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                         value={company}
                         onChange={(e) => setCompany(e.target.value)}
                         placeholder="Company name"
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none text-slate-900"
                       />
                     </div>
 
@@ -665,7 +691,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                           value={jobTitle}
                           onChange={(e) => setJobTitle(e.target.value)}
                           placeholder="Job title"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none"
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none text-slate-900"
                         />
                       </div>
                       <div>
@@ -675,7 +701,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                           value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           placeholder="Phone number"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none"
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none text-slate-900"
                         />
                       </div>
                     </div>
@@ -685,7 +711,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                       <select
                         value={interest}
                         onChange={(e) => setInterest(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none bg-white"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs outline-none bg-white text-slate-900 cursor-pointer"
                       >
                         <option value="Infrastructure Monitoring">Infrastructure Monitoring</option>
                         <option value="Application Performance">Application Performance</option>
@@ -709,14 +735,15 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                   <button
                     type="button"
                     onClick={() => setCurrentStep('step1')}
-                    className="px-5 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                    className="px-5 py-2 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-bold transition-colors cursor-pointer"
                   >
                     Back
                   </button>
                   <button
                     type="submit"
                     disabled={isLoading || !isPasswordValid}
-                    className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                    style={{ backgroundColor: '#0047bb' }}
+                    className="px-6 py-2.5 rounded-lg hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
                   >
                     {isLoading ? 'Creating account...' : 'Start trial'}
                   </button>
@@ -727,14 +754,14 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
         )}
 
         {/* ======================================================== */}
-        {/* CARD 5: ENVIRONMENT PROVISIONING (Image 5)               */}
+        {/* CARD 5: ENVIRONMENT PROVISIONING                         */}
         {/* ======================================================== */}
         {currentStep === 'provisioning' && (
-          <div className="bg-white rounded-3xl p-10 sm:p-14 shadow-2xl text-slate-900 border border-slate-100 text-center space-y-6 animate-in zoom-in-95 duration-300">
+          <div className="w-full max-w-[540px] bg-white rounded-2xl p-10 sm:p-14 shadow-2xl text-slate-900 border border-slate-100 text-center space-y-6 animate-in zoom-in-95 duration-300">
             {/* Animated Glowing 3D Gradient Globe */}
             <div className="relative w-36 h-36 mx-auto flex items-center justify-center">
               <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-500 to-emerald-400 animate-spin blur-xs opacity-70" />
-              <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-[#0c44ac] via-[#6366f1] to-[#10b981] shadow-2xl flex items-center justify-center overflow-hidden border-2 border-white/40">
+              <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-[#0047bb] via-[#6366f1] to-[#10b981] shadow-2xl flex items-center justify-center overflow-hidden border-2 border-white/40">
                 <div className="w-full h-full bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] opacity-30 animate-pulse" />
               </div>
             </div>
@@ -754,7 +781,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
           </div>
         )}
 
-        {/* Bottom Helper Links */}
+        {/* Bottom Helper Links (Exact Dynatrace footer) */}
         <div className="text-center pt-8 space-y-2 text-xs text-blue-100">
           <p>
             Want to try with sample data?{' '}
@@ -762,15 +789,22 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
               onClick={() => router.push('/demo')}
               className="text-white font-bold underline hover:text-blue-200 cursor-pointer"
             >
-              Try Playground / Demo
+              Try Playground.
             </button>
-            .
           </p>
           <p>
             <strong className="text-white">Request a demo</strong> to learn more about the InfraTrace platform.
           </p>
         </div>
       </main>
+
+      {/* Google Sign-In Chooser Modal */}
+      <GoogleAuthModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSuccess={handleGoogleSuccess}
+        initialEmail={email}
+      />
     </div>
   );
 }

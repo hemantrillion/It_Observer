@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   Search,
   CheckCircle2,
-  X,
-  Lock,
 } from 'lucide-react';
 
 interface InfratraceMinimalistLandingPageProps {
@@ -18,7 +16,6 @@ export function InfratraceMinimalistLandingPage({
 }: InfratraceMinimalistLandingPageProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'developers' | 'sre' | 'enterprise'>('developers');
-  const [authModalType, setAuthModalType] = useState<'signin' | 'signup' | null>(null);
 
   const handleStartDemo = () => {
     if (onStartDemo) {
@@ -157,7 +154,7 @@ export function InfratraceMinimalistLandingPage({
 
             {/* Sign in Button */}
             <button
-              onClick={() => setAuthModalType('signin')}
+              onClick={() => router.push('/signin')}
               className="px-7 sm:px-9 py-4 sm:py-4.5 rounded-full border border-[#747775]/40 hover:bg-black/5 text-[#1f1f1f] text-base sm:text-xl font-semibold transition-colors cursor-pointer"
             >
               Sign in
@@ -451,60 +448,6 @@ ORDER BY timestamp DESC LIMIT 3;
         </div>
       </footer>
 
-      {/* ======================================================== */}
-      {/* 6. SIGN IN / SIGN UP MODAL                               */}
-      {/* ======================================================== */}
-      {authModalType && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-[#c4c7c5] p-7 space-y-5 font-sans animate-in fade-in duration-150">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#e8f0fe] text-[#0b57d0] flex items-center justify-center">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h3 className="text-xl font-bold text-[#1f1f1f]">
-                  {authModalType === 'signin' ? 'Sign in to InfraTrace' : 'Create an Account'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setAuthModalType(null)}
-                className="p-1.5 rounded-full hover:bg-black/5 text-[#444746]"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-5 rounded-2xl bg-[#f0f4f9] border border-[#e0e2ec] text-sm text-[#444746] space-y-2.5">
-              <p className="font-semibold text-[#1f1f1f]">
-                {authModalType === 'signin'
-                  ? 'Sign in authentication will be enabled in the upcoming release.'
-                  : 'Account registration on our platform is currently in database-open verification mode.'}
-              </p>
-              <p>
-                To explore the live telemetry cockpit, Prometheus graphs, and database tables right now, please use the <strong>Start Demo</strong> option.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-3">
-              <button
-                onClick={() => setAuthModalType(null)}
-                className="px-5 py-2.5 rounded-full border border-[#c4c7c5] text-sm font-semibold text-[#444746] hover:bg-black/5"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  setAuthModalType(null);
-                  handleStartDemo();
-                }}
-                className="px-6 py-2.5 rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white text-sm font-semibold shadow-xs"
-              >
-                Launch Start Demo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

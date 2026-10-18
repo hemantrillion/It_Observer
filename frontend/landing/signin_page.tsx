@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Lock, Mail, Eye, EyeOff, ShieldAlert, Sparkles } from 'lucide-react';
-import { setActiveAccount, DEFAULT_TEST_USER } from '@/lib/auth/accounts_manager';
+import { setActiveAccount, DEFAULT_TEST_USER, UserAccount } from '@/lib/auth/accounts_manager';
+import { GoogleAuthModal } from '@/components/auth/google_auth_modal';
 
 interface SignInViewProps {
   onBack?: () => void;
@@ -20,6 +21,7 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,11 +37,11 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
       const res = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
       });
 
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.user) {
         setActiveAccount(data.user);
         if (onSuccess) {
           onSuccess();
@@ -47,7 +49,7 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
           router.push('/demo');
         }
       } else {
-        setErrorMessage(data.error || 'Authentication failed.');
+        setErrorMessage(data.error || 'Authentication failed. Please check your credentials.');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Network error.');
@@ -56,37 +58,15 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      const googleUserEmail = email && email.includes('@') ? email : 'googleuser@gmail.com';
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: googleUserEmail,
-          name: googleUserEmail.split('@')[0],
-          avatarUrl: '/infra_trace_logo.png',
-        }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setActiveAccount(data.user);
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push('/demo');
-        }
-      }
-    } catch (err: any) {
-      setErrorMessage('Google Sign-In failed.');
-    } finally {
-      setIsLoading(false);
+  const handleGoogleSuccess = (user: UserAccount) => {
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      router.push('/demo');
     }
   };
 
-  // Test User Quick Login Bypass (Side Docked)
+  // Test User Quick Login Bypass (Side Docked for dev convenience)
   const handleQuickTestUserLogin = () => {
     setActiveAccount(DEFAULT_TEST_USER);
     if (onSuccess) {
@@ -97,8 +77,17 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0c44ac] text-white font-sans antialiased flex flex-col justify-between p-4 sm:p-6 select-none relative overflow-x-hidden">
-      {/* Top Bar: Logo & Navigation */}
+    <div
+      style={{
+        backgroundColor: '#0047bb',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+      className="w-full text-white font-sans antialiased p-4 sm:p-6 select-none relative overflow-x-hidden"
+    >
+      {/* Top Bar: Brand Logo & Navigation */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between pt-2">
         <div
           onClick={onBack || (() => router.push('/'))}
@@ -110,31 +99,42 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
 
         <button
           onClick={onGoToSignUp || (() => router.push('/signup'))}
-          className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md border border-white/20 transition-colors cursor-pointer shadow-xs"
+          className="px-5 py-2 rounded-lg bg-white text-slate-900 text-xs font-semibold hover:bg-slate-100 transition-colors cursor-pointer shadow-xs"
         >
           Create account
         </button>
       </header>
 
-      {/* Center Sign In Card (Pure, Unaltered Design) */}
-      <main className="max-w-md w-full mx-auto my-auto py-8">
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-6 animate-in fade-in duration-200">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Sign in to your account</h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Enter your credentials to access telemetry consoles.
-            </p>
-          </div>
+      {/* Main Centered Sign In Card */}
+      <main
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+        className="w-full max-w-md mx-auto py-8 my-auto"
+      >
+        <div className="text-center mb-6">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Sign in to InfraTrace
+          </h1>
+          <p className="text-xs text-blue-100 mt-1.5 font-medium">
+            Enter your credentials to access your telemetry cockpit.
+          </p>
+        </div>
 
+        <div className="w-full bg-white rounded-2xl p-7 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-5 animate-in fade-in duration-200">
           {errorMessage && (
-            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold text-center">
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold text-center">
               {errorMessage}
             </div>
           )}
 
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-800">Email Address</label>
+              <label className="text-xs font-bold text-slate-800">Email Address *</label>
               <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
                 <Mail className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
@@ -150,7 +150,7 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800">Password</label>
+                <label className="text-xs font-bold text-slate-800">Password *</label>
                 <a href="#" className="text-[11px] font-semibold text-blue-600 hover:underline">
                   Forgot password?
                 </a>
@@ -168,7 +168,7 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-slate-600"
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -178,7 +178,8 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer disabled:opacity-75"
+              style={{ backgroundColor: '#0047bb' }}
+              className="w-full py-3 rounded-xl hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer disabled:opacity-75"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -194,7 +195,7 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
           {/* Continue with Google */}
           <button
             type="button"
-            onClick={handleGoogleSignIn}
+            onClick={() => setIsGoogleModalOpen(true)}
             className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors cursor-pointer shadow-2xs"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -215,6 +216,19 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
               Don't have an account? Create one
             </button>
           </div>
+        </div>
+
+        {/* Bottom Helper Links */}
+        <div className="text-center pt-8 space-y-2 text-xs text-blue-100">
+          <p>
+            Want to try with sample data?{' '}
+            <button
+              onClick={() => router.push('/demo')}
+              className="text-white font-bold underline hover:text-blue-200 cursor-pointer"
+            >
+              Try Playground.
+            </button>
+          </p>
         </div>
       </main>
 
@@ -242,9 +256,17 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
       </div>
 
       {/* Footer */}
-      <footer className="text-center text-xs text-blue-200/80 pt-4 pb-2">
+      <footer className="text-center text-xs text-blue-100/80 pt-4 pb-2">
         <span>© {new Date().getFullYear()} InfraTrace LLC. All rights reserved.</span>
       </footer>
+
+      {/* Google Sign-In Chooser Modal */}
+      <GoogleAuthModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSuccess={handleGoogleSuccess}
+        initialEmail={email}
+      />
     </div>
   );
 }

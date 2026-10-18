@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const db = getDatabaseConnection();
     const body = await req.json();
 
-    const { email, name, avatarUrl, company, jobTitle, phone, country } = body;
+    const { email, name, avatarUrl, company, jobTitle, phone, country, password } = body;
 
     if (!email) {
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
@@ -21,6 +21,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
+    const passwordHash = password && password.trim().length > 0
+      ? require('crypto').createHash('sha256').update(password).digest('hex')
+      : null;
+
     db.prepare(`
       UPDATE platform_users
       SET name = COALESCE(?, name),
@@ -29,6 +33,7 @@ export async function POST(req: Request) {
           job_title = COALESCE(?, job_title),
           phone = COALESCE(?, phone),
           country = COALESCE(?, country),
+          password_hash = COALESCE(?, password_hash),
           last_active_at = ?
       WHERE LOWER(email) = ?
     `).run(
@@ -38,6 +43,7 @@ export async function POST(req: Request) {
       jobTitle || null,
       phone || null,
       country || null,
+      passwordHash,
       new Date().toISOString(),
       cleanEmail
     );
