@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import {
-  Search,
   Check,
   Lock,
   Globe,
@@ -13,8 +12,6 @@ import {
   Cpu,
   Sliders,
   AlertCircle,
-  ExternalLink,
-  ChevronRight,
   X,
   Server,
   Layers,
@@ -60,7 +57,6 @@ export function DemoSettingsCatalogView({
   onChangeConstantPollingInterval,
   onTriggerManualPoll,
   isPolling,
-  hasWallpaper = false,
   onInspectService,
   searchQuery: externalSearchQuery = '',
 }: DemoSettingsCatalogViewProps) {
@@ -144,89 +140,87 @@ export function DemoSettingsCatalogView({
   };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto pb-20 font-sans select-none">
-      {/* ======================================================== */}
-      {/* 1. TOP SECTION (GRAPH-STYLE HIGH CONTRAST & TRANSPARENT) */}
-      {/* ======================================================== */}
-      <div className="space-y-6">
-        {/* Main Heading - Neo-Brutalist & Large Typography */}
-        <div className="bg-white/85 backdrop-blur-md rounded-2xl border-2 border-black p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <span className="w-10 h-10 rounded-lg bg-black text-white flex items-center justify-center font-bold text-lg">
-                <Sliders className="w-5 h-5 text-white" />
+    <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans select-text">
+      {/* 1. TOP SECTION: CONTROLS & CONFIGURATION */}
+      <div className="space-y-4">
+        {/* Main Heading */}
+        <div className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <Sliders className="w-4 h-4" />
               </span>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-black uppercase tracking-tight">
-                DEMO SETTINGS &amp; PUBLIC APIS CATALOG
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                Demo Settings &amp; Public APIs Catalog
               </h1>
             </div>
-            <p className="text-sm sm:text-base font-semibold text-neutral-800 max-w-4xl leading-relaxed">
-              Configure telemetry synthetic polling intervals and select target public or private endpoints across the sequential A–Z catalog. Checked endpoints instantly reflect in the live Dashboard and can be inspected in the time-series graph.
+            <p className="text-xs sm:text-sm font-medium text-slate-500 max-w-3xl leading-relaxed">
+              Configure telemetry synthetic polling intervals and select target public or private endpoints across the sequential A–Z catalog.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="border-2 border-black rounded-lg px-4 py-2 bg-white/90 text-xs sm:text-sm font-black uppercase text-black flex items-center gap-2 shadow-xs">
-              <Server className="w-4 h-4 text-black" />
-              <span>{monitoredServices.length} ACTIVE TARGETS</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="border border-slate-200/90 rounded-lg px-3 py-1.5 bg-slate-50 text-xs font-bold text-slate-700 flex items-center gap-2">
+              <Server className="w-3.5 h-3.5 text-slate-500" />
+              <span>{monitoredServices.length} Active Targets</span>
             </div>
           </div>
         </div>
 
-        {/* 1A. AUTOMATED CONSTANT POLLING CONTROL CARD (NEO-BRUTALIST GRAPH STYLE) */}
-        <div className="bg-white/85 backdrop-blur-md rounded-2xl border-2 border-black p-6 sm:p-8 space-y-6 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 border-b-2 border-black/20 pb-5">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-3">
-                <Radio className={`w-5 h-5 ${isConstantPollingEnabled ? 'text-black animate-pulse' : 'text-neutral-500'}`} />
-                <h3 className="text-lg sm:text-xl font-black text-black uppercase tracking-tight">
-                  AUTOMATED CONSTANT POLLING ENGINE
+        {/* 1A. AUTOMATED CONSTANT POLLING CONTROL CARD */}
+        <div className="bg-white rounded-xl border border-slate-200/90 p-5 sm:p-6 space-y-5 shadow-2xs">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <Radio className={`w-4 h-4 ${isConstantPollingEnabled ? 'text-emerald-600 animate-pulse' : 'text-slate-400'}`} />
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Automated Constant Polling Engine
                 </h3>
                 <span
-                  className={`px-3 py-1 rounded-md text-xs sm:text-sm font-black uppercase tracking-wider border border-black ${
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
                     isConstantPollingEnabled
-                      ? 'bg-black text-white'
-                      : 'bg-neutral-100 text-neutral-700'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}
                 >
-                  {isConstantPollingEnabled ? `ACTIVE (${constantPollingInterval / 1000}S INTERVAL)` : 'DISABLED (DEFAULT)'}
+                  {isConstantPollingEnabled ? `Active (${constantPollingInterval / 1000}s interval)` : 'Disabled (Default)'}
                 </span>
               </div>
-              <p className="text-sm sm:text-base font-semibold text-neutral-700 leading-relaxed max-w-3xl">
-                By default, constant polling is <strong>OFF</strong> to prevent unwanted background traffic. When disabled, metrics only refresh when clicking &ldquo;Poll Now&rdquo; manually. Enable to probe all selected target endpoints continuously at your chosen interval.
+              <p className="text-xs text-slate-500 font-medium leading-relaxed max-w-2xl">
+                By default, constant polling is off to prevent unwanted background traffic. When disabled, metrics only refresh when clicking &ldquo;Poll Now&rdquo; manually.
               </p>
             </div>
 
-            {/* Toggle Switch - High Contrast */}
-            <div className="flex items-center gap-4 shrink-0">
+            {/* Toggle Switch */}
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => onToggleConstantPolling(!isConstantPollingEnabled)}
-                className={`relative inline-flex h-9 w-16 shrink-0 cursor-pointer rounded-full border-2 border-black transition-colors duration-200 ease-in-out focus:outline-none ${
-                  isConstantPollingEnabled ? 'bg-black' : 'bg-neutral-200'
+                className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border border-slate-300 transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isConstantPollingEnabled ? 'bg-blue-600' : 'bg-slate-200'
                 }`}
               >
                 <span className="sr-only">Toggle Constant Polling</span>
                 <span
-                  className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white border border-black shadow-md ring-0 transition duration-200 ease-in-out mt-0.5 ml-0.5 ${
-                    isConstantPollingEnabled ? 'translate-x-7' : 'translate-x-0'
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out mt-0.5 ml-0.5 ${
+                    isConstantPollingEnabled ? 'translate-x-6' : 'translate-x-0'
                   }`}
                 />
               </button>
-              <span className="text-base font-black text-black uppercase">
-                {isConstantPollingEnabled ? 'ENABLED' : 'DISABLED'}
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                {isConstantPollingEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>
           </div>
 
           {/* Interval Selector + Manual Poll Now Button */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pt-1">
-            <div className="space-y-2">
-              <label className="text-xs sm:text-sm font-black uppercase tracking-wider text-black flex items-center gap-2">
-                <Clock className="w-4 h-4 text-black" />
-                <span>POLLING FREQUENCY INTERVAL</span>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pt-0.5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                <span>Polling Frequency Interval</span>
               </label>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
                 {POLLING_INTERVALS.map((intv) => {
                   const isSelected = constantPollingInterval === intv.value;
                   return (
@@ -234,10 +228,10 @@ export function DemoSettingsCatalogView({
                       key={intv.value}
                       type="button"
                       onClick={() => onChangeConstantPollingInterval(intv.value)}
-                      className={`px-3.5 py-2 text-xs sm:text-sm font-bold border-2 border-black rounded-lg uppercase transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-black text-white shadow-xs scale-[1.02]'
-                          : 'bg-white/80 text-black hover:bg-neutral-100'
+                          ? 'bg-slate-900 text-white font-bold border-slate-900 shadow-2xs'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200/90'
                       }`}
                     >
                       {intv.label}
@@ -248,113 +242,106 @@ export function DemoSettingsCatalogView({
             </div>
 
             {/* Manual Poll Now Button */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => onTriggerManualPoll()}
                 disabled={isPolling}
-                className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-black hover:bg-neutral-800 text-white font-black text-xs sm:text-sm uppercase border-2 border-black shadow-xs transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase shadow-2xs transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               >
-                <RefreshCw className={`w-4 h-4 text-white ${isPolling ? 'animate-spin' : ''}`} />
-                <span>{isPolling ? 'PROBING TARGETS...' : 'POLL NOW (MANUAL TRIGGER)'}</span>
+                <RefreshCw className={`w-3.5 h-3.5 text-white ${isPolling ? 'animate-spin' : ''}`} />
+                <span>{isPolling ? 'Probing...' : 'Poll Now'}</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* 1B. DISPLAY-ONLY SHOW SETTINGS (GRAPH-STYLE CARDS, TRANSPARENT & SHARP) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card 1: Telemetry Ingestion Engine */}
-          <div className="bg-white/80 backdrop-blur-md rounded-xl border-2 border-black p-5 space-y-2 select-none shadow-xs">
+        {/* 1B. SHOW SETTINGS CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          <div className="bg-white rounded-xl border border-slate-200/90 p-4 space-y-1.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5 opacity-70">
-                <Cpu className="w-4 h-4 text-black" />
-                <span>INGESTION ENGINE</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-slate-500" />
+                <span>Ingestion Engine</span>
               </span>
-              <span className="px-2.5 py-0.5 rounded border border-black text-xs font-bold bg-neutral-100 text-black uppercase">
-                MANAGED (SHOW ONLY)
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase">
+                Managed
               </span>
             </div>
-            <h4 className="text-base sm:text-lg font-black text-black uppercase">gRPC &amp; HTTP/2 STREAM PIPELINE</h4>
-            <p className="text-xs sm:text-sm font-medium text-neutral-700 leading-relaxed">
+            <h4 className="text-sm font-bold text-slate-900">gRPC &amp; HTTP/2 Stream</h4>
+            <p className="text-xs font-medium text-slate-500 leading-relaxed">
               Snappy compression enabled. Ingestion buffer throttled at 128 MB with zero-allocation socket pooling.
             </p>
           </div>
 
-          {/* Card 2: Transport Cryptography */}
-          <div className="bg-white/80 backdrop-blur-md rounded-xl border-2 border-black p-5 space-y-2 select-none shadow-xs">
+          <div className="bg-white rounded-xl border border-slate-200/90 p-4 space-y-1.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5 opacity-70">
-                <ShieldCheck className="w-4 h-4 text-black" />
-                <span>CRYPTOGRAPHY</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                <span>Cryptography</span>
               </span>
-              <span className="px-2.5 py-0.5 rounded border border-black text-xs font-bold bg-neutral-100 text-black uppercase">
-                ENFORCED (SHOW ONLY)
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase">
+                Enforced
               </span>
             </div>
-            <h4 className="text-base sm:text-lg font-black text-black uppercase">STRICT TLS 1.3 &amp; OCSP STAPLING</h4>
-            <p className="text-xs sm:text-sm font-medium text-neutral-700 leading-relaxed">
+            <h4 className="text-sm font-bold text-slate-900">Strict TLS 1.3 &amp; OCSP</h4>
+            <p className="text-xs font-medium text-slate-500 leading-relaxed">
               Automated certificate revocation verification and ECDHE ephemeral key exchange validation.
             </p>
           </div>
 
-          {/* Card 3: Reserved Configuration Slot (User explicitly requested placeholder) */}
-          <div className="bg-white/80 backdrop-blur-md rounded-xl border-2 border-dashed border-black p-5 space-y-2 select-none shadow-xs">
+          <div className="bg-white rounded-xl border border-dashed border-slate-300 p-4 space-y-1.5 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5 opacity-70">
-                <Layers className="w-4 h-4 text-black" />
-                <span>CUSTOM PARAMETER</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-slate-400" />
+                <span>Custom Parameter</span>
               </span>
-              <span className="px-2.5 py-0.5 rounded border border-black text-xs font-bold bg-black text-white uppercase">
-                RESERVED SLOT
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 uppercase">
+                Reserved Slot
               </span>
             </div>
-            <h4 className="text-base sm:text-lg font-black text-black uppercase">RESERVED CONFIGURATION SLOT</h4>
-            <p className="text-xs sm:text-sm font-medium text-neutral-700 leading-relaxed">
-              Slot reserved above search bar for custom configuration parameter to be specified in subsequent refinement.
+            <h4 className="text-sm font-bold text-slate-700">Reserved Configuration</h4>
+            <p className="text-xs font-medium text-slate-500 leading-relaxed">
+              Slot reserved above search bar for custom configuration parameter to be specified.
             </p>
           </div>
         </div>
       </div>
 
-      {/* ======================================================== */}
-      {/* 2. CATALOG STATUS & GLOBAL FILTER INFO                   */}
-      {/* ======================================================== */}
-      <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm text-neutral-800 px-1 font-bold gap-2">
-        <span className="uppercase tracking-wide">
-          SHOWING <strong>{filteredCatalog.length}</strong> TARGET APIS ACROSS {ALPHABETS.length} ALPHABETICAL CATEGORIES
+      {/* 2. CATALOG STATUS INFO */}
+      <div className="flex flex-wrap items-center justify-between text-xs text-slate-500 px-1 font-semibold gap-2">
+        <span>
+          Showing <strong className="text-slate-900 font-bold">{filteredCatalog.length}</strong> target APIs across {ALPHABETS.length} alphabetical categories
         </span>
         {externalSearchQuery && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-black text-white text-xs font-black uppercase shadow-xs">
-            <span>FILTERED BY TOP SEARCH: &ldquo;{externalSearchQuery}&rdquo;</span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200">
+            <span>Filtered by: &ldquo;{externalSearchQuery}&rdquo;</span>
           </span>
         )}
       </div>
 
-      {/* ======================================================== */}
-      {/* 3. ALPHABET JUMP BAR (LEFT TO RIGHT: A TO Z)             */}
-      {/* ======================================================== */}
-      <div className="space-y-2 sticky top-0 z-20 bg-white/90 backdrop-blur-md py-3.5 border-y-2 border-black shadow-xs">
+      {/* 3. ALPHABET JUMP BAR */}
+      <div className="space-y-2 sticky top-0 z-20 bg-white/95 backdrop-blur-md py-3 border-y border-slate-200/90 shadow-2xs">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-black">
-            ALPHABETICAL JUMP BAR (A &mdash; Z)
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Alphabetical Jump Bar (A &mdash; Z)
           </span>
-          <span className="text-xs sm:text-sm font-semibold text-neutral-600">
+          <span className="text-xs text-slate-400 font-medium">
             Click to jump or scroll sequentially
           </span>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
           <button
             type="button"
             onClick={() => {
               setActiveLetter(null);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className={`px-4 py-2 rounded-lg text-xs sm:text-sm font-black uppercase border-2 border-black transition-all shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all shrink-0 cursor-pointer ${
               activeLetter === null
-                ? 'bg-black text-white shadow-xs'
-                : 'bg-white/80 text-black hover:bg-neutral-100'
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             ALL
@@ -370,12 +357,12 @@ export function DemoSettingsCatalogView({
                 type="button"
                 onClick={() => handleAlphabetClick(letter)}
                 disabled={count === 0}
-                className={`min-w-9 h-9 sm:min-w-10 sm:h-10 px-2 rounded-lg text-xs sm:text-sm font-black transition-all shrink-0 flex items-center justify-center border-2 border-black cursor-pointer ${
+                className={`min-w-8 h-8 px-2 rounded-md text-xs font-bold transition-all shrink-0 flex items-center justify-center cursor-pointer ${
                   count === 0
-                    ? 'opacity-25 cursor-not-allowed bg-transparent text-neutral-400 border-neutral-300'
+                    ? 'opacity-30 cursor-not-allowed bg-transparent text-slate-400'
                     : isSelected
-                    ? 'bg-black text-white shadow-xs scale-105'
-                    : 'bg-white/80 text-black hover:bg-neutral-100'
+                    ? 'bg-slate-900 text-white font-black shadow-2xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
                 <span>{letter}</span>
@@ -387,25 +374,23 @@ export function DemoSettingsCatalogView({
 
       {/* Tooltip Alert when user clicks an unselectable metric */}
       {unselectableTooltip && (
-        <div className="p-4 rounded-xl bg-amber-100/90 backdrop-blur-md border-2 border-black text-black text-xs sm:text-sm font-bold flex items-center justify-between shadow-sm animate-in fade-in">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-700 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium flex items-center justify-between shadow-2xs animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{unselectableTooltip}</span>
           </div>
           <button
             type="button"
             onClick={() => setUnselectableTooltip(null)}
-            className="p-1 hover:bg-black/10 rounded-lg text-black cursor-pointer"
+            className="p-1 hover:bg-amber-100 rounded text-amber-800 cursor-pointer"
           >
-            <X className="w-4 h-4 text-black" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* 4. SEQUENTIAL ALPHABETICAL CATALOG (A TO Z)             */}
-      {/* ======================================================== */}
-      <div className="space-y-12">
+      {/* 4. SEQUENTIAL ALPHABETICAL CATALOG (A TO Z) */}
+      <div className="space-y-8">
         {ALPHABETS.map((letter) => {
           const items = groupedByLetter.get(letter) || [];
           if (items.length === 0) return null;
@@ -414,25 +399,25 @@ export function DemoSettingsCatalogView({
             <section
               key={letter}
               id={`catalog-alpha-${letter}`}
-              className="space-y-4 scroll-mt-32"
+              className="space-y-3 scroll-mt-28"
             >
               {/* Section Alphabet Header */}
-              <div className="flex items-center justify-between border-b-2 border-black pb-2.5">
-                <div className="flex items-center gap-3">
-                  <span className="w-10 h-10 rounded-lg bg-black text-white font-black text-base sm:text-lg flex items-center justify-center shadow-xs">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-md bg-slate-900 text-white font-bold text-xs flex items-center justify-center shadow-2xs">
                     {letter}
                   </span>
-                  <h2 className="text-xl sm:text-2xl font-black text-black uppercase tracking-tight">
-                    ALPHABET {letter}
+                  <h2 className="text-base font-bold text-slate-900 uppercase tracking-tight">
+                    Alphabet {letter}
                   </h2>
                 </div>
-                <span className="text-xs sm:text-sm font-black uppercase text-black px-3 py-1 rounded-md border border-black bg-white/80">
-                  {items.length} {items.length === 1 ? 'API AVAILABLE' : 'APIS AVAILABLE'}
+                <span className="text-xs font-semibold text-slate-400">
+                  {items.length} {items.length === 1 ? 'API available' : 'APIs available'}
                 </span>
               </div>
 
-              {/* Tabulated Card Grid (Smaller Compact Cards - Neo-Brutalist + Translucent) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tabulated Card Grid (Compact Light SaaS Cards) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                 {items.map((item) => {
                   const isMonitored = monitoredIdSet.has(item.id);
                   const isToggling = togglingServiceId === item.id;
@@ -441,20 +426,20 @@ export function DemoSettingsCatalogView({
                   return (
                     <div
                       key={item.id}
-                      className={`rounded-xl border-2 transition-all duration-150 p-4 space-y-3 ${
+                      className={`rounded-xl border transition-all duration-150 p-4 space-y-3 bg-white shadow-2xs ${
                         isMonitored
-                          ? 'bg-white/95 backdrop-blur-md border-black shadow-md ring-2 ring-black'
-                          : 'bg-white/80 backdrop-blur-md border-black hover:bg-white/95 shadow-xs'
+                          ? 'border-blue-500/80 ring-1 ring-blue-500/20'
+                          : 'border-slate-200/90 hover:border-slate-300'
                       }`}
                     >
-                      {/* Top Row: Provider, Title & Access Tag on one compact row */}
+                      {/* Top Row: Provider, Title & Access Tag */}
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-black uppercase text-neutral-600 truncate">
+                          <span className="text-xs font-bold uppercase text-slate-500 truncate">
                             {item.company}
                           </span>
-                          <span className="text-neutral-400 font-bold">&bull;</span>
-                          <h3 className="text-base font-black text-black tracking-tight truncate">
+                          <span className="text-slate-300 font-bold">&bull;</span>
+                          <h3 className="text-sm font-bold text-slate-900 tracking-tight truncate">
                             {item.name}
                           </h3>
                         </div>
@@ -462,51 +447,50 @@ export function DemoSettingsCatalogView({
                         {/* Public vs Private Badge */}
                         <div className="shrink-0">
                           {isPrivate ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black uppercase bg-amber-100 text-black border border-black">
-                              <Lock className="w-3 h-3 text-black" />
-                              <span>PRIVATE</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-200">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>Private</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-black uppercase bg-emerald-100 text-black border border-black">
-                              <Globe className="w-3 h-3 text-black" />
-                              <span>PUBLIC</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Globe className="w-2.5 h-2.5" />
+                              <span>Public</span>
                             </span>
                           )}
                         </div>
                       </div>
 
                       {/* Target Endpoint & Description in compact box */}
-                      <div className="space-y-1 bg-neutral-100/90 rounded-lg p-2.5 border border-black text-xs">
-                        <div className="font-mono font-bold text-black truncate text-[11px] sm:text-xs">
+                      <div className="space-y-1 bg-slate-50/70 rounded-lg p-2.5 border border-slate-200/60 text-xs">
+                        <div className="font-mono font-medium text-slate-800 truncate text-[11px]">
                           {item.target_url}
                         </div>
-                        <p className="font-semibold text-neutral-800 line-clamp-2 text-xs leading-relaxed">
+                        <p className="font-medium text-slate-500 line-clamp-2 text-xs leading-relaxed">
                           {item.description}
                         </p>
                       </div>
 
-                      {/* Exposed Metric Measurements (Tabulated List) */}
-                      <div className="space-y-2 border-t-2 border-black/20 pt-2.5">
+                      {/* Exposed Metric Measurements */}
+                      <div className="space-y-1.5 border-t border-slate-100 pt-2">
                         <div className="flex items-center justify-between text-xs">
-                          <span className="font-black uppercase tracking-wider text-black text-[11px] sm:text-xs">
-                            EXPOSED METRICS
+                          <span className="font-bold uppercase tracking-wider text-slate-400 text-[10px]">
+                            Exposed Metrics
                           </span>
-                          <span className="font-bold text-neutral-600 uppercase text-[10px] sm:text-[11px]">
+                          <span className="font-semibold text-slate-400 text-[10px]">
                             HTTP Latency Measurable
                           </span>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           {item.metrics.map((metric) => {
                             if (metric.selectable) {
-                              // Functional Checkbox for Response Time Latency
                               return (
                                 <div
                                   key={metric.id}
-                                  className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all select-none ${
+                                  className={`flex items-center justify-between p-2 rounded-lg border transition-all select-none ${
                                     isMonitored
-                                      ? 'bg-neutral-50/95 border-black shadow-xs'
-                                      : 'border-neutral-300 hover:border-black bg-white/70'
+                                      ? 'bg-blue-50/40 border-blue-200'
+                                      : 'border-slate-200/70 hover:border-slate-300 bg-white'
                                   }`}
                                 >
                                   <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0">
@@ -515,14 +499,14 @@ export function DemoSettingsCatalogView({
                                       checked={isMonitored}
                                       onChange={() => handleToggleService(item)}
                                       disabled={isToggling}
-                                      className="w-4 h-4 rounded border-2 border-black text-black focus:ring-black cursor-pointer accent-black shrink-0"
+                                      className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600 shrink-0"
                                     />
                                     <div className="min-w-0 truncate">
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-xs sm:text-sm font-black text-black truncate">
+                                        <span className="text-xs font-bold text-slate-900 truncate">
                                           {metric.name}
                                         </span>
-                                        <span className="text-[10px] px-1.5 py-0.2 rounded border border-black font-mono font-bold bg-white text-black shrink-0">
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-medium bg-slate-100 text-slate-600 shrink-0">
                                           {metric.unit}
                                         </span>
                                       </div>
@@ -532,27 +516,27 @@ export function DemoSettingsCatalogView({
                                   {/* Actions & Status Tag */}
                                   <div className="shrink-0 flex items-center gap-1.5 ml-2">
                                     {isToggling ? (
-                                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-black" />
+                                      <RefreshCw className="w-3 h-3 animate-spin text-slate-500" />
                                     ) : isMonitored ? (
                                       <div className="flex items-center gap-1.5">
-                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-black uppercase bg-black text-white border border-black">
-                                          <Check className="w-3 h-3 text-white" />
-                                          <span>ACTIVE</span>
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-600 text-white">
+                                          <Check className="w-2.5 h-2.5 text-white" />
+                                          <span>Active</span>
                                         </span>
                                         {onInspectService && (
                                           <button
                                             type="button"
                                             onClick={() => onInspectService(item.id)}
-                                            className="px-2 py-0.5 rounded text-[10px] sm:text-[11px] font-black uppercase bg-white hover:bg-neutral-100 text-black border border-black flex items-center gap-1 cursor-pointer"
+                                            className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
                                             title="Inspect live time-series graph"
                                           >
-                                            <LineChart className="w-3 h-3" />
-                                            <span>GRAPH</span>
+                                            <LineChart className="w-2.5 h-2.5" />
+                                            <span>Graph</span>
                                           </button>
                                         )}
                                       </div>
                                     ) : (
-                                      <span className="text-[10px] sm:text-xs font-bold uppercase text-neutral-600 px-2 py-0.5 rounded border border-neutral-300">
+                                      <span className="text-[10px] font-medium uppercase text-slate-400 px-1.5 py-0.5 rounded border border-slate-200">
                                         Include
                                       </span>
                                     )}
@@ -561,7 +545,6 @@ export function DemoSettingsCatalogView({
                               );
                             }
 
-                            // Unselectable other metrics (CPU, Memory, IOPS, etc.)
                             return (
                               <div
                                 key={metric.id}
@@ -577,19 +560,19 @@ export function DemoSettingsCatalogView({
                                     type="checkbox"
                                     disabled
                                     checked={false}
-                                    className="w-3.5 h-3.5 rounded text-neutral-400 border-neutral-400 cursor-not-allowed shrink-0"
+                                    className="w-3.5 h-3.5 rounded text-slate-300 border-slate-300 cursor-not-allowed shrink-0"
                                   />
                                   <div className="flex items-center gap-1.5 truncate">
-                                    <span className="text-xs font-bold text-neutral-700 line-through truncate">
+                                    <span className="text-xs font-medium text-slate-600 line-through truncate">
                                       {metric.name}
                                     </span>
-                                    <span className="text-[10px] px-1 rounded bg-neutral-200 font-mono text-neutral-700 shrink-0">
+                                    <span className="text-[10px] px-1 rounded bg-slate-100 font-mono text-slate-500 shrink-0">
                                       {metric.unit}
                                     </span>
                                   </div>
                                 </div>
 
-                                <span className="text-[10px] font-bold text-neutral-600 px-1.5 py-0.5 rounded border border-neutral-300 bg-neutral-100 shrink-0 uppercase ml-2">
+                                <span className="text-[10px] font-medium text-slate-400 px-1.5 py-0.5 rounded bg-slate-100 shrink-0 uppercase ml-2">
                                   Agent Required
                                 </span>
                               </div>

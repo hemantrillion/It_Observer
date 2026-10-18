@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SystemOverviewMetricsBarContainer } from '@/components/containers/system_overview_metrics_bar_container';
 import { ChaosTestingControlPanelContainer } from '@/components/containers/chaos_testing_control_panel_container';
 import { ActiveIncidentAlertNotificationCard } from '@/components/cards/active_incident_alert_notification_card';
@@ -14,7 +14,7 @@ import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_qu
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { DemoSubView, StatusFilter } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
-import { ArrowLeft, Activity, RefreshCw, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ObservatoryTelemetryEmbeddedViewProps {
   services: MonitoredServiceRecord[];
@@ -69,7 +69,7 @@ export function ObservatoryTelemetryEmbeddedView({
   const [allIncidents, setAllIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isLoadingIncidents, setIsLoadingIncidents] = useState(false);
 
-  // Fetch incidents list always on mount and when in incidents view
+  // Fetch incidents list on mount and whenever demoSubView changes
   const fetchIncidentsHistory = useCallback(() => {
     setIsLoadingIncidents(true);
     fetch('/api/incidents')
@@ -90,7 +90,6 @@ export function ObservatoryTelemetryEmbeddedView({
   // Fetch telemetry graph data for a specific service
   const fetchServiceDetails = useCallback(
     async (id: string, limit: number = sampleLimit) => {
-      // Immediate fallback from props so inspect view renders instantly without blocking
       const fallback = services.find((s) => s.id === id);
       if (fallback) {
         setSelectedService(fallback);
@@ -107,7 +106,6 @@ export function ObservatoryTelemetryEmbeddedView({
           if (data.samples && data.samples.length > 0) {
             setServiceSamples(data.samples);
           } else if (fallback) {
-            // Seed a baseline sample so graph renders properly
             setServiceSamples([
               {
                 id: 1,
@@ -133,7 +131,6 @@ export function ObservatoryTelemetryEmbeddedView({
   useEffect(() => {
     if (selectedServiceId) {
       fetchServiceDetails(selectedServiceId);
-      // Auto-refresh selected service telemetry every 4s
       const interval = setInterval(() => {
         fetchServiceDetails(selectedServiceId);
       }, 4000);
@@ -158,28 +155,23 @@ export function ObservatoryTelemetryEmbeddedView({
   });
 
   const densitySpacing =
-    density === 'compact' ? 'space-y-5 p-5 md:p-7' : density === 'comfortable' ? 'space-y-6 p-6 md:p-8' : 'space-y-8 p-6 md:p-10';
+    density === 'compact' ? 'space-y-4 p-4 md:p-6' : density === 'comfortable' ? 'space-y-6 p-6 md:p-8' : 'space-y-8 p-6 md:p-10';
 
   return (
-    <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-white'} overflow-y-auto font-sans select-none`}>
-      {/* Top Breadcrumb & Live Status Bar */}
-      <div className={`h-14 border-b border-[#e0e2ec]/80 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
-        <div className="flex items-center gap-3">
+    <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-slate-50/60'} overflow-y-auto font-sans select-text w-full`}>
+      {/* Top Header Bar */}
+      <div className={`h-13 border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
+        <div className="flex items-center gap-2.5">
           {selectedServiceId ? (
-            <button
-              onClick={() => setSelectedServiceId(null)}
-              className="inline-flex items-center gap-2 text-sm font-bold text-[#0b57d0] hover:bg-[#e8f0fe] px-4 py-2 rounded-full transition-colors cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to all targets</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-2.5 text-sm font-black text-[#1f1f1f] uppercase tracking-wider">
-              <span className="text-base font-black">
-                {demoSubView.toUpperCase()}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-slate-900">
+                {selectedService?.name || 'Service Telemetry Detail'}
               </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
               {statusFilter !== 'ALL' && (
-                <span className="ml-2 px-3 py-1 rounded-full text-xs bg-[#eaf1fb] text-[#0b57d0] font-black border border-[#0b57d0]/20">
+                <span className="px-2.5 py-0.5 rounded-full text-xs bg-blue-50 text-blue-700 font-bold border border-blue-200">
                   {statusFilter}
                 </span>
               )}
@@ -187,44 +179,36 @@ export function ObservatoryTelemetryEmbeddedView({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#e6f4ea] text-[#137333] text-xs sm:text-sm font-bold border border-[#a8dab5]">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#137333] animate-ping inline-block" />
-            <span>Telemetry Active</span>
-          </span>
-          {lastUpdatedTime && (
-            <span className="text-xs sm:text-sm text-[#444746] font-mono font-semibold hidden sm:inline">
-              Probed: {lastUpdatedTime}
-            </span>
+        <div className="flex items-center gap-2">
+          {selectedServiceId ? (
+            /* Simple X close button for inspect page (no Back to all targets, no Telemetry active badge) */
+            <button
+              onClick={() => setSelectedServiceId(null)}
+              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Close telemetry graph"
+              aria-label="Close telemetry graph"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          ) : (
+            lastUpdatedTime && (
+              <span className="text-xs text-slate-400 font-mono font-medium hidden sm:inline">
+                Probed: {lastUpdatedTime}
+              </span>
+            )
           )}
         </div>
       </div>
 
       {/* Main Observatory Content Body */}
-      <div className={`${densitySpacing} flex-1`}>
+      <div className={`${densitySpacing} flex-1 w-full`}>
         {/* If viewing a selected service's detail graph */}
         {selectedServiceId && selectedService ? (
-          <div className="space-y-6 w-full animate-in fade-in duration-150">
-            <div className="flex items-center justify-between border-b-2 border-black pb-4">
-              <div>
-                <h3 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black">
-                  {selectedService.name} &mdash; TELEMETRY DETAIL &amp; GRAPH
-                </h3>
-                <p className="text-sm sm:text-base font-semibold text-neutral-700 mt-1">
-                  Continuous Synthetic Latency Probing &amp; Real-Time Time-Series Samples
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedServiceId(null)}
-                className="px-5 py-2 rounded-lg bg-black text-white hover:bg-neutral-800 font-bold text-xs sm:text-sm uppercase transition-colors cursor-pointer"
-              >
-                Close Graph
-              </button>
-            </div>
-
+          <div className="space-y-4 w-full animate-in fade-in duration-150">
             <ServiceDetailInfoBlockCard service={selectedService} />
 
-            <div className="border-2 border-black rounded-2xl p-5 bg-white/95 backdrop-blur-md shadow-sm">
+            {/* Direct clean graph card (outer darker rectangle removed) */}
+            <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs">
               <LatencyMetricTimeseriesGraphCard
                 samples={serviceSamples}
                 service={selectedService}
@@ -242,12 +226,11 @@ export function ObservatoryTelemetryEmbeddedView({
           /* Main Dashboard Content */
           <>
             {/* Section: Overview Metrics Bar */}
-            <section className="space-y-3 w-full">
-              <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-                <h2 className="text-base sm:text-lg font-bold text-[#1f1f1f] uppercase tracking-wider">
+            <section className="space-y-2.5 w-full">
+              <div className="flex items-center justify-between pb-1">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                   System Telemetry Overview
                 </h2>
-                <span className="text-xs sm:text-sm font-semibold text-[#5e5e5e]">Live Aggregates &bull; Click card to filter</span>
               </div>
               <SystemOverviewMetricsBarContainer
                 total={summary.total}
@@ -260,83 +243,89 @@ export function ObservatoryTelemetryEmbeddedView({
               />
             </section>
 
-            {/* Section: Incidents Telemetry & Notifications (Always Visible) */}
-            <section className="space-y-3 w-full">
-              <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-                <div className="flex items-center gap-2.5">
-                  {activeIncidents.length > 0 ? (
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#c5221f] animate-ping" />
-                  ) : (
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                  )}
-                  <h2 className="text-base sm:text-lg font-bold text-[#1f1f1f] uppercase tracking-wider">
-                    Incident Telemetry &amp; Outage Notifications ({activeIncidents.length} Active / {allIncidents.length} Historical)
-                  </h2>
+            {/* Section: Chaos Injection Panel (Box A) & Outage Notifications (Box B) Side-by-Side in Single Rectangular Area */}
+            <section className="w-full">
+              <div className="border border-slate-200/90 rounded-2xl p-3.5 bg-slate-100/60 flex flex-col md:flex-row gap-3.5 w-full shadow-2xs">
+                {/* Box A: Chaos Injection Panel (Square-ish on Left, only taking as much space as needed) */}
+                <div className="w-full md:w-80 lg:w-96 shrink-0">
+                  <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
                 </div>
-                {onSelectDemoSubView && (
-                  <button
-                    onClick={() => onSelectDemoSubView('incidents')}
-                    className="text-xs sm:text-sm font-bold text-[#0b57d0] hover:underline cursor-pointer"
-                  >
-                    View Complete Audit Log &rarr;
-                  </button>
-                )}
-              </div>
 
-              {activeIncidents.length > 0 ? (
-                <div className="space-y-2.5 w-full">
-                  {activeIncidents.map((incident) => (
-                    <ActiveIncidentAlertNotificationCard
-                      key={incident.id}
-                      incident={incident}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="border border-[#e0e2ec] rounded-2xl p-5 bg-white/90 backdrop-blur-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-                  <div className="flex items-center gap-3.5">
-                    <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 shrink-0" />
-                    <div>
-                      <h4 className="text-sm sm:text-base font-bold text-[#1f1f1f]">Zero Active Critical Outages</h4>
-                      <p className="text-xs sm:text-sm text-[#444746] font-medium leading-relaxed">
-                        All monitored production targets are passing synthetic health probes. {allIncidents.length} historical outage events recorded in the system audit ledger.
-                      </p>
+                {/* Box B: Outage Notifications (Rectangular taking rest of space on right) */}
+                <div className="flex-1 flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+                  <div>
+                    {/* Header with Title and Severity Legend */}
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
+                          Outage Notifications
+                        </h3>
+                        {activeIncidents.length > 0 && (
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                            {activeIncidents.length} active
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Legend: Yellow for Warning, Red for Critical */}
+                      <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span>Warning</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-rose-500" />
+                          <span>Critical</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Active Outages List */}
+                    <div className="mt-2.5 space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                      {activeIncidents.length > 0 ? (
+                        activeIncidents.map((incident) => (
+                          <ActiveIncidentAlertNotificationCard
+                            key={incident.id}
+                            incident={incident}
+                          />
+                        ))
+                      ) : (
+                        <div className="py-6 text-center text-xs text-slate-500 font-medium">
+                          Zero active outages &mdash; all monitored endpoints operating normally.
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Footer link to complete history */}
                   {onSelectDemoSubView && (
-                    <button
-                      onClick={() => onSelectDemoSubView('incidents')}
-                      className="px-5 py-2.5 rounded-xl bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-bold text-xs sm:text-sm shrink-0 transition-colors cursor-pointer border border-[#c4c7c5]"
-                    >
-                      Audit Incident History ({allIncidents.length})
-                    </button>
+                    <div className="pt-2 border-t border-slate-100 flex justify-end">
+                      <button
+                        onClick={() => onSelectDemoSubView('incidents')}
+                        className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                      >
+                        View Complete Audit Log ({allIncidents.length}) &rarr;
+                      </button>
+                    </div>
                   )}
                 </div>
-              )}
-            </section>
-
-            {/* Section: Interactive Chaos Testing Panel */}
-            <section className="w-full">
-              <ChaosTestingControlPanelContainer onChaosTriggered={triggerPoll} />
+              </div>
             </section>
 
             {/* Section: Monitored Targets Grid */}
-            <section className="space-y-3 w-full">
-              <div className="flex items-center justify-between pb-1 border-b border-[#e0e2ec]">
-                <h2 className="text-base sm:text-lg font-bold text-[#1f1f1f] uppercase tracking-wider">
+            <section className="space-y-2.5 w-full">
+              <div className="flex items-center justify-between pb-1">
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                   Test Suite Monitored Targets ({filteredServices.length})
                 </h2>
-                <span className="text-xs sm:text-sm font-semibold text-[#5e5e5e]">
-                  Click Any Card Or &ldquo;Inspect&rdquo; To Open Real-Time Latency Graph
-                </span>
               </div>
 
               {filteredServices.length === 0 ? (
-                <div className="p-10 text-center text-sm sm:text-base text-[#444746] font-semibold border-2 border-dashed border-[#c4c7c5] rounded-2xl bg-[#f8fafd]">
+                <div className="p-8 text-center text-xs text-slate-500 font-medium border border-slate-200/90 rounded-xl bg-white">
                   No monitored targets match the current filter or search criteria. Select APIs in Demo Settings to add them to this dashboard.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                   {filteredServices.map((service) => (
                     <MonitoredServiceStatusBlockCard
                       key={service.id}
@@ -352,30 +341,51 @@ export function ObservatoryTelemetryEmbeddedView({
             </section>
           </>
         ) : demoSubView === 'incidents' ? (
-          /* Incidents View */
-          <div className="space-y-5 w-full">
-            <div className="flex items-center justify-between pb-3 border-b border-[#e0e2ec]">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-black text-[#1f1f1f] tracking-tight">
-                  Incident History &amp; Resolution Audit Log
-                </h2>
-                <p className="text-sm font-medium text-[#444746]">
-                  Detected Outages, Timeouts, and Recovery Timelines (Total Events: {allIncidents.length})
-                </p>
+          /* Incidents View: Outages at Top, Historical Incident Logs Below */
+          <div className="space-y-4 w-full">
+            {/* Outage Notifications at Top */}
+            <div className="bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
+                    Outage Notifications
+                  </h3>
+                  {activeIncidents.length > 0 && (
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                      {activeIncidents.length} active
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span>Warning</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span>Critical</span>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={() => {
-                  fetchIncidentsHistory();
-                  triggerPoll();
-                }}
-                disabled={isPolling || isLoadingIncidents}
-                className="px-5 py-2.5 rounded-full bg-[#f0f4f9] hover:bg-[#e0e2ec] text-[#1f1f1f] font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 cursor-pointer border border-[#c4c7c5]"
-              >
-                <RefreshCw className={`w-4 h-4 ${isPolling || isLoadingIncidents ? 'animate-spin' : ''}`} />
-                <span>Refresh Audit Log</span>
-              </button>
+
+              <div className="mt-2.5 space-y-2">
+                {activeIncidents.length > 0 ? (
+                  activeIncidents.map((incident) => (
+                    <ActiveIncidentAlertNotificationCard
+                      key={incident.id}
+                      incident={incident}
+                    />
+                  ))
+                ) : (
+                  <div className="py-4 text-center text-xs text-slate-500 font-medium">
+                    Zero active outages &mdash; all monitored endpoints operating normally.
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* Historical Incident Logs with Filter Bar and Relocated Raw Metrics button */}
             <IncidentHistoryTableContainer
               incidents={allIncidents}
             />

@@ -11,27 +11,39 @@ interface ActiveIncidentAlertNotificationCardProps {
 export function ActiveIncidentAlertNotificationCard({
   incident,
 }: ActiveIncidentAlertNotificationCardProps) {
-  return (
-    <div className="border border-[#f5c2c7] rounded-2xl p-4 bg-[#fce8e6] text-[#842029] flex flex-col md:flex-row md:items-center justify-between gap-3 my-2 w-full shadow-xs">
-      <div className="space-y-1.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1 font-sans text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-[#c5221f] text-white">
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>{incident.severity} ALERT</span>
-          </span>
-          <span className="font-sans text-xs font-semibold bg-white/80 px-2.5 py-0.5 rounded-full text-[#58151c] border border-[#f5c2c7]">
-            {incident.service_name || incident.service_id}
-          </span>
-        </div>
-        <div className="font-sans text-sm font-semibold tracking-tight text-[#58151c]">
-          {incident.reason}
-        </div>
-      </div>
+  const isCritical = incident.severity === 'CRITICAL';
 
-      <div className="inline-flex items-center gap-1.5 font-sans text-xs text-[#842029] bg-white/60 px-3 py-1 rounded-full border border-[#f5c2c7] shrink-0 self-start md:self-center font-mono">
-        <Clock className="w-3.5 h-3.5" />
-        <span>TRIGGERED: {new Date(incident.started_at).toLocaleTimeString()}</span>
+  const formatTriggered = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const day = d.getDate();
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      const timeStr = d.toTimeString().split(' ')[0];
+      return `${day} ${month} ${year}, ${timeStr}`;
+    } catch {
+      return iso;
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between py-2 px-3 bg-slate-50/80 hover:bg-slate-50 rounded-lg border border-slate-200/80 font-sans text-xs transition-colors">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+            isCritical ? 'bg-rose-500' : 'bg-amber-500'
+          }`}
+          title={isCritical ? 'Critical' : 'Warning'}
+        />
+        <span className="font-bold text-slate-900 text-xs sm:text-sm">
+          {incident.service_name || incident.service_id}
+        </span>
       </div>
+      <span className="text-slate-500 font-mono text-[11px] sm:text-xs font-medium">
+        Triggered: {formatTriggered(incident.started_at)}
+      </span>
     </div>
   );
 }

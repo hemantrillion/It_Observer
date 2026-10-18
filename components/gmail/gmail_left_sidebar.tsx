@@ -328,20 +328,7 @@ export function GmailLeftSidebar({
             </div>
           </button>
 
-          {/* Raw Metrics in Demo (/metrics) */}
-          <a
-            href="/metrics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`w-full flex items-center gap-4 px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-              hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <BarChart2 className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-            <span>Raw Metrics</span>
-          </a>
+
 
           {/* Telemetry Filters Section */}
           <div

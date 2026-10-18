@@ -134,13 +134,7 @@ export function ObservatoryMetricsDomainView({
             </p>
           </div>
 
-          {/* Right Status Pill: Ingestion Active (Matching Image 4) */}
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-xs font-semibold text-emerald-700 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Ingestion active</span>
-            </span>
-          </div>
+
         </div>
 
         {/* ====================================================== */}

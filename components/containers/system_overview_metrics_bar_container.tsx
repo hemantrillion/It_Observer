@@ -25,37 +25,37 @@ export function SystemOverviewMetricsBarContainer({
   const uptimeScore = total > 0 ? (((total - down) / total) * 100).toFixed(1) : '100.0';
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 w-full">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 w-full">
       <SystemHealthMetricSummaryCard
         label="TOTAL SERVICES"
         value={total}
-        subtext="MONITORED TARGETS"
+        subtext="Monitored targets"
         onClick={() => onSelectStatusFilter?.('ALL')}
       />
       <SystemHealthMetricSummaryCard
-        label="STATUS HEALTHY"
+        label="HEALTHY"
         value={healthy}
-        subtext="NORMAL LATENCY"
+        subtext="Normal latency"
         onClick={() => onSelectStatusFilter?.('HEALTHY')}
       />
       <SystemHealthMetricSummaryCard
         label="DEGRADED"
         value={degraded}
-        subtext="HIGH LATENCY / 4XX"
+        subtext="High latency / 4xx"
         isWarning={degraded > 0}
         onClick={() => onSelectStatusFilter?.('DEGRADED')}
       />
       <SystemHealthMetricSummaryCard
-        label="STATUS DOWN"
+        label="DOWN"
         value={down}
-        subtext="5XX / UNREACHABLE"
+        subtext="5xx / Unreachable"
         isWarning={down > 0}
         onClick={() => onSelectStatusFilter?.('DOWN')}
       />
       <SystemHealthMetricSummaryCard
-        label="ACTIVE INCIDENTS"
+        label="ACTIVE OUTAGES"
         value={activeAlerts}
-        subtext={`${uptimeScore}% OVERALL • CLICK TO AUDIT`}
+        subtext={`${uptimeScore}% Uptime`}
         isWarning={activeAlerts > 0}
         onClick={onSelectIncidents}
       />

@@ -16,10 +16,9 @@ export function TriggerChaosRecoverButtonOnPanel({
     <button
       onClick={onTrigger}
       disabled={isLoading}
-      className="px-4 py-2 bg-[#e6f4ea] hover:bg-[#ceead6] text-[#137333] font-sans font-semibold text-xs rounded-full border border-[#a8dab5] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+      className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-sans font-semibold text-xs rounded-lg border border-slate-300 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
     >
-      <CheckCircle2 className="w-3.5 h-3.5" />
-      <span>Recover Service</span>
+      Recover
     </button>
   );
 }

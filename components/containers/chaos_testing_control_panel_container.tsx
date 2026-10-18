@@ -41,44 +41,36 @@ export function ChaosTestingControlPanelContainer({
   };
 
   return (
-    <div className="space-y-3 w-full">
-      <div className="border border-[#e0e2ec] rounded-2xl p-5 bg-[#f8fafd] space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#e0e2ec]/80 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#eaf1fb] text-[#0b57d0] flex items-center justify-center">
-              <ShieldAlert className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-sans font-semibold text-sm text-[#1f1f1f]">
-                Interactive Chaos Injection Testing Panel
-              </h3>
-              <p className="font-sans text-xs text-[#5e5e5e]">
-                Simulate outage and latency degradation on Local Companion Service (Port 5001)
-              </p>
-            </div>
-          </div>
-
+    <div className="h-full flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
+      <div>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
+            Interactive Chaos Injection Panel
+          </h3>
           {lastActionMessage && (
-            <span className="font-sans text-xs font-semibold bg-[#e8f0fe] text-[#0b57d0] px-3 py-1 rounded-full inline-block border border-[#d3e3fd]">
+            <span className="font-sans text-[11px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200 truncate max-w-[140px]" title={lastActionMessage}>
               {lastActionMessage}
             </span>
           )}
         </div>
+        <p className="font-sans text-xs text-slate-500 mt-1.5 leading-relaxed">
+          Inject real-time failure simulation on companion port 5001.
+        </p>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <TriggerChaosDownButtonOnPanel
-            onTrigger={() => handleAction('down')}
-            isLoading={isLoading}
-          />
-          <TriggerChaosLagButtonOnPanel
-            onTrigger={() => handleAction('lag')}
-            isLoading={isLoading}
-          />
-          <TriggerChaosRecoverButtonOnPanel
-            onTrigger={() => handleAction('recover')}
-            isLoading={isLoading}
-          />
-        </div>
+      <div className="flex flex-wrap items-center gap-2 pt-3">
+        <TriggerChaosDownButtonOnPanel
+          onTrigger={() => handleAction('down')}
+          isLoading={isLoading}
+        />
+        <TriggerChaosLagButtonOnPanel
+          onTrigger={() => handleAction('lag')}
+          isLoading={isLoading}
+        />
+        <TriggerChaosRecoverButtonOnPanel
+          onTrigger={() => handleAction('recover')}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

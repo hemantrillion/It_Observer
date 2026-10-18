@@ -16,10 +16,9 @@ export function TriggerChaosDownButtonOnPanel({
     <button
       onClick={onTrigger}
       disabled={isLoading}
-      className="px-4 py-2 bg-[#fce8e6] hover:bg-[#fad2cf] text-[#c5221f] font-sans font-semibold text-xs rounded-full border border-[#f5c2c7] transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5 shadow-2xs"
+      className="px-3.5 py-1.5 bg-white hover:bg-slate-100 text-slate-800 font-sans font-semibold text-xs rounded-lg border border-slate-300 transition-all cursor-pointer disabled:opacity-50 shadow-2xs"
     >
-      <AlertOctagon className="w-3.5 h-3.5" />
-      <span>Crash Service (503)</span>
+      Crash Service
     </button>
   );
 }

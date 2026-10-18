@@ -25,9 +25,19 @@ interface LatencyMetricTimeseriesGraphCardProps {
   isLivePolling?: boolean;
 }
 
+type TimeframeOption = '15m' | '30m' | '1h' | '6h' | '24h' | 'all';
+
+const TIMEFRAME_BUTTONS: { id: TimeframeOption; label: string; minutes: number }[] = [
+  { id: '15m', label: '15m', minutes: 15 },
+  { id: '30m', label: '30m', minutes: 30 },
+  { id: '1h', label: '1h', minutes: 60 },
+  { id: '6h', label: '6h', minutes: 360 },
+  { id: '24h', label: '24h', minutes: 1440 },
+  { id: 'all', label: 'All', minutes: 0 },
+];
+
 function extractLatency(s: GenericMetricSample): number {
   const raw = s.latency_ms ?? s.response_time_ms ?? 0;
-  // Guard against OS sleep/hibernation skew: clamp between 0 and 6000ms (standard probe timeout)
   return Math.min(6000, Math.max(0, raw));
 }
 
@@ -41,10 +51,25 @@ function getCleanUpperBound(val: number): number {
   if (val <= 3000) return 3000;
   if (val <= 4000) return 4000;
   if (val <= 5000) return 5000;
-  return 6000; // Cap scales strictly at 6000ms max (standard maximum HTTP timeout)
+  return 6000;
 }
 
-function formatTime(isoString: string): string {
+function formatFullDateTime(isoString: string): string {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const timeStr = d.toTimeString().split(' ')[0];
+    return `${day} ${month} ${year}, ${timeStr}`;
+  } catch {
+    return isoString;
+  }
+}
+
+function formatAxisTime(isoString: string): string {
   try {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return isoString;
@@ -54,47 +79,18 @@ function formatTime(isoString: string): string {
   }
 }
 
-function formatAxisDateOrTime(isoString: string, spansMultipleDays: boolean): string {
-  try {
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return isoString;
-    const timeStr = d.toTimeString().split(' ')[0];
-    if (spansMultipleDays) {
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const day = d.getDate();
-      const month = monthNames[d.getMonth()];
-      const hoursMinutes = timeStr.substring(0, 5);
-      return `${day} ${month} ${hoursMinutes}`;
-    }
-    return timeStr;
-  } catch {
-    return isoString;
-  }
-}
-
-function formatFullDateTime(isoString: string): string {
-  try {
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return isoString;
-    return d.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-  } catch {
-    return isoString;
-  }
-}
-
 export function LatencyMetricTimeseriesGraphCard({
   samples,
   service,
-  currentLimit = 120,
   onLimitChange,
-  lastUpdatedTime,
   isLivePolling = false,
 }: LatencyMetricTimeseriesGraphCardProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(1000);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+  const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('15m');
 
-  // Measure exact container width dynamically using ResizeObserver for full-width edge-to-edge rendering
+  // Measure container width for responsive SVG rendering
   useEffect(() => {
     if (!containerRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -112,8 +108,8 @@ export function LatencyMetricTimeseriesGraphCard({
     return () => observer.disconnect();
   }, []);
 
-  // 1. Sort samples chronologically (oldest -> newest, left -> right)
-  const chronological = useMemo(() => {
+  // 1. Sort all raw samples chronologically (oldest -> newest)
+  const allChronological = useMemo(() => {
     return [...samples].sort((a, b) => {
       const timeDiff = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
       if (!isNaN(timeDiff) && timeDiff !== 0) return timeDiff;
@@ -123,12 +119,36 @@ export function LatencyMetricTimeseriesGraphCard({
     });
   }, [samples]);
 
-  // Extract latencies safely
+  // 2. Filter strictly by selected timeframe window
+  const chronological = useMemo(() => {
+    if (selectedTimeframe === 'all') return allChronological;
+    const config = TIMEFRAME_BUTTONS.find((b) => b.id === selectedTimeframe);
+    if (!config || config.minutes === 0) return allChronological;
+
+    const now = Date.now();
+    const cutoff = now - config.minutes * 60 * 1000;
+
+    const filtered = allChronological.filter((s) => {
+      const time = new Date(s.timestamp).getTime();
+      return !isNaN(time) && time >= cutoff;
+    });
+
+    // If zero samples in strictly current window (e.g. app was dormant),
+    // fallback to showing the last 20 samples so user is not left with an empty canvas,
+    // but clearly anchor them
+    if (filtered.length === 0 && allChronological.length > 0) {
+      return allChronological.slice(-25);
+    }
+
+    return filtered;
+  }, [allChronological, selectedTimeframe]);
+
+  // Extract latencies
   const latencies = useMemo(() => {
     return chronological.map((s) => extractLatency(s));
   }, [chronological]);
 
-  // Summary telemetry calculations
+  // Telemetry metrics statistics
   const stats = useMemo(() => {
     if (latencies.length === 0) {
       return { min: 0, max: 0, avg: 0, p95: 0, latest: 0 };
@@ -146,22 +166,20 @@ export function LatencyMetricTimeseriesGraphCard({
     return { min, max, avg, p95, latest };
   }, [latencies]);
 
-  // SVG Coordinate Geometry: Occupies full width from left padding to right edge
+  // SVG Geometry
   const svgWidth = Math.max(300, containerWidth);
-  const svgHeight = 380;
-  const paddingLeft = 72;
+  const svgHeight = 340;
+  const paddingLeft = 56;
   const paddingRight = 18;
-  const paddingTop = 28;
-  const paddingBottom = 55;
+  const paddingTop = 20;
+  const paddingBottom = 42;
   const plotWidth = Math.max(100, svgWidth - paddingLeft - paddingRight);
-  const plotHeight = Math.max(150, svgHeight - paddingTop - paddingBottom);
+  const plotHeight = Math.max(100, svgHeight - paddingTop - paddingBottom);
   const plotBaseline = paddingTop + plotHeight;
 
-  // Dynamic Y-axis upper bound with 20% headroom
-  const rawMax = Math.max(100, stats.max);
+  const rawMax = Math.max(80, stats.max);
   const maxY = useMemo(() => getCleanUpperBound(rawMax * 1.2), [rawMax]);
 
-  // Y-axis grid ticks (5 horizontal division levels)
   const yTicks = useMemo(() => {
     return [
       maxY,
@@ -172,7 +190,7 @@ export function LatencyMetricTimeseriesGraphCard({
     ];
   }, [maxY]);
 
-  // Map chronological samples to SVG Cartesian Coordinates
+  // Coordinates mapping
   const points = useMemo(() => {
     const total = chronological.length;
     if (total === 0) return [];
@@ -188,7 +206,7 @@ export function LatencyMetricTimeseriesGraphCard({
     });
   }, [chronological, maxY, plotBaseline, plotHeight, plotWidth, paddingLeft]);
 
-  // Smooth Cubic Bezier Curves (Catmull-Rom to Cubic Bezier)
+  // Smooth Curves
   const { linePathD, areaPathD } = useMemo(() => {
     if (points.length === 0) return { linePathD: '', areaPathD: '' };
     if (points.length === 1) {
@@ -225,25 +243,23 @@ export function LatencyMetricTimeseriesGraphCard({
     return { linePathD: linePath, areaPathD: areaPath };
   }, [points, plotBaseline, paddingTop]);
 
-  // X-axis time tick indices (5-6 evenly spaced markers)
+  // X ticks
   const xTickIndices = useMemo(() => {
     const total = points.length;
     if (total === 0) return [];
-    if (total <= 6) return points.map((_, i) => i);
-    const step = (total - 1) / 5;
+    if (total <= 5) return points.map((_, i) => i);
+    const step = (total - 1) / 4;
     return Array.from(
       new Set([
         0,
         Math.round(step),
         Math.round(step * 2),
         Math.round(step * 3),
-        Math.round(step * 4),
         total - 1,
       ])
     );
   }, [points]);
 
-  // Mouse interaction handler for interactive crosshairs
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (points.length === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -269,165 +285,91 @@ export function LatencyMetricTimeseriesGraphCard({
   const hoveredPoint = hoveredIdx !== null ? points[hoveredIdx] : null;
   const hoveredSample = hoveredPoint?.sample;
 
-  const serviceId = service?.id || (chronological[0]?.service_id ?? 'service');
-  const targetUrl = service?.target_url || 'http://localhost/probe';
-
-  const spansMultipleDays = useMemo(() => {
-    if (chronological.length < 2) return false;
-    const first = new Date(chronological[0].timestamp).toDateString();
-    const last = new Date(chronological[chronological.length - 1].timestamp).toDateString();
-    return first !== last;
-  }, [chronological]);
-
-  // Calculate start & end times of the currently visible time frame
-  const timeFrameLabel = useMemo(() => {
-    if (chronological.length < 2) return '';
-    const start = formatAxisDateOrTime(chronological[0].timestamp, spansMultipleDays);
-    const end = formatAxisDateOrTime(chronological[chronological.length - 1].timestamp, spansMultipleDays);
-    return `${start} → ${end}`;
-  }, [chronological, spansMultipleDays]);
-
   return (
-    <div className="border border-black rounded-lg p-5 bg-white space-y-5 w-full">
-      {/* Top Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-black/20 pb-4">
+    <div className="space-y-4 w-full font-sans select-text">
+      {/* Top Controls: Timeframe Filter Buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
         <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-sans text-[11px] uppercase font-bold px-2.5 py-0.5 border border-black rounded bg-black text-white">
-              GRAFANA TSDB
-            </span>
-            <span className="font-sans text-[11px] uppercase font-bold px-2.5 py-0.5 border border-black rounded bg-white text-black">
-              REAL-TIME VECTOR STREAM
-            </span>
-            {isLivePolling ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 border border-black rounded bg-white text-[11px] font-bold text-black uppercase">
-                <span className="w-2 h-2 bg-black animate-ping inline-block" />
-                <span>POLLING PROBE NOW...</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 border border-black rounded bg-white text-[11px] font-bold text-black uppercase">
-                <span className="w-2 h-2 bg-emerald-500 inline-block" />
-                <span>AUTO-PROBING EVERY 5S</span>
-              </span>
-            )}
-          </div>
-
-          <h3 className="font-sans font-bold text-xl md:text-2xl uppercase text-black mt-2 tracking-tight">
-            RESPONSE LATENCY TIME-SERIES MONITOR
+          <h3 className="text-base font-bold text-slate-900 tracking-tight">
+            Response Latency Time-Series
           </h3>
-
-          <div className="flex items-center gap-2 mt-2 flex-wrap">
-            <span className="font-sans text-xs font-bold text-black opacity-60 uppercase">
-              PROMQL QUERY:
-            </span>
-            <code className="text-xs font-mono bg-neutral-100 px-2.5 py-1 rounded border border-black/20 text-black break-all font-bold">
-              http_response_latency_ms&#123;service=&quot;{serviceId}&quot;, endpoint=&quot;{targetUrl}&quot;&#125;
-            </code>
-          </div>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Continuous synthetic response time samples
+          </p>
         </div>
 
-        {/* Time Window Buttons & Metrics Endpoint Link */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          {onLimitChange && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-sans text-xs font-bold uppercase opacity-60 mr-1">
-                TIME WINDOW:
-              </span>
-              {[
-                { label: '30 (~5M)', limit: 30 },
-                { label: '60 (~15M)', limit: 60 },
-                { label: '120 (~30M)', limit: 120 },
-                { label: '250 (~1H)', limit: 250 },
-                { label: '500 (~2H+)', limit: 500 },
-              ].map((btn) => (
-                <button
-                  key={btn.limit}
-                  type="button"
-                  onClick={() => onLimitChange(btn.limit)}
-                  className={`px-2.5 py-1 text-xs font-bold font-sans border border-black rounded uppercase transition-colors ${
-                    currentLimit === btn.limit
-                      ? 'bg-black text-white'
-                      : 'bg-white text-black hover:bg-neutral-100'
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <a
-            href="/metrics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold font-sans border border-black rounded bg-white hover:bg-black hover:text-white transition-colors text-black whitespace-nowrap"
-            title="View standard text Prometheus exposition metrics endpoint"
-          >
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        {/* Timeframe Buttons */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs font-semibold text-slate-400 mr-1">Timeframe:</span>
+          {TIMEFRAME_BUTTONS.map((btn) => (
+            <button
+              key={btn.id}
+              type="button"
+              onClick={() => {
+                setSelectedTimeframe(btn.id);
+                if (btn.id === 'all') onLimitChange?.(500);
+                else if (btn.id === '24h') onLimitChange?.(250);
+                else onLimitChange?.(120);
+              }}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                selectedTimeframe === btn.id
+                  ? 'bg-slate-900 text-white font-bold'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-              />
-            </svg>
-            <span>PROMETHEUS /METRICS</span>
-          </a>
+              {btn.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* High-Contrast Neo-Brutalist Summary Tiles (Large, Legible Arial Typography) */}
+      {/* Summary Tiles */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="border border-black rounded-md p-3 bg-white">
-          <div className="text-xs font-bold uppercase opacity-60 font-sans text-black">
-            LATEST LATENCY
+        <div className="border border-slate-200/90 rounded-xl p-3 bg-white shadow-2xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            LATEST
           </div>
-          <div className="text-2xl font-bold font-sans text-black mt-1">
-            {stats.latest} <span className="text-sm font-semibold opacity-70">MS</span>
+          <div className="text-xl font-black text-slate-900 mt-0.5">
+            {stats.latest} <span className="text-xs font-semibold text-slate-500">ms</span>
           </div>
         </div>
-        <div className="border border-black rounded-md p-3 bg-white">
-          <div className="text-xs font-bold uppercase opacity-60 font-sans text-black">
+        <div className="border border-slate-200/90 rounded-xl p-3 bg-white shadow-2xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             AVERAGE
           </div>
-          <div className="text-2xl font-bold font-sans text-black mt-1">
-            {stats.avg} <span className="text-sm font-semibold opacity-70">MS</span>
+          <div className="text-xl font-black text-slate-900 mt-0.5">
+            {stats.avg} <span className="text-xs font-semibold text-slate-500">ms</span>
           </div>
         </div>
-        <div className="border border-black rounded-md p-3 bg-white">
-          <div className="text-xs font-bold uppercase opacity-60 font-sans text-black">
+        <div className="border border-slate-200/90 rounded-xl p-3 bg-white shadow-2xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             MINIMUM
           </div>
-          <div className="text-2xl font-bold font-sans text-black mt-1">
-            {stats.min} <span className="text-sm font-semibold opacity-70">MS</span>
+          <div className="text-xl font-black text-slate-900 mt-0.5">
+            {stats.min} <span className="text-xs font-semibold text-slate-500">ms</span>
           </div>
         </div>
-        <div className="border border-black rounded-md p-3 bg-white">
-          <div className="text-xs font-bold uppercase opacity-60 font-sans text-black">
+        <div className="border border-slate-200/90 rounded-xl p-3 bg-white shadow-2xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             PEAK / MAX
           </div>
-          <div className="text-2xl font-bold font-sans text-black mt-1">
-            {stats.max} <span className="text-sm font-semibold opacity-70">MS</span>
+          <div className="text-xl font-black text-slate-900 mt-0.5">
+            {stats.max} <span className="text-xs font-semibold text-slate-500">ms</span>
           </div>
         </div>
-        <div className="border border-black rounded-md p-3 bg-white">
-          <div className="text-xs font-bold uppercase opacity-60 font-sans text-black">
+        <div className="border border-slate-200/90 rounded-xl p-3 bg-white shadow-2xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
             95TH % (P95)
           </div>
-          <div className="text-2xl font-bold font-sans text-black mt-1">
-            {stats.p95} <span className="text-sm font-semibold opacity-70">MS</span>
+          <div className="text-xl font-black text-slate-900 mt-0.5">
+            {stats.p95} <span className="text-xs font-semibold text-slate-500">ms</span>
           </div>
         </div>
-        <div className="border border-black rounded-md p-3 bg-white">
-          <div className="text-xs font-bold uppercase opacity-60 font-sans text-black">
-            SAMPLES SHOWN
+        <div className="border border-slate-200/90 rounded-xl p-3 bg-white shadow-2xs">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            SAMPLES
           </div>
-          <div className="text-2xl font-bold font-sans text-black mt-1">
+          <div className="text-xl font-black text-slate-900 mt-0.5">
             {chronological.length}
           </div>
         </div>
@@ -435,360 +377,205 @@ export function LatencyMetricTimeseriesGraphCard({
 
       {/* Main Graph Viewport */}
       {chronological.length === 0 ? (
-        <div className="p-16 text-center font-sans font-bold text-sm border border-black rounded-md bg-white text-black">
-          [ NO TELEMETRY METRIC SAMPLES RECORDED YET // PROMETHEUS SCRAPING IDLE ]
+        <div className="p-12 text-center text-xs font-medium text-slate-500 border border-slate-200/90 rounded-xl bg-slate-50/50">
+          No telemetry samples recorded for the selected timeframe.
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* White Neo-Brutalist Graph Viewport Canvas */}
-          <div
-            ref={containerRef}
-            className="relative w-full rounded-md border border-black overflow-hidden bg-white select-none cursor-crosshair shadow-none"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-          >
-            {/* Viewport Top Bar */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-black text-xs font-sans font-bold text-black bg-neutral-50">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 bg-black inline-block" />
-                <span className="uppercase tracking-wide">
-                  CHRONOLOGICAL TIME-SERIES
-                </span>
-                {timeFrameLabel && (
-                  <span className="text-neutral-600 font-semibold ml-2">
-                    [ RANGE: {timeFrameLabel} ]
-                  </span>
-                )}
-              </div>
-              <div>
-                {hoveredPoint ? (
-                  <span className="text-black font-extrabold uppercase bg-neutral-200 px-2 py-0.5 rounded border border-black text-xs">
-                    SAMPLE #{hoveredPoint.index + 1} OF {points.length}: {hoveredPoint.latency} MS
-                  </span>
-                ) : (
-                  <span className="text-black opacity-60 font-semibold">
-                    HOVER DATA SQUARES TO INSPECT PROBE
-                  </span>
-                )}
-              </div>
-            </div>
+        <div
+          ref={containerRef}
+          className="relative w-full rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs select-none cursor-crosshair"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {/* SVG Vector Chart */}
+          <div className="w-full h-[320px] bg-white">
+            <svg
+              width="100%"
+              height="100%"
+              viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+              preserveAspectRatio="none"
+              className="w-full h-full block"
+            >
+              <defs>
+                <linearGradient id="cleanLatencyAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563eb" stopOpacity="0.12" />
+                  <stop offset="100%" stopColor="#2563eb" stopOpacity="0.00" />
+                </linearGradient>
+              </defs>
 
-            {/* SVG Vector Chart: True 1:1 Pixel Aspect Ratio, Clean White Background */}
-            <div className="w-full h-[380px] md:h-[400px] bg-white">
-              <svg
-                width="100%"
-                height="100%"
-                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                preserveAspectRatio="none"
-                className="w-full h-full block overflow-visible"
-              >
-                <defs>
-                  {/* Subtle Gradient Area Fill under the line (Light translucent tint on pure white) */}
-                  <linearGradient id="latencyAreaGradWhite" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#000000" stopOpacity="0.08" />
-                    <stop offset="60%" stopColor="#000000" stopOpacity="0.03" />
-                    <stop offset="100%" stopColor="#000000" stopOpacity="0.00" />
-                  </linearGradient>
-                </defs>
-
-                {/* Y-Axis Horizontal Dashed Gridlines & Large Arial Millisecond Labels */}
-                {yTicks.map((tickVal, idx) => {
-                  const tickRatio = tickVal / maxY;
-                  const tickY = plotBaseline - tickRatio * plotHeight;
-                  return (
-                    <g key={idx}>
-                      <line
-                        x1={paddingLeft}
-                        y1={tickY}
-                        x2={paddingLeft + plotWidth}
-                        y2={tickY}
-                        stroke="#e5e7eb"
-                        strokeDasharray="4 4"
-                        strokeWidth="1"
-                      />
-                      <text
-                        x={paddingLeft - 12}
-                        y={tickY + 4}
-                        textAnchor="end"
-                        fill="#000000"
-                        fontSize="13"
-                        fontWeight="bold"
-                        fontFamily="Arial, Helvetica, sans-serif"
-                      >
-                        {tickVal} ms
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Baseline Solid Axis Line */}
-                <line
-                  x1={paddingLeft}
-                  y1={plotBaseline}
-                  x2={paddingLeft + plotWidth}
-                  y2={plotBaseline}
-                  stroke="#000000"
-                  strokeWidth="1.5"
-                />
-
-                {/* X-Axis Vertical Gridlines & Large Arial Timestamps */}
-                {xTickIndices.map((idx) => {
-                  const pt = points[idx];
-                  if (!pt) return null;
-                  const timeLabel = formatAxisDateOrTime(pt.sample.timestamp, spansMultipleDays);
-
-                  // Edge anchor adjustment to prevent overflow
-                  const isFirst = idx === 0;
-                  const isLast = idx === points.length - 1;
-                  const anchor = isFirst ? 'start' : isLast ? 'end' : 'middle';
-
-                  return (
-                    <g key={idx}>
-                      <line
-                        x1={pt.x}
-                        y1={paddingTop}
-                        x2={pt.x}
-                        y2={plotBaseline}
-                        stroke="#e5e7eb"
-                        strokeDasharray="4 4"
-                        strokeWidth="1"
-                      />
-                      <text
-                        x={pt.x}
-                        y={plotBaseline + 26}
-                        textAnchor={anchor}
-                        fill="#000000"
-                        fontSize="13"
-                        fontWeight="bold"
-                        fontFamily="Arial, Helvetica, sans-serif"
-                      >
-                        {timeLabel}
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* Vector Gradient Area Fill */}
-                {areaPathD && (
-                  <path
-                    d={areaPathD}
-                    fill="url(#latencyAreaGradWhite)"
-                  />
-                )}
-
-                {/* Smooth Cubic Bezier Vector Line (Solid High-Contrast Black Line) */}
-                {linePathD && (
-                  <path
-                    d={linePathD}
-                    fill="none"
-                    stroke="#000000"
-                    strokeWidth="2.5"
-                    strokeLinecap="square"
-                    strokeLinejoin="round"
-                  />
-                )}
-
-                {/* RIGID GEOMETRIC SQUARES (Replacing all circles) */}
-                {points.map((pt, i) => {
-                  const isError =
-                    pt.sample.http_status === 0 ||
-                    (pt.sample.http_status !== undefined && pt.sample.http_status >= 500);
-                  const isHighLatency = !isError && pt.latency >= 1000;
-                  const pointColor = isError
-                    ? '#ef4444' // Red square
-                    : isHighLatency
-                    ? '#f59e0b' // Amber square
-                    : '#10b981'; // Emerald square
-
-                  const isHovered = hoveredIdx === i;
-                  const squareSize = isHovered ? 10 : 7;
-                  const halfSize = squareSize / 2;
-
-                  return (
-                    <g key={i}>
-                      {/* Outer square ring for anomalies or hovered node */}
-                      {(isHovered || isError || isHighLatency) && (
-                        <rect
-                          x={pt.x - halfSize - 3}
-                          y={pt.y - halfSize - 3}
-                          width={squareSize + 6}
-                          height={squareSize + 6}
-                          fill="none"
-                          stroke={isError ? '#ef4444' : isHighLatency ? '#f59e0b' : '#000000'}
-                          strokeWidth="1.5"
-                        />
-                      )}
-
-                      {/* Main Data Square */}
-                      <rect
-                        x={pt.x - halfSize}
-                        y={pt.y - halfSize}
-                        width={squareSize}
-                        height={squareSize}
-                        fill={pointColor}
-                        stroke="#000000"
-                        strokeWidth="1.5"
-                      />
-                    </g>
-                  );
-                })}
-
-                {/* Interactive Dynamic Crosshairs (Sharp Dashed Lines) */}
-                {hoveredPoint && (
-                  <g pointerEvents="none">
-                    {/* Vertical tracking line */}
-                    <line
-                      x1={hoveredPoint.x}
-                      y1={paddingTop}
-                      x2={hoveredPoint.x}
-                      y2={plotBaseline}
-                      stroke="#000000"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 4"
-                    />
-                    {/* Horizontal tracking line */}
+              {/* Y-Axis Horizontal Dashed Gridlines */}
+              {yTicks.map((tickVal, idx) => {
+                const tickRatio = tickVal / maxY;
+                const tickY = plotBaseline - tickRatio * plotHeight;
+                return (
+                  <g key={idx}>
                     <line
                       x1={paddingLeft}
-                      y1={hoveredPoint.y}
+                      y1={tickY}
                       x2={paddingLeft + plotWidth}
-                      y2={hoveredPoint.y}
-                      stroke="#000000"
-                      strokeWidth="1.5"
-                      strokeDasharray="4 4"
+                      y2={tickY}
+                      stroke="#f1f5f9"
+                      strokeDasharray="3 3"
+                      strokeWidth="1"
                     />
-                    {/* Square cursor reticle */}
-                    <rect
-                      x={hoveredPoint.x - 8}
-                      y={hoveredPoint.y - 8}
-                      width={16}
-                      height={16}
-                      fill="none"
-                      stroke="#000000"
-                      strokeWidth="2"
-                    />
+                    <text
+                      x={paddingLeft - 8}
+                      y={tickY + 4}
+                      textAnchor="end"
+                      fill="#94a3b8"
+                      fontSize="11"
+                      fontWeight="600"
+                      fontFamily="sans-serif"
+                    >
+                      {tickVal}ms
+                    </text>
                   </g>
-                )}
-              </svg>
-            </div>
+                );
+              })}
 
-            {/* Neo-Brutalist White Tooltip Overlay with Crisp Black Border */}
-            {hoveredPoint && hoveredSample && (
-              <div
-                style={{
-                  left: `${Math.min(
-                    84,
-                    Math.max(16, (hoveredPoint.x / svgWidth) * 100)
-                  )}%`,
-                  top:
-                    hoveredPoint.y < 150
-                      ? `${((hoveredPoint.y + 40) / svgHeight) * 100}%`
-                      : `${((hoveredPoint.y - 15) / svgHeight) * 100}%`,
-                  transform:
-                    hoveredPoint.y < 150
-                      ? 'translate(-50%, 0%)'
-                      : 'translate(-50%, -100%)',
-                }}
-                className="absolute z-30 pointer-events-none bg-white border-2 border-black rounded-md shadow-2xl p-4 text-black font-sans text-xs min-w-[280px] max-w-[360px]"
-              >
-                {/* Tooltip Header: Timestamp */}
-                <div className="flex items-center justify-between border-b border-black pb-2 mb-2 text-xs text-black font-bold uppercase">
-                  <span>SAMPLE #{hoveredPoint.index + 1}</span>
-                  <span className="opacity-70 font-mono">
-                    {formatFullDateTime(hoveredSample.timestamp)}
-                  </span>
-                </div>
+              {/* Baseline */}
+              <line
+                x1={paddingLeft}
+                y1={plotBaseline}
+                x2={paddingLeft + plotWidth}
+                y2={plotBaseline}
+                stroke="#e2e8f0"
+                strokeWidth="1"
+              />
 
-                {/* Tooltip Body: Latency & Status */}
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-bold text-black uppercase">RESPONSE LATENCY:</span>
-                    <span className="font-extrabold text-black text-base">
-                      {hoveredPoint.latency} ms
-                    </span>
-                  </div>
+              {/* X-Axis Vertical Gridlines & Timestamps */}
+              {xTickIndices.map((idx) => {
+                const pt = points[idx];
+                if (!pt) return null;
+                const timeLabel = formatAxisTime(pt.sample.timestamp);
+                const isFirst = idx === 0;
+                const isLast = idx === points.length - 1;
+                const anchor = isFirst ? 'start' : isLast ? 'end' : 'middle';
 
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-bold text-black uppercase">HTTP STATUS:</span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-bold uppercase border border-black ${
-                        hoveredSample.http_status === 200
-                          ? 'bg-neutral-100 text-black'
-                          : hoveredSample.http_status === 0
-                          ? 'bg-black text-white'
-                          : 'bg-neutral-200 text-black'
-                      }`}
+                return (
+                  <g key={idx}>
+                    <line
+                      x1={pt.x}
+                      y1={paddingTop}
+                      x2={pt.x}
+                      y2={plotBaseline}
+                      stroke="#f8fafc"
+                      strokeWidth="1"
+                    />
+                    <text
+                      x={pt.x}
+                      y={plotBaseline + 20}
+                      textAnchor={anchor}
+                      fill="#94a3b8"
+                      fontSize="11"
+                      fontWeight="600"
+                      fontFamily="sans-serif"
                     >
-                      {hoveredSample.http_status
-                        ? `${hoveredSample.http_status}`
-                        : '0 (NETWORK FAILURE)'}
-                    </span>
-                  </div>
+                      {timeLabel}
+                    </text>
+                  </g>
+                );
+              })}
 
-                  {/* Health State Badge */}
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-bold text-black uppercase">HEALTH STATE:</span>
-                    <span
-                      className={`font-bold text-xs uppercase px-2 py-0.5 border border-black rounded ${
-                        hoveredSample.http_status === 0 ||
-                        (hoveredSample.http_status && hoveredSample.http_status >= 500)
-                          ? 'bg-red-100 text-red-900'
-                          : hoveredPoint.latency >= 1000
-                          ? 'bg-amber-100 text-amber-900'
-                          : 'bg-emerald-100 text-emerald-900'
-                      }`}
-                    >
-                      {hoveredSample.http_status === 0 ||
-                      (hoveredSample.http_status && hoveredSample.http_status >= 500)
-                        ? 'CRITICAL / DOWN'
-                        : hoveredPoint.latency >= 1000
-                        ? 'DEGRADED / HIGH LATENCY'
-                        : 'OPTIMAL / HEALTHY'}
-                    </span>
-                  </div>
+              {/* Vector Gradient Area Fill */}
+              {areaPathD && (
+                <path
+                  d={areaPathD}
+                  fill="url(#cleanLatencyAreaGrad)"
+                />
+              )}
 
-                  {/* System CPU / RAM if present */}
-                  {((hoveredSample.cpu_percentage ?? 0) > 0 ||
-                    (hoveredSample.memory_mb ?? 0) > 0) && (
-                    <div className="flex items-center justify-between gap-3 border-t border-black/20 pt-2 text-xs font-bold text-black">
-                      <span>CPU: {hoveredSample.cpu_percentage ?? 0}%</span>
-                      <span>RAM: {hoveredSample.memory_mb ?? 0} MB</span>
-                    </div>
-                  )}
+              {/* Vector Line */}
+              {linePathD && (
+                <path
+                  d={linePathD}
+                  fill="none"
+                  stroke="#2563eb"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
 
-                  {/* Error Message if present */}
-                  {hoveredSample.error_message && (
-                    <div className="mt-2 p-2 bg-neutral-100 border border-black rounded text-xs text-black break-words font-medium">
-                      <span className="font-bold uppercase">ERROR: </span>
-                      {hoveredSample.error_message}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+              {/* Data points */}
+              {points.map((pt, i) => {
+                const isError =
+                  pt.sample.http_status === 0 ||
+                  (pt.sample.http_status !== undefined && pt.sample.http_status >= 500);
+                const isHighLatency = !isError && pt.latency >= 1000;
+                const pointColor = isError
+                  ? '#ef4444'
+                  : isHighLatency
+                  ? '#f59e0b'
+                  : '#2563eb';
+
+                const isHovered = hoveredIdx === i;
+                const radius = isHovered ? 4.5 : 2.5;
+
+                return (
+                  <circle
+                    key={i}
+                    cx={pt.x}
+                    cy={pt.y}
+                    r={radius}
+                    fill={pointColor}
+                    stroke="#ffffff"
+                    strokeWidth={isHovered ? 2 : 1}
+                  />
+                );
+              })}
+
+              {/* Hover Crosshairs */}
+              {hoveredPoint && (
+                <g pointerEvents="none">
+                  <line
+                    x1={hoveredPoint.x}
+                    y1={paddingTop}
+                    x2={hoveredPoint.x}
+                    y2={plotBaseline}
+                    stroke="#94a3b8"
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
+                  />
+                </g>
+              )}
+            </svg>
           </div>
 
-          {/* Bottom Observability Legend Bar (Strict Neo-Brutalist SQUARES) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-black rounded-md p-3.5 bg-white font-sans text-xs text-black">
-            <div className="flex items-center gap-5 flex-wrap">
-              <span className="font-bold uppercase opacity-60 text-xs">LEGEND:</span>
-              <div className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 bg-[#10b981] border border-black inline-block" />
-                <span className="text-xs font-bold uppercase">NORMAL (&lt; 1000MS)</span>
+          {/* Clean Tooltip */}
+          {hoveredPoint && hoveredSample && (
+            <div
+              style={{
+                left: `${Math.min(84, Math.max(16, (hoveredPoint.x / svgWidth) * 100))}%`,
+                top: hoveredPoint.y < 120 ? `${hoveredPoint.y + 40}px` : `${hoveredPoint.y - 10}px`,
+                transform: hoveredPoint.y < 120 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+              }}
+              className="absolute z-30 pointer-events-none bg-slate-900 text-white rounded-lg p-2.5 text-xs shadow-lg space-y-1 min-w-[180px]"
+            >
+              <div className="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-700/80 pb-1">
+                <span>Sample #{hoveredPoint.index + 1}</span>
+                <span className="font-mono">{formatFullDateTime(hoveredSample.timestamp)}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 bg-[#f59e0b] border border-black inline-block" />
-                <span className="text-xs font-bold uppercase">HIGH LATENCY (≥ 1000MS)</span>
+              <div className="flex items-center justify-between font-medium">
+                <span className="text-slate-400">Latency:</span>
+                <span className="font-bold text-white text-sm">{hoveredPoint.latency} ms</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 bg-[#ef4444] border border-black inline-block" />
-                <span className="text-xs font-bold uppercase">FAILED PROBE / HTTP 5XX</span>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Status:</span>
+                <span
+                  className={`font-semibold ${
+                    hoveredSample.http_status === 200
+                      ? 'text-emerald-400'
+                      : hoveredSample.http_status === 0
+                      ? 'text-rose-400'
+                      : 'text-amber-400'
+                  }`}
+                >
+                  HTTP {hoveredSample.http_status || 0}
+                </span>
               </div>
             </div>
-
-            <div className="text-xs font-sans font-bold uppercase opacity-60 text-black">
-              STREAM: REAL-TIME (OLDEST → NEWEST)
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>
