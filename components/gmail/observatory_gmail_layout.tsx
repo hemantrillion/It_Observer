@@ -237,12 +237,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
       >
         <GmailLeftRail
           activeTab={activeRailTab}
-          onSelectTab={(tab) => {
-            setActiveRailTab(tab);
-            if (tab === 'demo') {
-              setDemoSubView('dashboard');
-            }
-          }}
+          onSelectTab={navigateTab}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
           hasWallpaper={hasWallpaper}
         />
@@ -318,24 +313,6 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
 
         {/* Body below Box 3: Horizontal flex row holding Box 2, 4, 5 */}
         <div className="flex-1 flex flex-row overflow-hidden">
-          {/* ==================================================== */}
-          {/* FLEXBOX 1: Left Navigation Rail                      */}
-          {/* ==================================================== */}
-          <div
-            className={`relative h-full shrink-0 flex flex-col transition-all ${
-              showFlexboxBorders
-                ? 'border-2 border-red-500 m-0.5 rounded-sm'
-                : ''
-            }`}
-          >
-            <GmailLeftRail
-              activeTab={activeRailTab}
-              onSelectTab={navigateTab}
-              onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-              hasWallpaper={hasWallpaper}
-            />
-          </div>
-
           {/* ==================================================== */}
           {/* FLEXBOX 2: Left Collapsible Sidebar                  */}
           {/* ==================================================== */}

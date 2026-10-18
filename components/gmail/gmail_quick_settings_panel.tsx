@@ -307,21 +307,39 @@ export function GmailQuickSettingsPanel({
   const [isViewAllModalOpen, setIsViewAllModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Always reset view-all modal whenever the settings panel is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setIsViewAllModalOpen(false);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
+      // If modal is open, clicks inside the modal dialog should not trigger outside click
+      if (isViewAllModalOpen && modalRef.current && modalRef.current.contains(event.target as Node)) {
+        return;
+      }
+
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
         const isTrigger = (event.target as HTMLElement)?.closest?.('[data-panel-trigger="quick-settings"]');
         if (isTrigger) return;
+        setIsViewAllModalOpen(false);
         onClose();
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        if (isViewAllModalOpen) {
+          setIsViewAllModalOpen(false);
+        } else {
+          onClose();
+        }
       }
     };
 
@@ -331,7 +349,7 @@ export function GmailQuickSettingsPanel({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, isViewAllModalOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -361,7 +379,10 @@ export function GmailQuickSettingsPanel({
             Quick settings
           </h3>
           <button
-            onClick={onClose}
+            onClick={() => {
+              setIsViewAllModalOpen(false);
+              onClose();
+            }}
             className="p-1 rounded-full hover:bg-black/10 text-[#444746] transition-colors"
           >
             <X className="w-5 h-5" />
@@ -372,6 +393,7 @@ export function GmailQuickSettingsPanel({
           {/* See All Settings Button */}
           <button
             onClick={() => {
+              setIsViewAllModalOpen(false);
               onClose();
               onSeeAllSettings();
             }}
@@ -492,9 +514,9 @@ export function GmailQuickSettingsPanel({
               </button>
             </div>
 
-            {/* 4x2 Thumbnails Grid */}
+            {/* 4x2 Thumbnails Grid (strictly 8 themes) */}
             <div className="grid grid-cols-4 gap-2">
-              {PRESET_THEMES.map((theme) => {
+              {PRESET_THEMES.slice(0, 8).map((theme) => {
                 const isSelected = activeThemeId === theme.id;
 
                 return (
@@ -517,6 +539,11 @@ export function GmailQuickSettingsPanel({
                         <div className="w-4 h-2 rounded-xs bg-[#c2e7ff] self-center" />
                         <div className="w-full h-1 bg-[#e0e2ec] rounded-xs" />
                       </div>
+                    ) : theme.type === 'color' ? (
+                      <div
+                        style={{ background: theme.backgroundStyle }}
+                        className="w-full h-full"
+                      />
                     ) : (
                       <img
                         src={theme.previewUrl}
@@ -571,8 +598,18 @@ export function GmailQuickSettingsPanel({
 
       {/* "View all" Theme Picker Modal */}
       {isViewAllModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-[#c4c7c5] overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsViewAllModalOpen(false);
+            }
+          }}
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+        >
+          <div
+            ref={modalRef}
+            className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl border border-[#c4c7c5] overflow-hidden flex flex-col max-h-[90vh]"
+          >
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-[#e0e2ec] flex items-center justify-between">
               <div>
@@ -647,6 +684,11 @@ export function GmailQuickSettingsPanel({
                           <div className="w-full h-full bg-[#f6f8fc] flex items-center justify-center p-2 text-xs font-bold text-[#444746]">
                             Light Default
                           </div>
+                        ) : theme.type === 'color' ? (
+                          <div
+                            style={{ background: theme.backgroundStyle }}
+                            className="w-full h-full"
+                          />
                         ) : (
                           <img
                             src={theme.previewUrl}
