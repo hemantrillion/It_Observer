@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
-import { TrendingUp, Square, BarChart2 } from 'lucide-react';
+import { TrendingUp, BarChart2 } from 'lucide-react';
 
 export interface GenericMetricSample {
   id?: number;
@@ -27,7 +27,7 @@ interface LatencyMetricTimeseriesGraphCardProps {
 }
 
 type TimeframeOption = '15m' | '30m' | '1h' | '6h' | '24h';
-type GraphFormat = 'area' | 'cartesian' | 'bar';
+type GraphFormat = 'area' | 'bar';
 
 const TIMEFRAME_BUTTONS: { id: TimeframeOption; label: string; minutes: number }[] = [
   { id: '15m', label: '15m', minutes: 15 },
@@ -120,35 +120,38 @@ export function LatencyMetricTimeseriesGraphCard({
     });
   }, [samples]);
 
-  // 2. Strict timeframe window filtering anchored to the latest sample
+  // 2. Strict timeframe window bounds: [windowStartTime, windowEndTime]
   const currentMinutes = useMemo(() => {
     return TIMEFRAME_BUTTONS.find((b) => b.id === selectedTimeframe)?.minutes || 15;
   }, [selectedTimeframe]);
 
   const windowDurationMs = currentMinutes * 60 * 1000;
 
-  // Filter samples that fall inside [latestSampleTime - windowDurationMs, latestSampleTime]
+  // Window ends at newest sample timestamp (or Date.now() if no samples)
+  const windowEndTime = useMemo(() => {
+    if (allChronological.length === 0) return Date.now();
+    const latest = allChronological[allChronological.length - 1];
+    const t = new Date(latest.timestamp).getTime();
+    return isNaN(t) ? Date.now() : t;
+  }, [allChronological]);
+
+  const windowStartTime = windowEndTime - windowDurationMs;
+
+  // Real measured samples inside the window
   const chronological = useMemo(() => {
     if (allChronological.length === 0) return [];
-    const latestSample = allChronological[allChronological.length - 1];
-    const latestTime = new Date(latestSample.timestamp).getTime();
-    if (isNaN(latestTime)) return allChronological.slice(-60);
-
-    const cutoffTime = latestTime - windowDurationMs;
-    const inWindow = allChronological.filter((s) => {
-      const time = new Date(s.timestamp).getTime();
-      return !isNaN(time) && time >= cutoffTime;
+    return allChronological.filter((s) => {
+      const t = new Date(s.timestamp).getTime();
+      return !isNaN(t) && t >= windowStartTime && t <= windowEndTime + 5000;
     });
+  }, [allChronological, windowStartTime, windowEndTime]);
 
-    return inWindow.length > 0 ? inWindow : allChronological.slice(-15);
-  }, [allChronological, windowDurationMs]);
-
-  // Extract latencies
+  // Extract latencies for measured samples
   const latencies = useMemo(() => {
     return chronological.map((s) => extractLatency(s));
   }, [chronological]);
 
-  // Telemetry metrics statistics (matching Metrics domain view font and layout)
+  // Telemetry metrics statistics
   const stats = useMemo(() => {
     if (latencies.length === 0) {
       return { min: 0, max: 0, avg: 0, p95: 0, latest: 0 };
@@ -190,37 +193,120 @@ export function LatencyMetricTimeseriesGraphCard({
     ];
   }, [maxY]);
 
-  // Map chronological samples evenly across SVG Cartesian space (anchored so latest is on the right)
-  const points = useMemo(() => {
-    const total = chronological.length;
-    if (total === 0) return [];
+  interface PointItem {
+    x: number;
+    y: number;
+    sample?: GenericMetricSample;
+    latency: number;
+    index: number;
+    isBaseline: boolean;
+    sampleTime: number;
+  }
 
-    return chronological.map((sample, i) => {
+  // Construct points spanning the entire window [windowStartTime, windowEndTime]
+  // For the time interval not measuring yet, keep it DOWN at baseline (y = plotBaseline, latency = 0)
+  const points = useMemo<PointItem[]>(() => {
+    if (chronological.length === 0) {
+      return [
+        {
+          x: paddingLeft,
+          y: plotBaseline,
+          latency: 0,
+          index: 0,
+          isBaseline: true,
+          sampleTime: windowStartTime,
+        },
+        {
+          x: paddingLeft + plotWidth,
+          y: plotBaseline,
+          latency: 0,
+          index: 1,
+          isBaseline: true,
+          sampleTime: windowEndTime,
+        },
+      ];
+    }
+
+    const pts: PointItem[] = [];
+    const firstSample = chronological[0];
+    const firstSampleTime = new Date(firstSample.timestamp).getTime();
+
+    // If measuring started less than the selected window, keep the prior interval down at baseline
+    if (firstSampleTime > windowStartTime + 3000) {
+      pts.push({
+        x: paddingLeft,
+        y: plotBaseline,
+        latency: 0,
+        index: -2,
+        isBaseline: true,
+        sampleTime: windowStartTime,
+      });
+
+      const firstRatio = Math.max(0, Math.min(1, (firstSampleTime - windowStartTime) / windowDurationMs));
+      const firstX = paddingLeft + firstRatio * plotWidth;
+
+      if (firstX > paddingLeft + 4) {
+        pts.push({
+          x: firstX,
+          y: plotBaseline,
+          latency: 0,
+          index: -1,
+          isBaseline: true,
+          sampleTime: firstSampleTime,
+        });
+      }
+    }
+
+    // Add all real measured samples mapped into their time-proportionate positions
+    chronological.forEach((sample, i) => {
       const lat = extractLatency(sample);
-      const x =
-        total === 1
-          ? paddingLeft + plotWidth / 2
-          : paddingLeft + (i / (total - 1)) * plotWidth;
+      const sampleTime = new Date(sample.timestamp).getTime();
+      const timeRatio = Math.max(0, Math.min(1, (sampleTime - windowStartTime) / windowDurationMs));
+      const x = paddingLeft + timeRatio * plotWidth;
       const valRatio = Math.max(0, Math.min(1, lat / maxY));
       const y = plotBaseline - valRatio * plotHeight;
 
-      return { x, y, sample, latency: lat, index: i };
+      pts.push({
+        x,
+        y,
+        sample,
+        latency: lat,
+        index: i,
+        isBaseline: false,
+        sampleTime,
+      });
     });
-  }, [chronological, maxY, plotBaseline, plotHeight, plotWidth, paddingLeft]);
 
-  // Slot width for bars and squares so they never collide or overlap
+    return pts;
+  }, [chronological, maxY, plotBaseline, plotHeight, plotWidth, paddingLeft, windowStartTime, windowEndTime, windowDurationMs]);
+
+  // Measured samples count, distance and slot width for bars
+  const measuredCount = useMemo(() => {
+    return points.filter((p) => !p.isBaseline).length;
+  }, [points]);
+
+  const minSampleDistance = useMemo(() => {
+    const measured = points.filter((p) => !p.isBaseline);
+    if (measured.length <= 1) return 24;
+    let minD = Infinity;
+    for (let i = 0; i < measured.length - 1; i++) {
+      const d = measured[i + 1].x - measured[i].x;
+      if (d > 0.5 && d < minD) minD = d;
+    }
+    return minD === Infinity ? 24 : minD;
+  }, [points]);
+
   const slotWidth = useMemo(() => {
-    const total = points.length;
-    return total <= 1 ? plotWidth : plotWidth / total;
-  }, [points.length, plotWidth]);
+    return measuredCount <= 1 ? plotWidth : plotWidth / measuredCount;
+  }, [measuredCount, plotWidth]);
 
-  // Smooth Curves (for Area Line mode)
+  // Smooth Area Curve path calculation
   const { linePathD, areaPathD } = useMemo(() => {
     if (points.length === 0) return { linePathD: '', areaPathD: '' };
     if (points.length === 1) {
       return {
-        linePathD: `M ${points[0].x} ${points[0].y}`,
-        areaPathD: `M ${points[0].x} ${plotBaseline} L ${points[0].x} ${points[0].y} L ${points[0].x} ${plotBaseline} Z`,
+        linePathD: `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`,
+        areaPathD: `M ${points[0].x.toFixed(1)} ${plotBaseline.toFixed(1)} L ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${points[0].x.toFixed(1)} ${plotBaseline.toFixed(1)} Z`,
       };
     }
 
@@ -232,6 +318,14 @@ export function LatencyMetricTimeseriesGraphCard({
       const p1 = points[i];
       const p2 = points[i + 1];
       const p3 = points[Math.min(points.length - 1, i + 2)];
+
+      // If both points are baseline (unmeasured interval), draw straight horizontal baseline line
+      if (p1.isBaseline && p2.isBaseline) {
+        const seg = ` L ${p2.x.toFixed(1)} ${plotBaseline.toFixed(1)}`;
+        linePath += seg;
+        areaCurves += seg;
+        continue;
+      }
 
       let cp1x = p1.x + (p2.x - p0.x) / 6;
       let cp1y = p1.y + (p2.y - p0.y) / 6;
@@ -251,32 +345,20 @@ export function LatencyMetricTimeseriesGraphCard({
     return { linePathD: linePath, areaPathD: areaPath };
   }, [points, plotBaseline, paddingTop]);
 
-  // Straight Cartesian Path (for Cartesian square mode)
-  const cartesianPathD = useMemo(() => {
-    if (points.length === 0) return '';
-    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
-    for (let i = 1; i < points.length; i++) {
-      d += ` L ${points[i].x.toFixed(1)} ${points[i].y.toFixed(1)}`;
-    }
-    return d;
-  }, [points]);
-
-  // 5 X-axis evenly spaced time ticks showing actual sample times
+  // 5 X-axis evenly spaced time ticks across the exact full timeframe window [windowStartTime, windowEndTime]
   const xTimeTicks = useMemo(() => {
-    const total = chronological.length;
-    if (total === 0) return [];
-    const count = Math.min(5, total);
+    const count = 5;
     const ticks: { x: number; label: string; anchor: 'start' | 'middle' | 'end' }[] = [];
     for (let i = 0; i < count; i++) {
-      const idx = count === 1 ? 0 : Math.round((i / (count - 1)) * (total - 1));
-      const sample = chronological[idx];
-      const x = total === 1 ? paddingLeft + plotWidth / 2 : paddingLeft + (idx / (total - 1)) * plotWidth;
-      const label = formatAxisTime(new Date(sample.timestamp).getTime());
+      const fraction = i / (count - 1);
+      const timeMs = windowStartTime + fraction * windowDurationMs;
+      const x = paddingLeft + fraction * plotWidth;
+      const label = formatAxisTime(timeMs);
       const anchor = i === 0 ? 'start' : i === count - 1 ? 'end' : 'middle';
       ticks.push({ x, label, anchor });
     }
     return ticks;
-  }, [chronological, paddingLeft, plotWidth]);
+  }, [windowStartTime, windowDurationMs, paddingLeft, plotWidth]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (points.length === 0) return;
@@ -338,7 +420,7 @@ export function LatencyMetricTimeseriesGraphCard({
             ))}
           </div>
 
-          {/* 3 Graph Format Selection Icons */}
+          {/* Graph Format Selection Icons */}
           <div className="flex items-center gap-1 border-l border-slate-200 pl-3">
             <button
               type="button"
@@ -351,18 +433,6 @@ export function LatencyMetricTimeseriesGraphCard({
               title="Smooth Area Curve"
             >
               <TrendingUp className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setGraphFormat('cartesian')}
-              className={`p-1.5 rounded-md border transition-all cursor-pointer ${
-                graphFormat === 'cartesian'
-                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-2xs'
-                  : 'bg-white text-slate-500 hover:text-slate-800 border-slate-200'
-              }`}
-              title="Cartesian Point Grid"
-            >
-              <Square className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
@@ -544,116 +614,67 @@ export function LatencyMetricTimeseriesGraphCard({
                       strokeLinejoin="round"
                     />
                   )}
-                  {points.map((pt, i) => {
-                    const isError =
-                      pt.sample.http_status === 0 ||
-                      (pt.sample.http_status !== undefined && pt.sample.http_status >= 500);
-                    const isHighLatency = !isError && pt.latency >= 1000;
-                    const pointColor = isError
-                      ? '#ef4444'
-                      : isHighLatency
-                      ? '#f59e0b'
-                      : '#2563eb';
-                    const isHovered = hoveredIdx === i;
+                  {points
+                    .filter((pt) => !pt.isBaseline)
+                    .map((pt, i) => {
+                      const isError =
+                        pt.sample?.http_status === 0 ||
+                        (pt.sample?.http_status !== undefined && pt.sample.http_status >= 500);
+                      const isHighLatency = !isError && pt.latency >= 1000;
+                      const pointColor = isError
+                        ? '#ef4444'
+                        : isHighLatency
+                        ? '#f59e0b'
+                        : '#2563eb';
+                      const isHovered = hoveredIdx !== null && points[hoveredIdx] === pt;
 
-                    return (
-                      <circle
-                        key={i}
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={isHovered ? 4.5 : 2.5}
-                        fill={pointColor}
-                        stroke="#ffffff"
-                        strokeWidth={isHovered ? 2 : 1}
-                      />
-                    );
-                  })}
-                </>
-              )}
-
-              {/* GRAPH FORMAT 2: CARTESIAN HIGH-PRECISION SQUARES */}
-              {graphFormat === 'cartesian' && (
-                <>
-                  {cartesianPathD && (
-                    <path
-                      d={cartesianPathD}
-                      fill="none"
-                      stroke="#0f172a"
-                      strokeWidth="1.5"
-                    />
-                  )}
-                  {points.map((pt, i) => {
-                    const isError =
-                      pt.sample.http_status === 0 ||
-                      (pt.sample.http_status !== undefined && pt.sample.http_status >= 500);
-                    const isHighLatency = !isError && pt.latency >= 1000;
-                    const pointColor = isError
-                      ? '#ef4444'
-                      : isHighLatency
-                      ? '#f59e0b'
-                      : '#0f172a';
-                    const isHovered = hoveredIdx === i;
-                    const size = isHovered ? 8 : Math.max(4, Math.min(7, slotWidth * 0.45));
-                    const half = size / 2;
-
-                    return (
-                      <g key={i}>
-                        {isHovered && (
-                          <rect
-                            x={pt.x - half - 2}
-                            y={pt.y - half - 2}
-                            width={size + 4}
-                            height={size + 4}
-                            fill="none"
-                            stroke={pointColor}
-                            strokeWidth="1.5"
-                          />
-                        )}
-                        <rect
-                          x={pt.x - half}
-                          y={pt.y - half}
-                          width={size}
-                          height={size}
+                      return (
+                        <circle
+                          key={pt.index ?? i}
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={isHovered ? 4.5 : 2.5}
                           fill={pointColor}
                           stroke="#ffffff"
-                          strokeWidth="1"
+                          strokeWidth={isHovered ? 2 : 1}
                         />
-                      </g>
-                    );
-                  })}
+                      );
+                    })}
                 </>
               )}
 
-              {/* GRAPH FORMAT 3: VERTICAL BAR HISTOGRAM */}
+              {/* GRAPH FORMAT 2: VERTICAL BAR HISTOGRAM */}
               {graphFormat === 'bar' && (
                 <>
-                  {points.map((pt, i) => {
-                    const isError =
-                      pt.sample.http_status === 0 ||
-                      (pt.sample.http_status !== undefined && pt.sample.http_status >= 500);
-                    const isHighLatency = !isError && pt.latency >= 1000;
-                    const pointColor = isError
-                      ? '#ef4444'
-                      : isHighLatency
-                      ? '#f59e0b'
-                      : '#2563eb';
-                    const isHovered = hoveredIdx === i;
-                    const barWidth = Math.max(2, Math.min(14, slotWidth * 0.65));
-                    const barHeight = Math.max(2, plotBaseline - pt.y);
+                  {points
+                    .filter((pt) => !pt.isBaseline)
+                    .map((pt, i) => {
+                      const isError =
+                        pt.sample?.http_status === 0 ||
+                        (pt.sample?.http_status !== undefined && pt.sample.http_status >= 500);
+                      const isHighLatency = !isError && pt.latency >= 1000;
+                      const pointColor = isError
+                        ? '#ef4444'
+                        : isHighLatency
+                        ? '#f59e0b'
+                        : '#2563eb';
+                      const isHovered = hoveredIdx !== null && points[hoveredIdx] === pt;
+                      const barWidth = Math.max(2, Math.min(12, Math.max(2, minSampleDistance * 0.75)));
+                      const barHeight = Math.max(2, plotBaseline - pt.y);
 
-                    return (
-                      <rect
-                        key={i}
-                        x={pt.x - barWidth / 2}
-                        y={pt.y}
-                        width={barWidth}
-                        height={barHeight}
-                        fill={pointColor}
-                        opacity={isHovered ? 1 : 0.85}
-                        rx={Math.min(2.5, barWidth / 3)}
-                      />
-                    );
-                  })}
+                      return (
+                        <rect
+                          key={pt.index ?? i}
+                          x={pt.x - barWidth / 2}
+                          y={pt.y}
+                          width={barWidth}
+                          height={barHeight}
+                          fill={pointColor}
+                          opacity={isHovered ? 1 : 0.85}
+                          rx={Math.min(2.5, barWidth / 3)}
+                        />
+                      );
+                    })}
                 </>
               )}
 
@@ -686,38 +707,56 @@ export function LatencyMetricTimeseriesGraphCard({
           </div>
 
           {/* Clean Tooltip */}
-          {hoveredPoint && hoveredSample && (
-            <div
-              style={{
-                left: `${Math.min(84, Math.max(16, (hoveredPoint.x / svgWidth) * 100))}%`,
-                top: hoveredPoint.y < 120 ? `${hoveredPoint.y + 40}px` : `${hoveredPoint.y - 10}px`,
-                transform: hoveredPoint.y < 120 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
-              }}
-              className="absolute z-30 pointer-events-none bg-slate-900 text-white rounded-lg p-2.5 text-xs shadow-lg space-y-1 min-w-[180px]"
-            >
-              <div className="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-700/80 pb-1">
-                <span>Sample #{hoveredPoint.index + 1}</span>
-                <span className="font-mono">{formatFullDateTime(hoveredSample.timestamp)}</span>
+          {hoveredPoint && (
+            hoveredSample ? (
+              <div
+                style={{
+                  left: `${Math.min(84, Math.max(16, (hoveredPoint.x / svgWidth) * 100))}%`,
+                  top: hoveredPoint.y < 120 ? `${hoveredPoint.y + 40}px` : `${hoveredPoint.y - 10}px`,
+                  transform: hoveredPoint.y < 120 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+                }}
+                className="absolute z-30 pointer-events-none bg-slate-900 text-white rounded-lg p-2.5 text-xs shadow-lg space-y-1 min-w-[180px]"
+              >
+                <div className="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-700/80 pb-1">
+                  <span>Sample #{hoveredPoint.index + 1}</span>
+                  <span className="font-mono">{formatFullDateTime(hoveredSample.timestamp)}</span>
+                </div>
+                <div className="flex items-center justify-between font-medium">
+                  <span className="text-slate-400">Latency:</span>
+                  <span className="font-bold text-white text-sm">{hoveredPoint.latency} ms</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400">Status:</span>
+                  <span
+                    className={`font-semibold ${
+                      hoveredSample.http_status === 200
+                        ? 'text-emerald-400'
+                        : hoveredSample.http_status === 0
+                        ? 'text-rose-400'
+                        : 'text-amber-400'
+                    }`}
+                  >
+                    HTTP {hoveredSample.http_status || 0}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between font-medium">
-                <span className="text-slate-400">Latency:</span>
-                <span className="font-bold text-white text-sm">{hoveredPoint.latency} ms</span>
+            ) : hoveredPoint.isBaseline ? (
+              <div
+                style={{
+                  left: `${Math.min(84, Math.max(16, (hoveredPoint.x / svgWidth) * 100))}%`,
+                  top: `${hoveredPoint.y - 10}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+                className="absolute z-30 pointer-events-none bg-slate-800/90 text-white rounded-md px-2.5 py-1.5 text-xs shadow-md space-y-0.5"
+              >
+                <div className="text-[11px] text-slate-300 font-mono">
+                  {formatAxisTime(hoveredPoint.sampleTime)}
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Unmeasured (0 ms)
+                </div>
               </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">Status:</span>
-                <span
-                  className={`font-semibold ${
-                    hoveredSample.http_status === 200
-                      ? 'text-emerald-400'
-                      : hoveredSample.http_status === 0
-                      ? 'text-rose-400'
-                      : 'text-amber-400'
-                  }`}
-                >
-                  HTTP {hoveredSample.http_status || 0}
-                </span>
-              </div>
-            </div>
+            ) : null
           )}
         </div>
       )}

@@ -285,13 +285,6 @@ export function GmailQuickSettingsPanel({
               <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full border-2 border-[#747775]" />
-                  <span className="text-xs font-medium text-[#1f1f1f]">Cartesian Point Grid</span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-mono">Precise</span>
-              </label>
-              <label className="flex items-center justify-between p-2 rounded-xl hover:bg-black/5 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-[#747775]" />
                   <span className="text-xs font-medium text-[#1f1f1f]">Vertical Bar Histogram</span>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">Discrete</span>

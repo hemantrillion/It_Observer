@@ -5,7 +5,7 @@ export interface IncidentAlertRecord {
   id: number;
   service_id: string;
   service_name?: string;
-  severity: 'CRITICAL' | 'WARNING';
+  severity: 'CRITICAL' | 'WARNING' | 'HEALTHY';
   reason: string;
   started_at: string;
   resolved_at: string | null;
@@ -13,7 +13,7 @@ export interface IncidentAlertRecord {
   duration_seconds: number;
 }
 
-export function getAllIncidentsHistoryQuery(limit = 50): IncidentAlertRecord[] {
+export function getAllIncidentsHistoryQuery(limit = 200): IncidentAlertRecord[] {
   initializeObservatoryTables();
   const db = getDatabaseConnection();
   return db.prepare(`
