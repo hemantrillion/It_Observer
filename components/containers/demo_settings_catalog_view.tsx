@@ -133,13 +133,14 @@ export function DemoSettingsCatalogView({
 
   return (
     <div className="space-y-6 w-full pb-16 font-sans select-text">
-      {/* 1. SINGLE CARD: DEMO SETTINGS & AUTOMATED POLLING (No icons, no subtitle, no active targets, no poll now) */}
-      <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-          Demo Settings
-        </h1>
+      {/* 1. DEMO SETTINGS HEADING (Outside the Card) */}
+      <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+        Demo Settings
+      </h1>
 
-        <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Demo Settings Card: Automated Polling & Polling Frequency Interval */}
+      <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-slate-800">
               Automated Polling
@@ -200,18 +201,13 @@ export function DemoSettingsCatalogView({
         </div>
       </div>
 
-      {/* 2. PUBLIC API CATALOG SECTION (Spacing above, no icons) */}
-      <div className="pt-2 space-y-3">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
-            Public API Catalog
-          </h2>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Showing {filteredCatalog.length} target APIs
-          </p>
-        </div>
+      {/* 2. PUBLIC API CATALOG SECTION (Heading Outside Box) */}
+      <div className="pt-3 space-y-4">
+        <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+          Public API Catalog
+        </h2>
 
-        {/* 3. ALPHABET JUMP BAR INSIDE A RECTANGLE CARD */}
+        {/* 3. ALPHABET JUMP BAR (Outside the Catalog Box) */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs sticky top-0 z-20">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
             <button
@@ -271,8 +267,8 @@ export function DemoSettingsCatalogView({
           </div>
         )}
 
-        {/* 4. SEQUENTIAL ALPHABETICAL CATALOG (A TO Z) */}
-        <div className="space-y-6 pt-2">
+        {/* 4. API CATALOG BOX: Sequential Alphabetical Catalog inside its own Box */}
+        <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs space-y-8">
           {ALPHABETS.map((letter) => {
             const items = groupedByLetter.get(letter) || [];
             if (items.length === 0) return null;
@@ -283,13 +279,13 @@ export function DemoSettingsCatalogView({
                 id={`catalog-alpha-${letter}`}
                 className="space-y-3 scroll-mt-28"
               >
-                {/* Section Alphabet Header: Clean letter without redundant 'A Alphabet A' duplication */}
+                {/* Section Alphabet Header: Just clean letter '{letter}' in a slightly larger font */}
                 <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                    Alphabet {letter}
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                    {letter}
                   </h3>
                   <span className="text-xs font-semibold text-slate-400">
-                    {items.length} {items.length === 1 ? 'API available' : 'APIs available'}
+                    {items.length} {items.length === 1 ? 'API' : 'APIs'}
                   </span>
                 </div>
 

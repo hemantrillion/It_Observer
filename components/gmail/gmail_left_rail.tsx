@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Menu, Mail, MessageSquare, Gauge, Activity, Users } from 'lucide-react';
+import { Menu, Mail, Terminal, Gauge, Activity, Users } from 'lucide-react';
 
 export type RailTab = 'mail' | 'chat' | 'metrics' | 'demo' | 'users' | 'meet';
 
@@ -20,15 +20,14 @@ export function GmailLeftRail({
 }: GmailLeftRailProps) {
   const tabs = [
     {
+      id: 'chat' as RailTab,
+      label: 'Console',
+      icon: Terminal,
+    },
+    {
       id: 'mail' as RailTab,
       label: 'Mail',
       icon: Mail,
-      badge: '99+',
-    },
-    {
-      id: 'chat' as RailTab,
-      label: 'Chat',
-      icon: MessageSquare,
     },
     {
       id: 'metrics' as RailTab,
@@ -88,13 +87,6 @@ export function GmailLeftRail({
                 }`}
               >
                 <IconComponent className="w-6 h-6 stroke-[1.8]" />
-
-                {/* Red unread badge for mail */}
-                {tab.badge && tab.id === 'mail' && (
-                  <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 min-w-[20px] text-center bg-[#b3261e] text-white text-[11px] font-bold rounded-full leading-tight shadow-xs">
-                    {tab.badge}
-                  </span>
-                )}
               </div>
 
               {/* Label below capsule */}

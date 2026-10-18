@@ -90,15 +90,6 @@ export function LatencyMetricTimeseriesGraphCard({
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState<TimeframeOption>('15m');
   const [graphFormat, setGraphFormat] = useState<GraphFormat>('area');
-  const [currentTimeMs, setCurrentTimeMs] = useState<number>(Date.now());
-
-  // Dynamically advance live reference time so the time axis naturally moves forward
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTimeMs(Date.now());
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Measure container width for responsive SVG rendering
   useEffect(() => {
@@ -129,29 +120,28 @@ export function LatencyMetricTimeseriesGraphCard({
     });
   }, [samples]);
 
-  // 2. Strict timeframe window bounds: [windowStartTime, windowEndTime]
+  // 2. Strict timeframe window filtering anchored to the latest sample
   const currentMinutes = useMemo(() => {
     return TIMEFRAME_BUTTONS.find((b) => b.id === selectedTimeframe)?.minutes || 15;
   }, [selectedTimeframe]);
 
   const windowDurationMs = currentMinutes * 60 * 1000;
-  const windowEndTime = currentTimeMs;
-  const windowStartTime = windowEndTime - windowDurationMs;
 
-  // Filter samples that fall strictly inside this window
+  // Filter samples that fall inside [latestSampleTime - windowDurationMs, latestSampleTime]
   const chronological = useMemo(() => {
+    if (allChronological.length === 0) return [];
+    const latestSample = allChronological[allChronological.length - 1];
+    const latestTime = new Date(latestSample.timestamp).getTime();
+    if (isNaN(latestTime)) return allChronological.slice(-60);
+
+    const cutoffTime = latestTime - windowDurationMs;
     const inWindow = allChronological.filter((s) => {
       const time = new Date(s.timestamp).getTime();
-      return !isNaN(time) && time >= windowStartTime && time <= windowEndTime + 5000;
+      return !isNaN(time) && time >= cutoffTime;
     });
 
-    // If completely empty (e.g. system just booted or dormant), anchor with the latest samples
-    if (inWindow.length === 0 && allChronological.length > 0) {
-      return allChronological.slice(-15);
-    }
-
-    return inWindow;
-  }, [allChronological, windowStartTime, windowEndTime]);
+    return inWindow.length > 0 ? inWindow : allChronological.slice(-15);
+  }, [allChronological, windowDurationMs]);
 
   // Extract latencies
   const latencies = useMemo(() => {
@@ -200,27 +190,29 @@ export function LatencyMetricTimeseriesGraphCard({
     ];
   }, [maxY]);
 
-  // Time-proportionate coordinates mapping across the actual selected timeframe window
+  // Map chronological samples evenly across SVG Cartesian space (anchored so latest is on the right)
   const points = useMemo(() => {
     const total = chronological.length;
     if (total === 0) return [];
 
     return chronological.map((sample, i) => {
       const lat = extractLatency(sample);
-      const sampleTime = new Date(sample.timestamp).getTime();
-
-      // Proportional position along the window duration
-      let timeRatio = (sampleTime - windowStartTime) / windowDurationMs;
-      if (isNaN(timeRatio)) timeRatio = total === 1 ? 0.5 : i / (total - 1);
-      timeRatio = Math.max(0, Math.min(1, timeRatio));
-
-      const x = paddingLeft + timeRatio * plotWidth;
+      const x =
+        total === 1
+          ? paddingLeft + plotWidth / 2
+          : paddingLeft + (i / (total - 1)) * plotWidth;
       const valRatio = Math.max(0, Math.min(1, lat / maxY));
       const y = plotBaseline - valRatio * plotHeight;
 
-      return { x, y, sample, latency: lat, index: i, sampleTime };
+      return { x, y, sample, latency: lat, index: i };
     });
-  }, [chronological, maxY, plotBaseline, plotHeight, plotWidth, paddingLeft, windowStartTime, windowDurationMs]);
+  }, [chronological, maxY, plotBaseline, plotHeight, plotWidth, paddingLeft]);
+
+  // Slot width for bars and squares so they never collide or overlap
+  const slotWidth = useMemo(() => {
+    const total = points.length;
+    return total <= 1 ? plotWidth : plotWidth / total;
+  }, [points.length, plotWidth]);
 
   // Smooth Curves (for Area Line mode)
   const { linePathD, areaPathD } = useMemo(() => {
@@ -259,7 +251,7 @@ export function LatencyMetricTimeseriesGraphCard({
     return { linePathD: linePath, areaPathD: areaPath };
   }, [points, plotBaseline, paddingTop]);
 
-  // Stepped Cartesian Path (for Cartesian square mode)
+  // Straight Cartesian Path (for Cartesian square mode)
   const cartesianPathD = useMemo(() => {
     if (points.length === 0) return '';
     let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
@@ -269,20 +261,22 @@ export function LatencyMetricTimeseriesGraphCard({
     return d;
   }, [points]);
 
-  // 5 X-axis evenly spaced time ticks across the exact window [windowStartTime, windowEndTime]
+  // 5 X-axis evenly spaced time ticks showing actual sample times
   const xTimeTicks = useMemo(() => {
-    const count = 5;
+    const total = chronological.length;
+    if (total === 0) return [];
+    const count = Math.min(5, total);
     const ticks: { x: number; label: string; anchor: 'start' | 'middle' | 'end' }[] = [];
     for (let i = 0; i < count; i++) {
-      const fraction = i / (count - 1);
-      const timeMs = windowStartTime + fraction * windowDurationMs;
-      const x = paddingLeft + fraction * plotWidth;
-      const label = formatAxisTime(timeMs);
+      const idx = count === 1 ? 0 : Math.round((i / (count - 1)) * (total - 1));
+      const sample = chronological[idx];
+      const x = total === 1 ? paddingLeft + plotWidth / 2 : paddingLeft + (idx / (total - 1)) * plotWidth;
+      const label = formatAxisTime(new Date(sample.timestamp).getTime());
       const anchor = i === 0 ? 'start' : i === count - 1 ? 'end' : 'middle';
       ticks.push({ x, label, anchor });
     }
     return ticks;
-  }, [windowStartTime, windowDurationMs, paddingLeft, plotWidth]);
+  }, [chronological, paddingLeft, plotWidth]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (points.length === 0) return;
@@ -599,7 +593,7 @@ export function LatencyMetricTimeseriesGraphCard({
                       ? '#f59e0b'
                       : '#0f172a';
                     const isHovered = hoveredIdx === i;
-                    const size = isHovered ? 9 : 6;
+                    const size = isHovered ? 8 : Math.max(4, Math.min(7, slotWidth * 0.45));
                     const half = size / 2;
 
                     return (
@@ -644,7 +638,7 @@ export function LatencyMetricTimeseriesGraphCard({
                       ? '#f59e0b'
                       : '#2563eb';
                     const isHovered = hoveredIdx === i;
-                    const barWidth = Math.max(3, Math.min(14, (plotWidth / Math.max(1, points.length)) * 0.7));
+                    const barWidth = Math.max(2, Math.min(14, slotWidth * 0.65));
                     const barHeight = Math.max(2, plotBaseline - pt.y);
 
                     return (
@@ -655,22 +649,33 @@ export function LatencyMetricTimeseriesGraphCard({
                         width={barWidth}
                         height={barHeight}
                         fill={pointColor}
-                        opacity={isHovered ? 1 : 0.8}
-                        rx="1.5"
+                        opacity={isHovered ? 1 : 0.85}
+                        rx={Math.min(2.5, barWidth / 3)}
                       />
                     );
                   })}
                 </>
               )}
 
-              {/* Hover Crosshair Line */}
+              {/* Hover Crosshairs (Vertical + Horizontal tracking lines) */}
               {hoveredPoint && (
                 <g pointerEvents="none">
+                  {/* Vertical tracking line */}
                   <line
                     x1={hoveredPoint.x}
                     y1={paddingTop}
                     x2={hoveredPoint.x}
                     y2={plotBaseline}
+                    stroke="#94a3b8"
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
+                  />
+                  {/* Horizontal tracking line */}
+                  <line
+                    x1={paddingLeft}
+                    y1={hoveredPoint.y}
+                    x2={paddingLeft + plotWidth}
+                    y2={hoveredPoint.y}
                     stroke="#94a3b8"
                     strokeWidth="1"
                     strokeDasharray="3 3"

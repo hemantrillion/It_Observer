@@ -55,7 +55,7 @@ export function ObservatoryTelemetryEmbeddedView({
   onServicesUpdated = () => {},
   isConstantPollingEnabled = false,
   onToggleConstantPolling = () => {},
-  constantPollingInterval = 8000,
+  constantPollingInterval = 15000,
   onChangeConstantPollingInterval = () => {},
   onSelectDemoSubView,
   onSelectStatusFilter,
