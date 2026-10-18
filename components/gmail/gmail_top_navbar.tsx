@@ -261,17 +261,17 @@ export function GmailTopNavbar({
           data-panel-trigger="account-flyout"
           title="Account"
           aria-label="Account"
-          className="relative cursor-pointer ml-1 focus:outline-none"
+          className="relative cursor-pointer ml-1 focus:outline-none flex items-center justify-center"
         >
           <div
-            className={`w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-xs transition-transform hover:scale-105 border border-slate-200/90 overflow-hidden ${
+            className={`w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-xs transition-transform hover:scale-105 border border-slate-200/90 overflow-hidden ${
               isAccountMenuOpen ? 'ring-2 ring-blue-500' : ''
             }`}
           >
             <img
               src="/infra_trace_logo.png"
               alt="Test User"
-              className="w-7 h-7 object-contain"
+              className="w-6 h-6 object-contain"
             />
           </div>
         </button>
