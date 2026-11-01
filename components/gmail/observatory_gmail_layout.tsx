@@ -30,7 +30,7 @@ import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_qu
 import { MessageSquare, Video, Plus, Cloud } from 'lucide-react';
 import { InspectView } from '@/frontend/box/inspect/box4';
 import { DeliveryView } from '@/frontend/box/delivery/box4';
-import { getActiveAccount, UserAccount, DEFAULT_TEST_USER } from '@/lib/auth/accounts_manager';
+import { getActiveAccount, UserAccount, DEFAULT_TEST_USER, syncSessionFromServer } from '@/lib/auth/accounts_manager';
 
 interface ObservatoryGmailLayoutProps {
   onNavigateLanding?: () => void;
@@ -47,9 +47,14 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Browser History & Back button synchronization
+  // Browser History & Back button synchronization + Session sync
   useEffect(() => {
     setActiveAccountState(getActiveAccount());
+    syncSessionFromServer().then((user) => {
+      if (user) {
+        setActiveAccountState(user);
+      }
+    });
 
     if (typeof window !== 'undefined' && !window.history.state) {
       window.history.replaceState({ tab: 'demo', subView: 'dashboard' }, '');

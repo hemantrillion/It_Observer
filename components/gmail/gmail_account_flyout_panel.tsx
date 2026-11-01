@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { X, ChevronUp, ChevronDown, Plus, LogOut, Check } from 'lucide-react';
-import { UserAccount, getStoredAccounts, getActiveAccount, setActiveAccount, removeAccount, clearAllAccounts } from '@/lib/auth/accounts_manager';
+import { UserAccount, getStoredAccounts, getActiveAccount, setActiveAccount, removeAccount, clearAllAccounts, signOutActiveAccount } from '@/lib/auth/accounts_manager';
 
 interface GmailAccountFlyoutPanelProps {
   isOpen: boolean;
@@ -69,29 +69,30 @@ export function GmailAccountFlyoutPanel({
     onClose();
   };
 
-  const handleSignOutSingle = () => {
+  const handleSignOutSingle = async () => {
     const nextAcc = removeAccount(activeUser.email);
     if (nextAcc) {
       setActiveUserState(nextAcc);
       onAccountChanged?.(nextAcc);
       onClose();
     } else {
+      await signOutActiveAccount();
       onClose();
       if (onNavigateLanding) {
         onNavigateLanding();
       } else {
-        window.location.href = '/';
+        window.location.href = '/signin';
       }
     }
   };
 
-  const handleSignOutAll = () => {
-    clearAllAccounts();
+  const handleSignOutAll = async () => {
+    await signOutActiveAccount();
     onClose();
     if (onNavigateLanding) {
       onNavigateLanding();
     } else {
-      window.location.href = '/';
+      window.location.href = '/signin';
     }
   };
 
@@ -124,9 +125,9 @@ export function GmailAccountFlyoutPanel({
             <div className="relative shrink-0">
               <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs overflow-hidden border border-slate-200">
                 <img
-                  src={activeUser.avatarUrl || '/infra_trace_logo.png'}
+                  src={activeUser.profilePicture || activeUser.avatarUrl || '/infra_trace_logo.png'}
                   alt={activeUser.name}
-                  className="w-8 h-8 object-contain"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
@@ -139,6 +140,13 @@ export function GmailAccountFlyoutPanel({
               <span className="text-xs text-slate-500 font-normal truncate max-w-[175px] mt-0.5">
                 {activeUser.email}
               </span>
+              {activeUser.authProvider === 'google' && (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    Google Account
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 

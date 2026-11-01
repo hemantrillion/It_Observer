@@ -50,12 +50,16 @@ export function initializeObservatoryTables(): void {
       role TEXT DEFAULT 'Admin',
       status TEXT DEFAULT 'ACTIVE',
       avatar_url TEXT DEFAULT '/infra_trace_logo.png',
+      profile_picture TEXT,
+      auth_provider TEXT DEFAULT 'local',
+      provider_user_id TEXT,
       company TEXT,
       job_title TEXT,
       phone TEXT,
       country TEXT,
       interests TEXT,
       created_at TEXT NOT NULL,
+      updated_at TEXT,
       last_active_at TEXT NOT NULL
     );
 
@@ -105,6 +109,10 @@ export function initializeObservatoryTables(): void {
 
   // Safely ensure all columns exist on platform_users for backwards compatibility
   try { db.exec('ALTER TABLE platform_users ADD COLUMN avatar_url TEXT DEFAULT "/infra_trace_logo.png"'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN profile_picture TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN auth_provider TEXT DEFAULT "local"'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN provider_user_id TEXT'); } catch (_) {}
+  try { db.exec('ALTER TABLE platform_users ADD COLUMN updated_at TEXT'); } catch (_) {}
   try { db.exec('ALTER TABLE platform_users ADD COLUMN password_hash TEXT'); } catch (_) {}
   try { db.exec('ALTER TABLE platform_users ADD COLUMN company TEXT'); } catch (_) {}
   try { db.exec('ALTER TABLE platform_users ADD COLUMN job_title TEXT'); } catch (_) {}

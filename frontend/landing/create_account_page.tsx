@@ -381,7 +381,13 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                 </span>
               </label>
 
-              {/* Real Google Identity Services (Zero simulation - only renders when configured) */}
+              {/* Prominent Continue with Google */}
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-slate-200" />
+                <span className="flex-shrink mx-4 text-xs text-slate-400 font-semibold uppercase">or continue with</span>
+                <div className="flex-grow border-t border-slate-200" />
+              </div>
+
               <RealGoogleIdentityButton
                 context="signup"
                 onSuccess={handleRealGoogleSuccess}

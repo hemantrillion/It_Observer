@@ -5,11 +5,16 @@ export interface UserAccount {
   name: string;
   email: string;
   avatarUrl?: string;
+  profilePicture?: string;
+  authProvider?: string;
+  providerUserId?: string;
   role?: string;
   company?: string;
   jobTitle?: string;
   phone?: string;
   country?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const DEFAULT_TEST_USER: UserAccount = {
@@ -17,6 +22,8 @@ export const DEFAULT_TEST_USER: UserAccount = {
   name: 'Test User',
   email: 'xyztestuser@gmail.com',
   avatarUrl: '/infra_trace_logo.png',
+  profilePicture: '/infra_trace_logo.png',
+  authProvider: 'local',
   role: 'Admin',
   company: 'InfraTrace Internal',
   jobTitle: 'Observability Lead',
@@ -27,17 +34,14 @@ const STORAGE_ACCOUNTS_KEY = 'infratrace_accounts_list';
 const STORAGE_ACTIVE_KEY = 'infratrace_active_account_email';
 
 export function getStoredAccounts(): UserAccount[] {
-  if (typeof window === 'undefined') return [DEFAULT_TEST_USER];
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_ACCOUNTS_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_ACCOUNTS_KEY, JSON.stringify([DEFAULT_TEST_USER]));
-      return [DEFAULT_TEST_USER];
-    }
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : [DEFAULT_TEST_USER];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return [DEFAULT_TEST_USER];
+    return [];
   }
 }
 
@@ -46,14 +50,29 @@ export function getActiveAccount(): UserAccount {
   try {
     const accounts = getStoredAccounts();
     const activeEmail = localStorage.getItem(STORAGE_ACTIVE_KEY);
-    const found = accounts.find((a) => a.email.toLowerCase() === activeEmail?.toLowerCase());
-    return found || accounts[0] || DEFAULT_TEST_USER;
+    if (activeEmail) {
+      const found = accounts.find((a) => a.email.toLowerCase() === activeEmail.toLowerCase());
+      if (found) return found;
+    }
+    if (accounts.length > 0) return accounts[0];
+    return DEFAULT_TEST_USER;
   } catch {
     return DEFAULT_TEST_USER;
   }
 }
 
-export function setActiveAccount(account: UserAccount) {
+export function isUserAuthenticated(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    const activeEmail = localStorage.getItem(STORAGE_ACTIVE_KEY);
+    const accounts = getStoredAccounts();
+    return Boolean(activeEmail && accounts.some((a) => a.email.toLowerCase() === activeEmail.toLowerCase()));
+  } catch {
+    return false;
+  }
+}
+
+export function setActiveAccount(account: UserAccount): void {
   if (typeof window === 'undefined') return;
   const accounts = getStoredAccounts();
   const exists = accounts.some((a) => a.email.toLowerCase() === account.email.toLowerCase());
@@ -79,8 +98,42 @@ export function removeAccount(email: string): UserAccount | null {
   }
 }
 
-export function clearAllAccounts() {
+export function clearAllAccounts(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(STORAGE_ACCOUNTS_KEY);
   localStorage.removeItem(STORAGE_ACTIVE_KEY);
+}
+
+/**
+ * Validates session with backend server and persists verified user account
+ */
+export async function syncSessionFromServer(): Promise<UserAccount | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const res = await fetch('/api/auth/session', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.authenticated && data.user) {
+      setActiveAccount(data.user);
+      return data.user;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Complete secure sign-out (clears server cookie + local storage)
+ */
+export async function signOutActiveAccount(): Promise<void> {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // continue cleanup
+  }
+  clearAllAccounts();
 }

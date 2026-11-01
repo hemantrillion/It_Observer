@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Lock, Mail, Eye, EyeOff, ShieldAlert, Sparkles } from 'lucide-react';
 import { setActiveAccount, DEFAULT_TEST_USER, UserAccount } from '@/lib/auth/accounts_manager';
-import { RealGoogleIdentityButton } from '@/components/auth/real_google_identity';
+import { GoogleAuthButton } from '@/components/auth/google_auth_button';
 
 interface SignInViewProps {
   onBack?: () => void;
@@ -21,6 +21,16 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlError = params.get('error');
+      if (urlError) {
+        setErrorMessage(decodeURIComponent(urlError));
+      }
+    }
+  }, []);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,21 +197,18 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
             </button>
           </form>
 
-          {/* Real Google Identity Services (Zero simulation - only renders when configured) */}
-          {hasGoogleClientId && (
-            <>
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-slate-200" />
-                <span className="flex-shrink mx-4 text-xs text-slate-400 font-semibold uppercase">or</span>
-                <div className="flex-grow border-t border-slate-200" />
-              </div>
-              <RealGoogleIdentityButton
-                context="signin"
-                onSuccess={handleRealGoogleSuccess}
-                onError={(err) => setErrorMessage(err)}
-              />
-            </>
-          )}
+          {/* Prominent Continue with Google */}
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-slate-200" />
+            <span className="flex-shrink mx-4 text-xs text-slate-400 font-semibold uppercase">or</span>
+            <div className="flex-grow border-t border-slate-200" />
+          </div>
+
+          <GoogleAuthButton
+            context="signin"
+            onSuccess={handleRealGoogleSuccess}
+            onError={(err) => setErrorMessage(err)}
+          />
 
           <div className="text-center pt-2 border-t border-slate-100">
             <button

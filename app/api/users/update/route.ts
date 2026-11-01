@@ -25,26 +25,31 @@ export async function POST(req: Request) {
       ? require('crypto').createHash('sha256').update(password).digest('hex')
       : null;
 
+    const now = new Date().toISOString();
     db.prepare(`
       UPDATE platform_users
       SET name = COALESCE(?, name),
           avatar_url = COALESCE(?, avatar_url),
+          profile_picture = COALESCE(?, profile_picture),
           company = COALESCE(?, company),
           job_title = COALESCE(?, job_title),
           phone = COALESCE(?, phone),
           country = COALESCE(?, country),
           password_hash = COALESCE(?, password_hash),
+          updated_at = ?,
           last_active_at = ?
       WHERE LOWER(email) = ?
     `).run(
       name || null,
+      avatarUrl || null,
       avatarUrl || null,
       company || null,
       jobTitle || null,
       phone || null,
       country || null,
       passwordHash,
-      new Date().toISOString(),
+      now,
+      now,
       cleanEmail
     );
 
