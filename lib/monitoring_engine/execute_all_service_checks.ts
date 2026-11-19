@@ -4,6 +4,7 @@ import { updateServiceStatusQuery } from '../database/update_service_status_quer
 import { insertMetricSampleQuery } from '../database/insert_metric_sample_query';
 import { evaluateIncidentThresholds } from './incident_threshold_evaluator';
 import { getAllMonitoredServicesQuery } from '../database/get_all_monitored_services_query';
+import { evaluateServiceStateTransition } from './state_transition_evaluator';
 
 export async function executeAllServiceChecks(): Promise<HealthCheckResult[]> {
   const adapters = getAllTestSuiteAdapters();
@@ -52,15 +53,36 @@ export async function executeAllServiceChecks(): Promise<HealthCheckResult[]> {
 
         const elapsed = Math.round(performance.now() - startTime);
         const safeLatency = Math.max(8, Math.min(6000, elapsed));
-        // Any response from web server (including 401/403/404) means the server and network are alive
-        const isHealthy = response.status < 500;
 
+        // HTTP status >= 500 is a server error / crash -> DOWN immediately
+        if (response.status >= 500) {
+          return {
+            serviceId: service.id,
+            status: 'DOWN',
+            responseTimeMs: safeLatency,
+            httpStatus: response.status,
+            errorMessage: `HTTP status ${response.status} Server Error`,
+          };
+        }
+
+        // Latency >= 1500ms with responding server -> DEGRADED
+        if (safeLatency >= 1500) {
+          return {
+            serviceId: service.id,
+            status: 'DEGRADED',
+            responseTimeMs: safeLatency,
+            httpStatus: response.status,
+            errorMessage: `High latency ${safeLatency}ms`,
+          };
+        }
+
+        // Nominal healthy response
         return {
           serviceId: service.id,
-          status: isHealthy ? 'HEALTHY' : 'DEGRADED',
+          status: 'HEALTHY',
           responseTimeMs: safeLatency,
           httpStatus: response.status,
-          errorMessage: isHealthy ? null : `HTTP status ${response.status}`,
+          errorMessage: null,
         };
       } catch (err: unknown) {
         const elapsed = Math.round(performance.now() - startTime);
@@ -76,10 +98,29 @@ export async function executeAllServiceChecks(): Promise<HealthCheckResult[]> {
     })
   );
 
+  const serviceMetaMap = new Map<string, { name: string; targetUrl: string }>();
+  monitoredServices.forEach((s) => serviceMetaMap.set(s.id, { name: s.name, targetUrl: s.target_url }));
+
   for (const res of results) {
-    const isFailure = res.status !== 'HEALTHY';
     const safeResponseTimeMs = Math.max(1, Math.min(6000, res.responseTimeMs));
     res.responseTimeMs = safeResponseTimeMs;
+
+    const meta = serviceMetaMap.get(res.serviceId) || { name: res.serviceId, targetUrl: '' };
+
+    // 1. Evaluate smart state transition & notify strictly on confirmed state changes
+    const transition = await evaluateServiceStateTransition({
+      serviceId: res.serviceId,
+      serviceName: meta.name,
+      targetUrl: meta.targetUrl,
+      rawStatus: res.status,
+      responseTimeMs: safeResponseTimeMs,
+      httpStatus: res.httpStatus,
+      errorMessage: res.errorMessage,
+    });
+
+    // Keep res.status aligned with confirmed state
+    res.status = transition.currentState === 'UP' ? 'HEALTHY' : (transition.currentState as any);
+    const isFailure = res.status !== 'HEALTHY';
 
     updateServiceStatusQuery(res.serviceId, res.status, safeResponseTimeMs, isFailure);
     insertMetricSampleQuery({

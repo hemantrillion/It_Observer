@@ -11,9 +11,17 @@ import {
   AlertCircle,
   X,
   LineChart,
+  Play,
+  Activity,
+  Code2,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import { PREMADE_APIS_CATALOG, PremadeApiItem } from '@/lib/catalog/premade_apis_catalog';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
+import { IMPLEMENTED_METRICS, ImplementedMetricDefinition } from '@/lib/metrics/implemented_metrics_registry';
 
 interface DemoSettingsCatalogViewProps {
   monitoredServices: MonitoredServiceRecord[];
@@ -48,13 +56,33 @@ export function DemoSettingsCatalogView({
   isConstantPollingEnabled,
   onToggleConstantPolling,
   constantPollingInterval,
-  onChangeConstantPollingInterval,
+  onChangeConstantPollingInterval = () => {},
   onInspectService,
   searchQuery: externalSearchQuery = '',
 }: DemoSettingsCatalogViewProps) {
   const [activeLetter, setActiveLetter] = useState<string | null>(null);
   const [togglingServiceId, setTogglingServiceId] = useState<string | null>(null);
   const [unselectableTooltip, setUnselectableTooltip] = useState<string | null>(null);
+
+  // Testing public APIs state (Phase 4 requirement)
+  const [testingMetricId, setTestingMetricId] = useState<string | null>(null);
+  const [testResults, setTestResults] = useState<
+    Record<
+      string,
+      {
+        success: boolean;
+        status: number;
+        statusText?: string;
+        latencyMs: number;
+        isOk: boolean;
+        headers?: Record<string, string>;
+        sampleData?: any;
+        error?: string;
+        timestamp: string;
+      }
+    >
+  >({});
+  const [expandedPayloadMetricId, setExpandedPayloadMetricId] = useState<string | null>(null);
 
   // Set of currently monitored service IDs in SQLite database
   const monitoredIdSet = useMemo(() => {
@@ -65,6 +93,86 @@ export function DemoSettingsCatalogView({
   const selectedItems = useMemo(() => {
     return PREMADE_APIS_CATALOG.filter((item) => monitoredIdSet.has(item.id));
   }, [monitoredIdSet]);
+
+  // Filter practical metrics by search query
+  const filteredPracticalMetrics = useMemo(() => {
+    const q = (externalSearchQuery || '').trim().toLowerCase();
+    if (!q) return IMPLEMENTED_METRICS;
+    return IMPLEMENTED_METRICS.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        m.subCategory.toLowerCase().includes(q) ||
+        m.sampleApiName.toLowerCase().includes(q) ||
+        m.sampleApiProvider.toLowerCase().includes(q) ||
+        m.sampleApiUrl.toLowerCase().includes(q) ||
+        m.description.toLowerCase().includes(q)
+    );
+  }, [externalSearchQuery]);
+
+  // Test Endpoint execution (Phase 4 requirement)
+  const handleTestEndpoint = async (metric: ImplementedMetricDefinition) => {
+    setTestingMetricId(metric.id);
+    try {
+      const res = await fetch('/api/probe/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: metric.sampleApiUrl }),
+      });
+      const data = await res.json();
+      setTestResults((prev) => ({ ...prev, [metric.id]: data }));
+      setExpandedPayloadMetricId(metric.id);
+    } catch (err: any) {
+      setTestResults((prev) => ({
+        ...prev,
+        [metric.id]: {
+          success: false,
+          status: 0,
+          isOk: false,
+          error: err.message || 'Probe request failed',
+          latencyMs: 0,
+          timestamp: new Date().toISOString(),
+        },
+      }));
+      setExpandedPayloadMetricId(metric.id);
+    } finally {
+      setTestingMetricId(null);
+    }
+  };
+
+  // Toggle practical metric into SQLite monitored_services
+  const handleTogglePracticalMetric = async (metric: ImplementedMetricDefinition) => {
+    setTogglingServiceId(metric.id);
+    try {
+      const isCurrentlyMonitored = monitoredIdSet.has(metric.id);
+      const action = isCurrentlyMonitored ? 'remove' : 'add';
+
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          serviceId: metric.id,
+          service: {
+            id: metric.id,
+            name: metric.name,
+            target_type: 'public_api',
+            target_url: metric.sampleApiUrl,
+            metric_type: metric.id,
+            check_interval_seconds: metric.expectedIntervalSeconds,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        await onServicesUpdated();
+      }
+    } catch (err) {
+      console.error('Failed to toggle practical metric:', err);
+    } finally {
+      setTogglingServiceId(null);
+    }
+  };
 
   // Handle toggling an API in/out of the test suite
   const handleToggleService = async (item: PremadeApiItem) => {
@@ -136,7 +244,7 @@ export function DemoSettingsCatalogView({
     }
   };
 
-  // Render a single API card (shared between Selected section and Alphabetical Catalog)
+  // Render Premade API card
   const renderApiCard = (item: PremadeApiItem) => {
     const isMonitored = monitoredIdSet.has(item.id);
     const isToggling = togglingServiceId === item.id;
@@ -151,7 +259,6 @@ export function DemoSettingsCatalogView({
             : 'border-slate-200/90 hover:border-slate-300'
         }`}
       >
-        {/* Top Row: Provider, Title & Access Tag */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-xs font-bold uppercase text-slate-500 truncate">
@@ -178,7 +285,6 @@ export function DemoSettingsCatalogView({
           </div>
         </div>
 
-        {/* Target Endpoint & Description */}
         <div className="space-y-1 bg-slate-50/70 rounded-lg p-2.5 border border-slate-200/60 text-xs">
           <div className="font-mono font-medium text-slate-800 truncate text-[11px]">
             {item.target_url}
@@ -188,7 +294,6 @@ export function DemoSettingsCatalogView({
           </p>
         </div>
 
-        {/* Exposed Metric Measurements */}
         <div className="space-y-1.5 border-t border-slate-100 pt-2">
           <div className="flex items-center justify-between text-xs">
             <span className="font-bold uppercase tracking-wider text-slate-400 text-[10px]">
@@ -264,7 +369,7 @@ export function DemoSettingsCatalogView({
                   key={metric.id}
                   onClick={() =>
                     setUnselectableTooltip(
-                      `"${metric.name}" cannot be checked: Synthetic HTTP probing can only measure Response Time / Latency. Host telemetry agent required for internal metrics.`
+                      `"${metric.name}" cannot be checked directly: Synthetic HTTP probing can only measure response latency. Use Practical Metric Suites above for complete domain metrics.`
                     )
                   }
                   className="flex items-center justify-between p-1.5 rounded-lg opacity-60 hover:opacity-100 transition-opacity cursor-not-allowed select-none text-xs"
@@ -300,24 +405,21 @@ export function DemoSettingsCatalogView({
 
   return (
     <div className="space-y-6 w-full pb-16 font-sans select-text">
-      {/* 1. DEMO SETTINGS HEADING (Outside the Card) */}
+      {/* 1. DEMO SETTINGS HEADING */}
       <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-        Demo Settings
+        Demo Settings & Practical Telemetry Catalog
       </h1>
 
-      {/* Demo Settings Card: Automated Polling & Polling Frequency Interval */}
+      {/* Automated Polling Configuration Card */}
       <div className="bg-white rounded-xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-slate-800">
-              Automated Polling
-            </h3>
+            <h3 className="text-sm font-bold text-slate-800">Automated Polling</h3>
             <p className="text-xs text-slate-500 font-medium">
-              Continuous background synthetic latency health probes.
+              Continuous background synthetic latency and metric health probes.
             </p>
           </div>
 
-          {/* Clean, standard switch toggle */}
           <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
@@ -341,7 +443,6 @@ export function DemoSettingsCatalogView({
           </div>
         </div>
 
-        {/* Polling Frequency Interval Pills */}
         <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <span className="text-xs font-semibold text-slate-500">
             Polling Frequency Interval
@@ -368,23 +469,217 @@ export function DemoSettingsCatalogView({
         </div>
       </div>
 
-      {/* 2. PUBLIC API CATALOG SECTION (Heading Outside Box) */}
-      <div className="pt-3 space-y-4">
+      {/* 2. PHASE 3 & 4 PRACTICAL TELEMETRY METRIC SUITES & WORKING PUBLIC APIS */}
+      <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Public API Catalog
-          </h2>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                Practical Telemetry Metrics & Working Public APIs
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500">
+              Each metric is paired with a real, live public API. Click <strong>Test Endpoint</strong> to verify live network responses and inspect returned payloads.
+            </p>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+            {filteredPracticalMetrics.length} Practical Metrics
+          </span>
+        </div>
+
+        {/* Practical Metric Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredPracticalMetrics.map((metric) => {
+            const isMonitored = monitoredIdSet.has(metric.id);
+            const isToggling = togglingServiceId === metric.id;
+            const isTesting = testingMetricId === metric.id;
+            const testResult = testResults[metric.id];
+            const isPayloadExpanded = expandedPayloadMetricId === metric.id;
+
+            return (
+              <div
+                key={metric.id}
+                className={`rounded-2xl border transition-all duration-150 p-4 space-y-3 bg-white shadow-2xs ${
+                  isMonitored
+                    ? 'border-blue-500 ring-1 ring-blue-500/20'
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {/* Header: Title, Category & Unit */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                        {metric.category} &bull; {metric.subCategory}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                        Unit: {metric.unit}
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-900 truncate">
+                      {metric.name}
+                    </h3>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-1.5">
+                    {/* Toggle into Active Monitoring */}
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePracticalMetric(metric)}
+                      disabled={isToggling}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isMonitored
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {isToggling ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : isMonitored ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Monitored</span>
+                        </>
+                      ) : (
+                        <span>+ Add to Suite</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                  {metric.description}
+                </p>
+
+                {/* Target URL & Provider Details */}
+                <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1 text-xs">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span className="font-semibold text-slate-700">{metric.sampleApiProvider}</span>
+                    <span className="font-mono">{metric.expectedIntervalSeconds}s cadence</span>
+                  </div>
+                  <div className="font-mono text-[11px] text-blue-700 truncate">
+                    {metric.sampleApiUrl}
+                  </div>
+                </div>
+
+                {/* Test Endpoint Action & Results */}
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTestEndpoint(metric)}
+                    disabled={isTesting}
+                    className="px-3 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-800 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs disabled:opacity-50"
+                  >
+                    {isTesting ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 text-blue-600 fill-blue-600" />
+                    )}
+                    <span>{isTesting ? 'Sending Probe...' : 'Test Endpoint'}</span>
+                  </button>
+
+                  {/* Test Result Pill */}
+                  {testResult && (
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                          testResult.isOk
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-rose-50 text-rose-700 border border-rose-200'
+                        }`}
+                      >
+                        {testResult.status > 0 ? `${testResult.status} ${testResult.statusText || 'OK'}` : 'TIMEOUT/ERR'}
+                      </span>
+                      <span className="text-[11px] font-mono font-bold text-slate-600">
+                        {testResult.latencyMs}ms
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedPayloadMetricId(isPayloadExpanded ? null : metric.id)
+                        }
+                        className="p-1 rounded hover:bg-slate-100 text-slate-500 cursor-pointer"
+                        title="Toggle response payload inspection"
+                      >
+                        {isPayloadExpanded ? (
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Link to Inspect Graph if monitored */}
+                  {isMonitored && onInspectService && (
+                    <button
+                      type="button"
+                      onClick={() => onInspectService(metric.id)}
+                      className="px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-700 hover:bg-blue-50 flex items-center gap-1 cursor-pointer transition-colors ml-auto"
+                    >
+                      <LineChart className="w-3.5 h-3.5" />
+                      <span>Graph</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Expandable Live Response Data Inspector */}
+                {testResult && isPayloadExpanded && (
+                  <div className="p-3 bg-slate-900 text-slate-100 rounded-xl space-y-2 text-[11px] font-mono animate-in fade-in">
+                    <div className="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-1.5">
+                      <span>Live Response Payload ({testResult.timestamp.split('T')[1].slice(0, 8)})</span>
+                      <span>{testResult.latencyMs}ms roundtrip</span>
+                    </div>
+
+                    {testResult.error ? (
+                      <div className="text-rose-400">{testResult.error}</div>
+                    ) : (
+                      <>
+                        {testResult.headers && (
+                          <div className="text-[10px] text-slate-400 space-y-0.5">
+                            <div>Content-Type: {testResult.headers['content-type'] || 'n/a'}</div>
+                            {testResult.headers['server'] && <div>Server: {testResult.headers['server']}</div>}
+                          </div>
+                        )}
+                        <pre className="max-h-36 overflow-auto bg-black/40 p-2 rounded text-[10px] text-emerald-400 scrollbar-thin">
+                          {typeof testResult.sampleData === 'object'
+                            ? JSON.stringify(testResult.sampleData, null, 2)
+                            : String(testResult.sampleData || 'No response body')}
+                        </pre>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* 3. PUBLIC API CATALOG SECTION (General Alphabetical Directory) */}
+      <div className="pt-6 border-t border-slate-200/80 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+              Premade Public API Directory (A–Z)
+            </h2>
+            <p className="text-xs text-slate-500">
+              Complete alphabetical library of monitored cloud endpoints and distributed microservices.
+            </p>
+          </div>
           <span className="text-xs font-semibold text-slate-500">
             {selectedItems.length} active in telemetry suite
           </span>
         </div>
 
-        {/* Selected APIs Section: Listed above alphabet before the full list starts */}
+        {/* Selected APIs Section */}
         <section id="catalog-selected-section" className="space-y-3 scroll-mt-28">
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Selected APIs
+                Active Suite Services
               </h3>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                 {selectedItems.length} selected
@@ -399,7 +694,7 @@ export function DemoSettingsCatalogView({
 
           {selectedItems.length === 0 ? (
             <div className="p-4 rounded-xl border border-dashed border-slate-200 bg-white text-center text-xs text-slate-500 font-medium">
-              No APIs currently selected. Select APIs from the catalog below to add them to your active monitoring suite.
+              No APIs currently selected. Select APIs from above or the catalog below to add them to your active monitoring suite.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -408,7 +703,7 @@ export function DemoSettingsCatalogView({
           )}
         </section>
 
-        {/* 3. ALPHABET JUMP BAR (Outside the Catalog Box) */}
+        {/* ALPHABET JUMP BAR */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-3 shadow-2xs sticky top-0 z-20">
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-thin">
             <button
@@ -449,7 +744,6 @@ export function DemoSettingsCatalogView({
               );
             })}
 
-            {/* Selected APIs Quick Jump Button after Z */}
             <button
               type="button"
               onClick={() => {
@@ -496,7 +790,7 @@ export function DemoSettingsCatalogView({
           </div>
         )}
 
-        {/* 4. API CATALOG BOX: Sequential Alphabetical Catalog inside its own Box */}
+        {/* Sequential Alphabetical Catalog inside its own Box */}
         <div className="bg-white border border-slate-200/90 rounded-xl p-5 shadow-2xs space-y-8">
           {ALPHABETS.map((letter) => {
             const items = groupedByLetter.get(letter) || [];
@@ -508,7 +802,6 @@ export function DemoSettingsCatalogView({
                 id={`catalog-alpha-${letter}`}
                 className="space-y-3 scroll-mt-28"
               >
-                {/* Section Alphabet Header: Just clean letter '{letter}' in a slightly larger font */}
                 <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                   <h3 className="text-xl font-bold text-slate-900 tracking-tight">
                     {letter}
@@ -518,7 +811,6 @@ export function DemoSettingsCatalogView({
                   </span>
                 </div>
 
-                {/* Tabulated Card Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {items.map((item) => renderApiCard(item))}
                 </div>

@@ -21,8 +21,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No account found with this email address.' }, { status: 404 });
     }
 
-    // If password provided and user has a password_hash, check it
-    if (password && user.password_hash) {
+    // If user has a password_hash, enforce password validation
+    if (user.password_hash) {
+      if (!password) {
+        return NextResponse.json({ success: false, error: 'Password is required to sign in to this account.' }, { status: 400 });
+      }
       const hash = crypto.createHash('sha256').update(password).digest('hex');
       if (hash !== user.password_hash) {
         return NextResponse.json({ success: false, error: 'Incorrect password.' }, { status: 401 });

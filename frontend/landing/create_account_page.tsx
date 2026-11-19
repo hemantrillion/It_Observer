@@ -58,11 +58,11 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Password validation checks
-  const hasMinLength = password.length >= 12;
+  const hasMinLength = password.length >= 8;
   const hasLower = /[a-z]/.test(password);
   const hasUpper = /[A-Z]/.test(password);
   const hasNumberOrSpecial = /[0-9!@#$%^&*(),.?":{}|<>]/.test(password);
-  const isPasswordValid = hasMinLength && hasLower && hasUpper && hasNumberOrSpecial;
+  const isPasswordValid = hasMinLength && (hasLower || hasUpper || hasNumberOrSpecial);
 
   // Countdown timer for OTP
   useEffect(() => {
@@ -162,6 +162,33 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otpValues[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Auto-fill OTP and instantly verify
+  const handleAutoFillAndVerify = async () => {
+    if (otpPreviewCode && otpPreviewCode.length === 6) {
+      const digits = otpPreviewCode.split('');
+      setOtpValues(digits);
+      setIsLoading(true);
+      setOtpError('');
+      try {
+        const res = await fetch('/api/auth/otp/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.toLowerCase().trim(), otp: otpPreviewCode }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setCurrentStep('step2');
+        } else {
+          setOtpError(data.error || 'Invalid code.');
+        }
+      } catch (err: any) {
+        setOtpError(err.message || 'Verification failed.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -472,13 +499,22 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                     Also delivered to your email and platform inbox.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAutoFillOtp}
-                  className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer transition-colors shrink-0 shadow-2xs"
-                >
-                  Auto-fill Code
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleAutoFillOtp}
+                    className="px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100 text-amber-900 text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                  >
+                    Fill
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAutoFillAndVerify}
+                    className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer transition-colors shadow-2xs flex items-center gap-1"
+                  >
+                    <span>⚡ Verify & Continue</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -597,7 +633,7 @@ export function CreateAccountView({ onBack, onGoToSignIn, onSuccess }: CreateAcc
                 <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-xs text-slate-600">
                   <div className={`flex items-center gap-2 ${hasMinLength ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
                     <Check className={`w-3.5 h-3.5 ${hasMinLength ? 'opacity-100' : 'opacity-40'}`} />
-                    <span>Minimum 12 characters long</span>
+                    <span>Minimum 8 characters long</span>
                   </div>
                   <div className={`flex items-center gap-2 ${hasLower ? 'text-emerald-600 font-semibold' : 'text-slate-500'}`}>
                     <Check className={`w-3.5 h-3.5 ${hasLower ? 'opacity-100' : 'opacity-40'}`} />

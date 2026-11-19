@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserAccount } from '@/lib/auth/accounts_manager';
+import { UserAccount, setActiveAccount } from '@/lib/auth/accounts_manager';
 
 interface GoogleAuthButtonProps {
   onSuccess: (user: UserAccount, isNewUser?: boolean) => void;
@@ -12,6 +12,10 @@ interface GoogleAuthButtonProps {
   disabled?: boolean;
 }
 
+const GOOGLE_CLIENT_ID =
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+  '1002309612117-pk9vf42asi782km54k6kagmmrc3h931s.apps.googleusercontent.com';
+
 export function GoogleAuthButton({
   onSuccess,
   onError,
@@ -21,174 +25,117 @@ export function GoogleAuthButton({
   disabled = false,
 }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const buttonLabel =
+    text ||
+    (context === 'signup'
+      ? 'Sign up with Google'
+      : context === 'signin'
+      ? 'Sign in with Google'
+      : 'Continue with Google');
 
-  // Compute button text
-  const buttonLabel = text || (context === 'signup' ? 'Sign up with Google' : context === 'signin' ? 'Sign in with Google' : 'Continue with Google');
-
-  // Load Google Identity Services script
+  // Background Google Identity Services (GIS) loader for browser auto-detection
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const existingScript = document.getElementById('google-identity-client-script');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'google-identity-client-script';
+    // Check if user explicitly clicked Sign out; if so, do not force auto-login loop
+    const isLoggedOut = localStorage.getItem('infratrace_logged_out') === 'true';
+
+    const handleGsiCredential = async (response: any) => {
+      if (!response?.credential) return;
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential }),
+        });
+        const data = await res.json();
+        setIsLoading(false);
+        if (data.success && data.user) {
+          try {
+            localStorage.removeItem('infratrace_logged_out');
+          } catch {}
+          setActiveAccount(data.user);
+          onSuccess(data.user, data.isNewUser);
+        } else {
+          const err = data.error || 'Failed to authenticate with Google.';
+          setErrorMessage(err);
+          onError?.(err);
+        }
+      } catch (err: any) {
+        setIsLoading(false);
+        const errMsg = err.message || 'Google authentication error.';
+        setErrorMessage(errMsg);
+        onError?.(errMsg);
+      }
+    };
+
+    const initGsi = () => {
+      const google = (window as any).google;
+      if (!google?.accounts?.id) return;
+
+      try {
+        google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGsiCredential,
+          auto_select: !isLoggedOut, // Automatically logs in if 1 Google account is active in the browser
+          cancel_on_tap_outside: false,
+          itp_support: true,
+        });
+
+        if (!isLoggedOut) {
+          google.accounts.id.prompt();
+        }
+      } catch (e) {
+        // GSI initialization notice
+      }
+    };
+
+    const scriptId = 'google-gsi-client-script';
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
+      script.onload = initGsi;
       document.head.appendChild(script);
+    } else {
+      initGsi();
     }
-  }, []);
-
-  // Listen for popup messages if OAuth redirect opens in popup window
-  useEffect(() => {
-    function handleMessage(event: MessageEvent) {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type === 'GOOGLE_AUTH_SUCCESS' && event.data.user) {
-        setIsLoading(false);
-        onSuccess(event.data.user, event.data.isNewUser);
-      } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
-        setIsLoading(false);
-        const err = event.data.error || 'Google authentication failed.';
-        setLocalError(err);
-        onError?.(err);
-      }
-    }
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
   }, [onSuccess, onError]);
 
-  const handleGoogleClick = async () => {
-    setLocalError(null);
-
-    // If client ID is not configured, inform user clearly
-    if (!clientId) {
-      const errorMsg = 'Google Client ID is not configured. Please add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your environment variables.';
-      setLocalError(errorMsg);
-      onError?.(errorMsg);
-      return;
-    }
-
+  // Handle direct Google OAuth 2.0 flow using the browser's active Google account
+  const handleDirectGoogleLogin = () => {
     setIsLoading(true);
+    setErrorMessage(null);
 
     try {
-      const google = (window as any).google;
+      localStorage.removeItem('infratrace_logged_out');
+    } catch {}
 
-      // 1. Try Google Identity Services OAuth 2.0 Code Client (Standard & Recommended)
-      if (google?.accounts?.oauth2) {
-        const client = google.accounts.oauth2.initCodeClient({
-          client_id: clientId,
-          scope: 'openid email profile',
-          ux_mode: 'popup',
-          select_account: true,
-          callback: async (response: any) => {
-            if (response.error) {
-              setIsLoading(false);
-              const err = response.error_description || response.error || 'Google login cancelled or failed.';
-              setLocalError(err);
-              onError?.(err);
-              return;
-            }
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+    const redirectUri = `${origin}/api/auth/google/callback`;
 
-            if (!response.code) {
-              setIsLoading(false);
-              const err = 'No authorization code received from Google.';
-              setLocalError(err);
-              onError?.(err);
-              return;
-            }
+    // Without prompt=select_account, Google directly uses the browser's signed-in Google account.
+    // If not signed in to Google in this browser, Google displays its official sign-in screen.
+    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+      GOOGLE_CLIENT_ID
+    )}&redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}&response_type=code&scope=openid%20email%20profile&access_type=offline`;
 
-            try {
-              // Send authorization code to server for backend verification
-              const res = await fetch('/api/auth/google', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  code: response.code,
-                  redirectUri: 'postmessage',
-                }),
-              });
-
-              const data = await res.json();
-              setIsLoading(false);
-
-              if (data.success && data.user) {
-                onSuccess(data.user, data.isNewUser);
-              } else {
-                const err = data.error || 'Failed to authenticate with Google on server.';
-                setLocalError(err);
-                onError?.(err);
-              }
-            } catch (postErr: any) {
-              setIsLoading(false);
-              const err = postErr.message || 'Network error verifying Google credentials.';
-              setLocalError(err);
-              onError?.(err);
-            }
-          },
-          error_callback: (nonOAuthError: any) => {
-            setIsLoading(false);
-            const err = nonOAuthError.message || 'Google authentication popup was closed or blocked.';
-            setLocalError(err);
-            onError?.(err);
-          },
-        });
-
-        client.requestCode();
-        return;
-      }
-
-      // 2. Fallback: Open server authorization route in popup window
-      const width = 500;
-      const height = 650;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-
-      const popup = window.open(
-        '/api/auth/google/authorize',
-        'google_oauth_popup',
-        `width=${width},height=${height},left=${left},top=${top},status=0,toolbar=0,location=0,menubar=0`
-      );
-
-      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-        // If popup was blocked by browser, fallback to standard full-page redirect
-        window.location.href = '/api/auth/google/authorize';
-        return;
-      }
-
-      // Poll for popup closing or completion
-      const popupCheckTimer = setInterval(() => {
-        if (!popup || popup.closed) {
-          clearInterval(popupCheckTimer);
-          setIsLoading(false);
-          // Check session cookie from server
-          fetch('/api/auth/session')
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.authenticated && data.user) {
-                onSuccess(data.user);
-              }
-            })
-            .catch(() => {});
-        }
-      }, 800);
-    } catch (err: any) {
-      setIsLoading(false);
-      const errMsg = err.message || 'Failed to initiate Google sign-in.';
-      setLocalError(errMsg);
-      onError?.(errMsg);
-    }
+    window.location.href = oauthUrl;
   };
 
   return (
-    <div className="w-full space-y-2">
+    <div className="w-full">
       <button
         type="button"
-        onClick={handleGoogleClick}
+        onClick={handleDirectGoogleLogin}
         disabled={disabled || isLoading}
         className={`w-full h-11 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm shadow-2xs hover:shadow-xs transition-all flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed select-none active:scale-[0.99] ${className}`}
       >
@@ -218,7 +165,7 @@ export function GoogleAuthButton({
           </div>
         ) : (
           <>
-            {/* Official Google 4-color G logo */}
+            {/* Authentic Google 4-Color G SVG Logo */}
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -237,17 +184,16 @@ export function GoogleAuthButton({
                 fill="#EA4335"
               />
             </svg>
-            <span>{buttonLabel}</span>
+            <span className="truncate">{buttonLabel}</span>
           </>
         )}
       </button>
 
-      {localError && (
-        <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs text-left animate-in fade-in duration-150">
-          <p className="font-semibold">{localError}</p>
-        </div>
+      {errorMessage && (
+        <p className="mt-2 text-xs text-rose-600 font-medium text-center">
+          {errorMessage}
+        </p>
       )}
     </div>
   );
 }
-

@@ -16,9 +16,10 @@ function getSummaryAndServices() {
 
   const summary = {
     total: services.length,
-    healthy: services.filter((s) => s.current_status === 'HEALTHY').length,
+    healthy: services.filter((s) => s.current_status === 'HEALTHY' || s.current_status === 'UP').length,
     degraded: services.filter((s) => s.current_status === 'DEGRADED').length,
     down: services.filter((s) => s.current_status === 'DOWN').length,
+    unstable: services.filter((s) => s.current_status === 'UNSTABLE').length,
     activeAlerts,
   };
 

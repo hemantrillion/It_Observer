@@ -16,6 +16,7 @@ const isWindows = process.platform === 'win32';
 const npmCmd = isWindows ? 'npm.cmd' : 'npm';
 const nextProcess = spawn(npmCmd, ['run', 'dev'], {
   stdio: 'inherit',
+  shell: isWindows,
 });
 
 function cleanup() {

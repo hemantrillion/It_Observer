@@ -14,9 +14,10 @@ export function MonitoredServiceStatusBlockCard({
   service,
   onInspect,
 }: MonitoredServiceStatusBlockCardProps) {
-  const isHealthy = service.current_status === 'HEALTHY';
+  const isHealthy = service.current_status === 'HEALTHY' || service.current_status === 'UP';
   const isDegraded = service.current_status === 'DEGRADED';
   const isDown = service.current_status === 'DOWN';
+  const isUnstable = service.current_status === 'UNSTABLE';
 
   const getTypeIcon = () => {
     switch (service.target_type) {
@@ -48,6 +49,8 @@ export function MonitoredServiceStatusBlockCard({
                 ? 'bg-rose-50 text-rose-700 border-rose-200'
                 : isDegraded
                 ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : isUnstable
+                ? 'bg-purple-50 text-purple-700 border-purple-200'
                 : 'bg-emerald-50 text-emerald-700 border-emerald-200'
             }`}
           >
@@ -57,6 +60,8 @@ export function MonitoredServiceStatusBlockCard({
                   ? 'bg-rose-500 animate-ping'
                   : isDegraded
                   ? 'bg-amber-500'
+                  : isUnstable
+                  ? 'bg-purple-600 animate-pulse'
                   : 'bg-emerald-500'
               }`}
             />

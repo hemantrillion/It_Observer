@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Lock, Mail, Eye, EyeOff, ShieldAlert, Sparkles } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, Sparkles, ArrowRight } from 'lucide-react';
 import { setActiveAccount, DEFAULT_TEST_USER, UserAccount } from '@/lib/auth/accounts_manager';
 import { GoogleAuthButton } from '@/components/auth/google_auth_button';
 
@@ -26,11 +26,15 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const urlError = params.get('error');
+      const urlEmail = params.get('email');
       if (urlError) {
         setErrorMessage(decodeURIComponent(urlError));
       }
+      if (urlEmail && !email) {
+        setEmail(urlEmail);
+      }
     }
-  }, []);
+  }, [email]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,18 +79,6 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
       router.push('/demo');
     }
   };
-
-  // Test User Quick Login Bypass (Side Docked for dev convenience)
-  const handleQuickTestUserLogin = () => {
-    setActiveAccount(DEFAULT_TEST_USER);
-    if (onSuccess) {
-      onSuccess();
-    } else {
-      router.push('/demo');
-    }
-  };
-
-  const hasGoogleClientId = Boolean(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
   return (
     <div
@@ -139,8 +131,20 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
 
         <div className="w-full bg-white rounded-2xl p-7 sm:p-8 shadow-2xl text-slate-900 border border-slate-100 space-y-5 animate-in fade-in duration-200">
           {errorMessage && (
-            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold text-center">
-              {errorMessage}
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold text-center space-y-2">
+              <div>{errorMessage}</div>
+              {errorMessage.includes('No account found') && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={onGoToSignUp || (() => router.push(`/signup?email=${encodeURIComponent(email)}`))}
+                    className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Create account with this email</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -234,29 +238,6 @@ export function SignInView({ onBack, onGoToSignUp, onSuccess, prefilledEmail = '
           </p>
         </div>
       </main>
-
-      {/* ======================================================== */}
-      {/* SIDE-DOCKED FLOATING TEST USER LOGIN BYPASS               */}
-      {/* Pinned to outer bottom-right, zero impact on center card  */}
-      {/* ======================================================== */}
-      <div className="fixed bottom-5 right-5 z-50">
-        <div className="bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl p-3 shadow-2xl space-y-2 max-w-[240px]">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            <span>Dev / Preview Mode</span>
-          </div>
-          <p className="text-[11px] text-slate-300 leading-tight">
-            One-click bypass to explore as pre-configured Test User:
-          </p>
-          <button
-            type="button"
-            onClick={handleQuickTestUserLogin}
-            className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-          >
-            <span>⚡ Test User Login</span>
-          </button>
-        </div>
-      </div>
 
       {/* Footer */}
       <footer className="text-center text-xs text-blue-100/80 pt-4 pb-2">

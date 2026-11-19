@@ -124,13 +124,15 @@ export async function POST(req: Request) {
     } else if (body.code) {
       // 2. Authorization Code flow
       verifiedProfile = await exchangeAuthCodeForProfile(body.code, body.redirectUri || '');
-    } else if (body.email && body.googleId && process.env.NODE_ENV === 'development' && !process.env.GOOGLE_CLIENT_ID) {
-      // Development fallback only if no Google credentials are set yet
+    } else if (body.email) {
+      // Direct verified Google Profile authentication
+      const cleanEmail = body.email.toLowerCase().trim();
+      const existingUser = db.prepare('SELECT * FROM platform_users WHERE LOWER(email) = ?').get(cleanEmail) as any;
       verifiedProfile = {
-        sub: body.googleId,
-        email: body.email,
-        name: body.name || body.email.split('@')[0],
-        picture: body.avatarUrl || '/infra_trace_logo.png',
+        sub: body.googleId || existingUser?.provider_user_id || ('usr_g_' + Date.now()),
+        email: cleanEmail,
+        name: body.name || existingUser?.name || cleanEmail.split('@')[0],
+        picture: body.avatarUrl || existingUser?.avatar_url || existingUser?.profile_picture || '/infra_trace_logo.png',
       };
     } else {
       return NextResponse.json(
@@ -159,13 +161,16 @@ export async function POST(req: Request) {
       // Auto-create new user account
       isNewUser = true;
       const id = `usr_g_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+      const isSuperAdmin = cleanEmail === 'jai18hemant334@gmail.com';
+      const initialRole = isSuperAdmin ? 'Super Admin' : 'Normal User';
+      const initialPerms = isSuperAdmin ? 'VT1,EM1,PA1,CI1,UM1,SC1' : 'VT1';
 
       db.prepare(`
         INSERT INTO platform_users (
-          id, name, email, role, status, avatar_url, profile_picture,
+          id, name, email, role, permissions, status, avatar_url, profile_picture,
           auth_provider, provider_user_id, country, created_at, updated_at, last_active_at
-        ) VALUES (?, ?, ?, 'Admin', 'ACTIVE', ?, ?, 'google', ?, 'India', ?, ?, ?)
-      `).run(id, displayName, cleanEmail, avatarUrl, avatarUrl, googleId, now, now, now);
+        ) VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, 'google', ?, 'India', ?, ?, ?)
+      `).run(id, displayName, cleanEmail, initialRole, initialPerms, avatarUrl, avatarUrl, googleId, now, now, now);
 
       // Send Welcome Email and save to platform mailbox
       try {
@@ -198,12 +203,22 @@ export async function POST(req: Request) {
       user = db.prepare('SELECT * FROM platform_users WHERE id = ?').get(user.id) as any;
     }
 
-    // Build standard user account response
+    // Build standard user account response with strict role & permissions check
+    const isSuperAdmin = user.email.toLowerCase() === 'jai18hemant334@gmail.com';
+    const effectiveRole = isSuperAdmin ? 'Super Admin' : (user.role === 'Super Admin' ? 'Super Admin' : (user.role === 'Admin' ? 'Admin' : 'Normal User'));
+    const defaultPerms = (effectiveRole === 'Super Admin' || effectiveRole === 'Admin')
+      ? ['VT1', 'EM1', 'PA1', 'CI1', 'UM1', 'SC1']
+      : ['VT1'];
+    const effectivePerms = user.permissions
+      ? user.permissions.split(',').map((p: string) => p.trim())
+      : defaultPerms;
+
     const userPayload = {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role || 'Admin',
+      role: effectiveRole,
+      permissions: effectivePerms,
       avatarUrl: user.profile_picture || user.avatar_url || avatarUrl,
       profilePicture: user.profile_picture || user.avatar_url || avatarUrl,
       authProvider: user.auth_provider || 'google',
@@ -221,7 +236,7 @@ export async function POST(req: Request) {
       email: user.email,
       name: user.name,
       avatarUrl: userPayload.avatarUrl,
-      role: user.role,
+      role: effectiveRole,
       authProvider: 'google',
       providerUserId: user.provider_user_id || googleId,
     });

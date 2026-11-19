@@ -162,9 +162,9 @@ export default function AccountManagementPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/demo')}
+              onClick={() => router.push('/console')}
               className="p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
-              title="Back to Console / Demo"
+              title="Back to Console"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
@@ -176,7 +176,7 @@ export default function AccountManagementPage() {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => router.push('/demo')}
+              onClick={() => router.push('/console')}
               className="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               Go to Observatory
@@ -184,7 +184,7 @@ export default function AccountManagementPage() {
             <button
               onClick={async () => {
                 await signOutActiveAccount();
-                router.push('/signin');
+                window.location.href = '/';
               }}
               className="px-3.5 py-2 rounded-full border border-slate-300 hover:bg-rose-50 hover:text-rose-600 text-slate-700 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               title="Sign out"
@@ -345,7 +345,7 @@ export default function AccountManagementPage() {
             <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
               <button
                 type="button"
-                onClick={() => router.push('/demo')}
+                onClick={() => router.push('/console')}
                 className="px-5 py-2.5 rounded-full border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 Cancel

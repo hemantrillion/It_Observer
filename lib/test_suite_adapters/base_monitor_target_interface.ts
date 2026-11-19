@@ -1,6 +1,6 @@
 export interface HealthCheckResult {
   serviceId: string;
-  status: 'HEALTHY' | 'DEGRADED' | 'DOWN';
+  status: 'HEALTHY' | 'UP' | 'DEGRADED' | 'DOWN' | 'UNSTABLE';
   responseTimeMs: number;
   httpStatus: number;
   cpuPercentage?: number;

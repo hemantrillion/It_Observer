@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { MonitoredServiceRecord } from '@/lib/database/get_all_monitored_services_query';
-import { TrendingUp, BarChart2 } from 'lucide-react';
+import { TrendingUp, BarChart2, Activity } from 'lucide-react';
 
 export interface GenericMetricSample {
   id?: number;
@@ -499,8 +499,62 @@ export function LatencyMetricTimeseriesGraphCard({
 
       {/* Main Graph Viewport */}
       {chronological.length === 0 ? (
-        <div className="p-12 text-center text-xs font-medium text-slate-500 border border-slate-200/90 rounded-xl bg-slate-50/50">
-          No telemetry samples recorded in the selected {selectedTimeframe} window. Probing active...
+        <div className="relative w-full h-[310px] rounded-xl border border-slate-200/90 bg-white overflow-hidden shadow-2xs select-none flex items-center justify-center">
+          {/* Background Coordinate Axis Grid */}
+          <svg
+            width="100%"
+            height="100%"
+            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+            preserveAspectRatio="none"
+            className="w-full h-full absolute inset-0 opacity-40 pointer-events-none"
+          >
+            {/* Horizontal Gridlines & Y-labels */}
+            {yTicks.map((tickVal, idx) => {
+              const tickRatio = tickVal / maxY;
+              const tickY = plotBaseline - tickRatio * plotHeight;
+              return (
+                <g key={idx}>
+                  <line
+                    x1={paddingLeft}
+                    y1={tickY}
+                    x2={paddingLeft + plotWidth}
+                    y2={tickY}
+                    stroke="#f1f5f9"
+                    strokeDasharray="3 3"
+                    strokeWidth="1"
+                  />
+                  <text
+                    x={paddingLeft - 8}
+                    y={tickY + 4}
+                    textAnchor="end"
+                    fill="#94a3b8"
+                    fontSize="11"
+                    fontWeight="600"
+                    fontFamily="sans-serif"
+                  >
+                    {tickVal}ms
+                  </text>
+                </g>
+              );
+            })}
+            <line
+              x1={paddingLeft}
+              y1={plotBaseline}
+              x2={paddingLeft + plotWidth}
+              y2={plotBaseline}
+              stroke="#cbd5e1"
+              strokeWidth="1.2"
+            />
+          </svg>
+
+          {/* Centered Image 2 State */}
+          <div className="relative z-10 flex flex-col items-center gap-1.5 bg-white/95 backdrop-blur-xs px-6 py-4 rounded-xl border border-slate-200 shadow-2xs text-center max-w-sm">
+            <Activity className="w-5 h-5 text-slate-400" />
+            <span className="text-xs font-bold text-slate-800">Awaiting Suite Configuration</span>
+            <span className="text-[11px] text-slate-500">
+              Enable in Settings or Private API to start collecting telemetry.
+            </span>
+          </div>
         </div>
       ) : (
         <div

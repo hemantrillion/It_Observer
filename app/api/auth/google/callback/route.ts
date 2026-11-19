@@ -12,15 +12,30 @@ export async function GET(req: NextRequest) {
   const stateParam = searchParams.get('state');
 
   // Parse state target if provided
-  let redirectTarget = '/demo';
+  let redirectTarget = '/console';
+  let appSource = 'infratrace';
+
   if (stateParam) {
     try {
       const decoded = JSON.parse(Buffer.from(stateParam, 'base64url').toString('utf8'));
-      if (decoded.target && typeof decoded.target === 'string' && decoded.target.startsWith('/')) {
+      if (decoded.target && typeof decoded.target === 'string') {
         redirectTarget = decoded.target;
       }
+      if (decoded.app) {
+        appSource = decoded.app;
+      }
     } catch {
-      // ignore invalid state decode
+      try {
+        const decoded = JSON.parse(Buffer.from(stateParam, 'base64').toString('utf8'));
+        if (decoded.target && typeof decoded.target === 'string') {
+          redirectTarget = decoded.target;
+        }
+        if (decoded.app) {
+          appSource = decoded.app;
+        }
+      } catch {
+        // ignore invalid state decode
+      }
     }
   }
 
@@ -114,15 +129,23 @@ export async function GET(req: NextRequest) {
       .prepare('SELECT * FROM platform_users WHERE provider_user_id = ? OR LOWER(email) = ?')
       .get(googleId, cleanEmail) as any;
 
+    const isSuperAdmin = cleanEmail === 'jai18hemant334@gmail.com';
+    const effectiveRole = isSuperAdmin ? 'Super Admin' : (user?.role === 'Super Admin' ? 'Super Admin' : (user?.role === 'Admin' ? 'Admin' : 'Normal User'));
+    const defaultPerms = (effectiveRole === 'Super Admin' || effectiveRole === 'Admin')
+      ? ['VT1', 'EM1', 'PA1', 'CI1', 'UM1', 'SC1']
+      : ['VT1'];
+
     if (!user) {
       // Auto-create new user account
       const id = `usr_g_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+      const initialPerms = defaultPerms.join(',');
+
       db.prepare(`
         INSERT INTO platform_users (
-          id, name, email, role, status, avatar_url, profile_picture,
+          id, name, email, role, permissions, status, avatar_url, profile_picture,
           auth_provider, provider_user_id, country, created_at, updated_at, last_active_at
-        ) VALUES (?, ?, ?, 'Admin', 'ACTIVE', ?, ?, 'google', ?, 'India', ?, ?, ?)
-      `).run(id, name, cleanEmail, picture, picture, googleId, now, now, now);
+        ) VALUES (?, ?, ?, ?, ?, 'ACTIVE', ?, ?, 'google', ?, 'India', ?, ?, ?)
+      `).run(id, name, cleanEmail, effectiveRole, initialPerms, picture, picture, googleId, now, now, now);
 
       try {
         sendPlatformMail({
@@ -139,33 +162,86 @@ export async function GET(req: NextRequest) {
 
       user = db.prepare('SELECT * FROM platform_users WHERE id = ?').get(id) as any;
     } else {
-      // Existing user: Link Google identity and update last active timestamp
+      // Existing user: Link Google identity and update last active timestamp & role
       db.prepare(`
         UPDATE platform_users
         SET last_active_at = ?,
             updated_at = ?,
+            role = ?,
             auth_provider = CASE WHEN auth_provider IS NULL OR auth_provider = 'local' THEN 'google' ELSE auth_provider END,
             provider_user_id = COALESCE(provider_user_id, ?),
             avatar_url = COALESCE(?, avatar_url),
             profile_picture = COALESCE(?, profile_picture)
         WHERE id = ?
-      `).run(now, now, googleId, picture, picture, user.id);
+      `).run(now, now, effectiveRole, googleId, picture, picture, user.id);
 
       user = db.prepare('SELECT * FROM platform_users WHERE id = ?').get(user.id) as any;
     }
 
-    // 3. Create session token and set cookie on redirect
+    // 3. Create session token
     const sessionToken = createSessionToken({
       id: user.id,
       email: user.email,
       name: user.name,
       avatarUrl: user.profile_picture || user.avatar_url || picture,
-      role: user.role,
+      role: effectiveRole,
       authProvider: 'google',
       providerUserId: user.provider_user_id || googleId,
     });
 
-    const response = NextResponse.redirect(new URL(redirectTarget, req.url));
+    // Handle OQ Booking app redirection
+    if (appSource === 'oq' || redirectTarget.includes('3001') || redirectTarget.includes('/oq')) {
+      const targetBase = redirectTarget.startsWith('http') ? redirectTarget : `http://localhost:3001${redirectTarget.startsWith('/') ? '' : '/'}${redirectTarget}`;
+      const targetUrl = new URL(targetBase);
+      targetUrl.searchParams.set('google_auth', 'success');
+      targetUrl.searchParams.set('email', user.email);
+      targetUrl.searchParams.set('name', user.name);
+      if (picture) targetUrl.searchParams.set('avatarUrl', picture);
+      return NextResponse.redirect(targetUrl.toString());
+    }
+
+    // Handle InfraTrace app login with synchronous client-side storage injection
+    const userPayload = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: effectiveRole,
+      permissions: defaultPerms,
+      avatarUrl: user.profile_picture || user.avatar_url || picture,
+      profilePicture: user.profile_picture || user.avatar_url || picture,
+      authProvider: 'google',
+      providerUserId: user.provider_user_id || googleId,
+      company: user.company || 'InfraTrace Internal',
+      jobTitle: user.job_title || 'Observability Lead',
+      country: user.country || 'India',
+    };
+
+    const targetUrl = redirectTarget.startsWith('/') ? redirectTarget : `/${redirectTarget}`;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>InfraTrace</title>
+</head>
+<body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8fafd;color:#1f1f1f;">
+  <div style="text-align:center;">
+    <p style="font-weight:600;font-size:16px;">Authenticating with Google...</p>
+  </div>
+  <script>
+    try {
+      localStorage.removeItem('infratrace_logged_out');
+      localStorage.setItem('infratrace_active_account_email', ${JSON.stringify(user.email)});
+      localStorage.setItem('infratrace_accounts_list', JSON.stringify([${JSON.stringify(userPayload)}]));
+    } catch (e) {}
+    window.location.replace(${JSON.stringify(targetUrl)});
+  </script>
+</body>
+</html>`;
+
+    const response = new NextResponse(html, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
     setSessionCookieOnResponse(response, sessionToken);
 
     return response;
@@ -175,4 +251,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

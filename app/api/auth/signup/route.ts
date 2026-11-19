@@ -27,6 +27,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Valid email is required' }, { status: 400 });
     }
 
+    if (!password || password.length < 8) {
+      return NextResponse.json({ success: false, error: 'Password must be at least 8 characters long.' }, { status: 400 });
+    }
+
     const cleanEmail = email.toLowerCase().trim();
 
     // Check duplicate
@@ -40,16 +44,22 @@ export async function POST(req: Request) {
     const passwordHash = password ? crypto.createHash('sha256').update(password).digest('hex') : null;
     const now = new Date().toISOString();
 
+    const isSuperAdmin = cleanEmail === 'jai18hemant334@gmail.com';
+    const initialRole = isSuperAdmin ? 'Admin' : 'Normal User';
+    const initialPerms = isSuperAdmin ? 'VT1,EM1,PA1,CI1,UM1,SC1' : 'VT1';
+
     db.prepare(`
       INSERT INTO platform_users (
-        id, name, email, password_hash, role, status, avatar_url, profile_picture,
+        id, name, email, password_hash, role, permissions, status, avatar_url, profile_picture,
         auth_provider, company, job_title, phone, country, interests, created_at, updated_at, last_active_at
-      ) VALUES (?, ?, ?, ?, 'Admin', 'ACTIVE', '/infra_trace_logo.png', '/infra_trace_logo.png', 'local', ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', '/infra_trace_logo.png', '/infra_trace_logo.png', 'local', ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       fullName,
       cleanEmail,
       passwordHash,
+      initialRole,
+      initialPerms,
       company,
       jobTitle,
       phone,

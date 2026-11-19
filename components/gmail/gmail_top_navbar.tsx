@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Plus,
 } from 'lucide-react';
+import { PrivateApiPopover } from '@/frontend/box3/private_api_popover';
 
 interface GmailTopNavbarProps {
   searchQuery?: string;
@@ -25,6 +26,7 @@ interface GmailTopNavbarProps {
   onNavigateLanding?: () => void;
   onNavigatePrivateApi?: () => void;
   userAvatarUrl?: string;
+  isDemoMode?: boolean;
 }
 
 export function GmailTopNavbar({
@@ -42,6 +44,7 @@ export function GmailTopNavbar({
   onNavigateLanding,
   onNavigatePrivateApi,
   userAvatarUrl = '/infra_trace_logo.png',
+  isDemoMode = false,
 }: GmailTopNavbarProps) {
   const [isPrivateApiMenuOpen, setIsPrivateApiMenuOpen] = useState(false);
   const privateApiMenuRef = useRef<HTMLDivElement>(null);
@@ -171,47 +174,10 @@ export function GmailTopNavbar({
 
           {/* Private API Popover Box */}
           {isPrivateApiMenuOpen && (
-            <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2.5 z-50 animate-in fade-in zoom-in-95 text-slate-900 font-sans select-none">
-              {/* Sample unclickable APIs */}
-              <div className="space-y-1.5">
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5 cursor-default">
-                  <div className="text-xs font-bold text-slate-800">
-                    api case sample 1
-                  </div>
-                  <div className="text-[11px] font-mono text-slate-500 truncate">
-                    https://sample-api-1.internal/health
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5 cursor-default">
-                  <div className="text-xs font-bold text-slate-800">
-                    api case sample 2
-                  </div>
-                  <div className="text-[11px] font-mono text-slate-500 truncate">
-                    https://sample-api-2.internal/health
-                  </div>
-                </div>
-              </div>
-
-              {/* Clickable option saying "add new private api" */}
-              <div className="pt-2 mt-1.5 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsPrivateApiMenuOpen(false);
-                    if (onNavigatePrivateApi) {
-                      onNavigatePrivateApi();
-                    } else {
-                      window.location.href = '/private-api';
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-dashed border-blue-400 bg-blue-50/60 hover:bg-blue-100/80 text-blue-700 text-xs font-bold cursor-pointer transition-colors shadow-2xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add new private API</span>
-                </button>
-              </div>
-            </div>
+            <PrivateApiPopover
+              onClose={() => setIsPrivateApiMenuOpen(false)}
+              onNavigateToPrivateApi={onNavigatePrivateApi}
+            />
           )}
         </div>
 
@@ -269,27 +235,41 @@ export function GmailTopNavbar({
           </svg>
         </button>
 
-        {/* User Profile Avatar (InfraTrace Logo / Active Avatar) */}
-        <button
-          type="button"
-          onClick={onOpenAccountMenu}
-          data-panel-trigger="account-flyout"
-          title="Account"
-          aria-label="Account"
-          className="relative cursor-pointer ml-1 focus:outline-none flex items-center justify-center"
-        >
+        {/* User Profile Avatar / Demo Badge */}
+        {isDemoMode ? (
           <div
-            className={`w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-xs transition-transform hover:scale-105 border border-slate-200/90 overflow-hidden ${
-              isAccountMenuOpen ? 'ring-2 ring-blue-500' : ''
-            }`}
+            title="Demo Playground (No account associated)"
+            className="ml-1 px-3 py-1 rounded-full bg-slate-200 text-slate-700 text-xs font-bold border border-slate-300 select-none"
           >
-            <img
-              src={userAvatarUrl}
-              alt="Account"
-              className="w-6 h-6 object-contain"
-            />
+            Demo
           </div>
-        </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenAccountMenu}
+            data-panel-trigger="account-flyout"
+            title="Account"
+            aria-label="Account"
+            className="relative cursor-pointer ml-1 focus:outline-none flex items-center justify-center"
+          >
+            <div
+              className={`w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-xs transition-transform hover:scale-105 border border-slate-200/90 overflow-hidden ${
+                isAccountMenuOpen ? 'ring-2 ring-blue-500' : ''
+              }`}
+            >
+              <img
+                src={userAvatarUrl}
+                alt="Account"
+                referrerPolicy="no-referrer"
+                className={`w-full h-full ${
+                  userAvatarUrl && !userAvatarUrl.includes('infra_trace_logo')
+                    ? 'object-cover'
+                    : 'object-contain p-1.5'
+                }`}
+              />
+            </div>
+          </button>
+        )}
       </div>
     </header>
   );

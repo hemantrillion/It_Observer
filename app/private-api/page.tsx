@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Cloud,
@@ -16,51 +16,120 @@ import {
   Plus,
   ShieldCheck,
   Check,
+  Trash2,
+  Save,
   Globe,
 } from 'lucide-react';
 import { getActiveAccount } from '@/lib/auth/accounts_manager';
+import { IMPLEMENTED_METRICS, ImplementedMetricDefinition } from '@/lib/metrics/implemented_metrics_registry';
 
-const AWS_METRIC_TEMPLATES = [
-  {
-    category: 'EC2 Compute & Utilization',
-    metrics: [
-      { id: 'ec2_cpu', name: 'EC2 CPU Utilization', description: 'Tracks percentage of allocated EC2 compute units in use (% CPU).', defaultEndpoint: 'https://monitoring.us-east-1.amazonaws.com/ec2/cpu' },
-      { id: 'ec2_network', name: 'EC2 Network In/Out', description: 'Monitors bytes received and transmitted across all instance ENIs.', defaultEndpoint: 'https://monitoring.us-east-1.amazonaws.com/ec2/network' },
-      { id: 'ec2_instance_state', name: 'EC2 Instance State', description: 'Synthetic probe tracking active instance lifecycle state (running/stopping).', defaultEndpoint: 'https://monitoring.us-east-1.amazonaws.com/ec2/state' },
-      { id: 'ec2_status_checks', name: 'EC2 Status Checks', description: 'Monitors StatusCheckFailed_System and StatusCheckFailed_Instance events.', defaultEndpoint: 'https://monitoring.us-east-1.amazonaws.com/ec2/status-checks' },
-      { id: 'ec2_disk', name: 'EC2 Disk Metrics Where Configured', description: 'Measures completed disk read/write operation rates and burst balance.', defaultEndpoint: 'https://monitoring.us-east-1.amazonaws.com/ec2/disk-io' },
-    ],
-  },
-  {
-    category: 'AWS Platform & Health Suite',
-    metrics: [
-      { id: 'aws_health_dashboard', name: 'AWS Health Dashboard API', description: 'Global feed for AWS infrastructure disruptions and maintenance events.', defaultEndpoint: 'https://health.us-east-1.amazonaws.com/events' },
-      { id: 'aws_cloudwatch_alarms', name: 'CloudWatch Alarms Telemetry', description: 'Polls active alarm triggers and state transition evaluations.', defaultEndpoint: 'https://monitoring.us-east-1.amazonaws.com/alarms' },
-    ],
-  },
-];
-
-export default function PrivateApiSetupPage() {
+function PrivateApiSetupForm() {
   const router = useRouter();
-  const activeUser = getActiveAccount();
+  const searchParams = useSearchParams();
+  const suiteIdParam = searchParams.get('suiteId');
 
+  const [mounted, setMounted] = useState(false);
+  const [activeUser, setActiveUser] = useState<any>({ email: 'jai18hemant334@gmail.com', role: 'Super Admin' });
+
+  useEffect(() => {
+    setMounted(true);
+    const acc = getActiveAccount();
+    if (acc) setActiveUser(acc);
+  }, []);
+
+  const [isEditMode, setIsEditMode] = useState(false);
   const [suiteName, setSuiteName] = useState('');
   const [suiteDescription, setSuiteDescription] = useState('');
   const [setupMode, setSetupMode] = useState<'cloud_aws' | 'upload_file' | 'custom_url'>('cloud_aws');
   const [selectedCloudCsp, setSelectedCloudCsp] = useState<'AWS' | 'GCP' | 'Azure' | 'Cloudflare'>('AWS');
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([
-    'ec2_cpu',
-    'ec2_network',
-    'ec2_instance_state',
-    'ec2_status_checks',
-    'ec2_disk',
+    'aws_ec2_cpu',
+    'aws_ec2_network_io',
+    'aws_lambda_duration',
+    'container_memory_usage',
+    'host_cpu_load',
   ]);
   const [apiKey, setApiKey] = useState('');
   const [awsRegion, setAwsRegion] = useState('us-east-1');
   const [customEndpointUrl, setCustomEndpointUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [disabledGraphs, setDisabledGraphs] = useState<string[]>([]);
+
+  // Load role visibility configuration
+  useEffect(() => {
+    async function loadVisibility() {
+      try {
+        const res = await fetch('/api/visibility');
+        const data = await res.json();
+        if (data.success && data.configs) {
+          const role = activeUser?.role || 'Normal User';
+          const roleCfg = data.configs[role];
+          if (roleCfg?.a2_elements?.disabled_graphs) {
+            setDisabledGraphs(roleCfg.a2_elements.disabled_graphs);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load visibility in private-api setup:', err);
+      }
+    }
+    loadVisibility();
+  }, [activeUser?.role]);
+
+  // Filter IMPLEMENTED_METRICS according to Super Admin Visibility
+  const visibleMetrics = React.useMemo(() => {
+    return IMPLEMENTED_METRICS.filter((m) => {
+      if (disabledGraphs && disabledGraphs.length > 0) {
+        if (disabledGraphs.includes(m.id) || disabledGraphs.includes(m.name)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [disabledGraphs]);
+
+  // Group visible metrics by category
+  const categories = React.useMemo(() => {
+    return Array.from(new Set(visibleMetrics.map((m) => m.category)));
+  }, [visibleMetrics]);
+
+  // If suiteIdParam is present, fetch existing suite details for editing
+  useEffect(() => {
+    if (!suiteIdParam) return;
+    setIsEditMode(true);
+
+    async function loadSuite() {
+      try {
+        const res = await fetch(`/api/private-api?suiteId=${encodeURIComponent(suiteIdParam!)}`);
+        const data = await res.json();
+        if (data.success && data.suite) {
+          const s = data.suite;
+          setSuiteName(s.name);
+          setSetupMode(s.suite_type || 'cloud_aws');
+          setSelectedCloudCsp(s.csp_provider || 'AWS');
+
+          try {
+            const endpoints = JSON.parse(s.endpoints_json);
+            if (Array.isArray(endpoints)) {
+              setSelectedMetrics(endpoints.map((ep: any) => ep.id));
+              if (endpoints[0]?.region) setAwsRegion(endpoints[0].region);
+              if (endpoints[0]?.endpoint && s.suite_type === 'custom_url') {
+                setCustomEndpointUrl(endpoints[0].endpoint);
+              }
+            }
+          } catch {
+            // ignore JSON parse error
+          }
+        }
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Failed to load existing suite.');
+      }
+    }
+
+    loadSuite();
+  }, [suiteIdParam]);
 
   const toggleMetric = (id: string) => {
     setSelectedMetrics((prev) =>
@@ -81,20 +150,22 @@ export default function PrivateApiSetupPage() {
     try {
       let endpoints: any[] = [];
       if (setupMode === 'cloud_aws') {
-        endpoints = AWS_METRIC_TEMPLATES.flatMap((group) =>
-          group.metrics.filter((m) => selectedMetrics.includes(m.id))
-        ).map((m) => ({
+        endpoints = IMPLEMENTED_METRICS.filter((m) => selectedMetrics.includes(m.id)).map((m) => ({
           id: m.id,
           name: m.name,
-          endpoint: m.defaultEndpoint,
+          category: m.category,
+          unit: m.unit,
+          endpoint: m.sampleApiUrl,
           region: awsRegion,
-          intervalSeconds: 15,
+          intervalSeconds: m.expectedIntervalSeconds,
         }));
       } else if (setupMode === 'custom_url') {
         endpoints = [
           {
             id: `custom_${Date.now()}`,
             name: suiteName,
+            category: 'Custom Microservice',
+            unit: 'ms',
             endpoint: customEndpointUrl || 'https://api.internal/health',
             region: 'global',
             intervalSeconds: 15,
@@ -105,6 +176,8 @@ export default function PrivateApiSetupPage() {
           {
             id: `file_${Date.now()}`,
             name: `${suiteName} (Imported Manifest)`,
+            category: 'Manifest Telemetry',
+            unit: 'ms',
             endpoint: 'https://manifest.internal/batch-health',
             region: 'us-east-1',
             intervalSeconds: 30,
@@ -112,32 +185,68 @@ export default function PrivateApiSetupPage() {
         ];
       }
 
+      const method = isEditMode ? 'PUT' : 'POST';
+      const payload: any = {
+        suiteId: suiteIdParam,
+        userEmail: activeUser.email,
+        name: suiteName,
+        suiteType: setupMode,
+        cspProvider: selectedCloudCsp,
+        serviceCategory: 'Cloud Compute & Infrastructure',
+        endpoints,
+      };
+
       const res = await fetch('/api/private-api', {
-        method: 'POST',
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userEmail: activeUser.email,
-          name: suiteName,
-          suiteType: setupMode,
-          cspProvider: selectedCloudCsp,
-          serviceCategory: 'AWS Compute & Infrastructure',
-          endpoints,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
       if (data.success) {
-        setSuccessMessage('Private API suite successfully registered and monitoring initiated!');
+        setSuccessMessage(
+          isEditMode
+            ? 'Private API suite updated successfully!'
+            : 'Private API suite successfully registered and monitoring initiated!'
+        );
         setTimeout(() => {
-          router.push('/demo');
-        }, 1800);
+          router.push('/console');
+        }, 1500);
       } else {
-        setErrorMessage(data.error || 'Failed to create suite.');
+        setErrorMessage(data.error || 'Failed to save suite.');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Network error.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteSuite = async () => {
+    if (!suiteIdParam) return;
+    if (!window.confirm('Are you sure you want to delete this private API suite?')) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/private-api?suiteId=${encodeURIComponent(suiteIdParam)}&email=${encodeURIComponent(
+          activeUser.email
+        )}`,
+        { method: 'DELETE' }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setSuccessMessage('Private API suite successfully removed.');
+        setTimeout(() => {
+          router.push('/console');
+        }, 1000);
+      } else {
+        setErrorMessage(data.error || 'Failed to delete suite.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Delete operation failed.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -148,7 +257,7 @@ export default function PrivateApiSetupPage() {
         <div className="w-full px-6 sm:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/demo')}
+              onClick={() => router.push('/console')}
               className="p-2 rounded-full hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
               title="Back to Observatory"
             >
@@ -156,21 +265,36 @@ export default function PrivateApiSetupPage() {
             </button>
             <div className="flex items-center gap-2.5">
               <img src="/infra_trace_logo.png" alt="InfraTrace" className="w-8 h-8 object-contain" />
-              <span className="text-lg font-bold text-slate-900">Add New Private API Suite</span>
+              <span className="text-lg font-bold text-slate-900">
+                {isEditMode ? 'Edit Private API Suite' : 'Add New Private API Suite'}
+              </span>
             </div>
           </div>
 
-          <button
-            onClick={() => router.push('/demo')}
-            className="px-4 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+          <div className="flex items-center gap-2">
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={handleDeleteSuite}
+                disabled={isDeleting}
+                className="px-4 py-2 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isDeleting ? 'Deleting...' : 'Delete Suite'}</span>
+              </button>
+            )}
+            <button
+              onClick={() => router.push('/console')}
+              className="px-4 py-2 rounded-full border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Full-Width Main Content */}
-      <main className="w-full px-6 sm:px-12 py-8 flex-1 space-y-6">
+      <main className="w-full px-6 sm:px-12 py-8 flex-1 space-y-6 max-w-6xl mx-auto">
         {successMessage && (
           <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-3 animate-in fade-in shadow-2xs">
             <Check className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -190,9 +314,12 @@ export default function PrivateApiSetupPage() {
             {/* Section 1: Suite Identification */}
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Private API Suite Identification</h2>
+                <h2 className="text-lg font-bold text-slate-900">
+                  {isEditMode ? 'Edit Suite Settings & Owner' : 'Private API Suite Identification'}
+                </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Define an identifier and operational scope for this private telemetry suite.
+                  Define an identifier and operational scope for this private telemetry suite owned by{' '}
+                  <strong className="text-slate-700 font-mono" suppressHydrationWarning>{activeUser.email}</strong>.
                 </p>
               </div>
 
@@ -245,8 +372,10 @@ export default function PrivateApiSetupPage() {
                     <Cloud className="w-5 h-5 text-blue-600" />
                     {setupMode === 'cloud_aws' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
                   </div>
-                  <span className="text-sm font-bold">Cloud Provider APIs</span>
-                  <span className="text-xs text-slate-500 mt-1">Directly monitor AWS EC2, status checks, and CloudWatch metrics.</span>
+                  <span className="text-sm font-bold">Practical Metrics Suite</span>
+                  <span className="text-xs text-slate-500 mt-1">
+                    Select from shared practical metrics across Cloud, Containers, DB & Host.
+                  </span>
                 </button>
 
                 <button
@@ -285,13 +414,15 @@ export default function PrivateApiSetupPage() {
               </div>
             </div>
 
-            {/* Section 3: Cloud Provider & Telemetry Signals (When Cloud Provider is selected) */}
+            {/* Section 3: Shared Practical Metrics (Single Source of Truth) */}
             {setupMode === 'cloud_aws' && (
               <div className="pt-6 border-t border-slate-100 space-y-6">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Cloud Provider & Telemetry Signals</h2>
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Shared Telemetry Signals ({selectedMetrics.length} selected)
+                  </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Select target cloud platform and choose active telemetry and compute synthetic probes.
+                    Unified metric catalogue shared with Settings & Observatory. Select the telemetry signals to monitor in this suite.
                   </p>
                 </div>
 
@@ -313,16 +444,22 @@ export default function PrivateApiSetupPage() {
                   ))}
                 </div>
 
-                {/* AWS Metric Groups */}
-                {selectedCloudCsp === 'AWS' ? (
-                  <div className="space-y-6">
-                    {AWS_METRIC_TEMPLATES.map((group) => (
-                      <div key={group.category} className="space-y-3">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">
-                          {group.category}
-                        </span>
+                {/* Grouped Practical Metrics */}
+                <div className="space-y-6">
+                  {categories.map((category) => {
+                    const metricsInCat = visibleMetrics.filter((m) => m.category === category);
+                    return (
+                      <div key={category} className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            {category}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            {metricsInCat.length} practical metrics
+                          </span>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {group.metrics.map((metric) => {
+                          {metricsInCat.map((metric) => {
                             const isChecked = selectedMetrics.includes(metric.id);
                             return (
                               <div
@@ -344,14 +481,19 @@ export default function PrivateApiSetupPage() {
                                   {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <span className="text-sm font-semibold text-slate-900 block">
-                                    {metric.name}
-                                  </span>
+                                  <div className="flex items-center justify-between gap-1">
+                                    <span className="text-sm font-semibold text-slate-900 truncate">
+                                      {metric.name}
+                                    </span>
+                                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">
+                                      {metric.unit}
+                                    </span>
+                                  </div>
                                   <span className="text-xs text-slate-500 block mt-0.5 leading-relaxed">
                                     {metric.description}
                                   </span>
                                   <span className="text-[11px] font-mono text-slate-400 block mt-1.5 truncate">
-                                    Endpoint: {metric.defaultEndpoint}
+                                    Target: {metric.sampleApiUrl}
                                   </span>
                                 </div>
                               </div>
@@ -359,16 +501,9 @@ export default function PrivateApiSetupPage() {
                           })}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-8 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
-                    <span className="text-sm font-bold text-slate-700">{selectedCloudCsp} Monitoring Pipeline</span>
-                    <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                      {selectedCloudCsp} metrics acceptance templates are being synchronized. Please select AWS for the active compute acceptance suite.
-                    </p>
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -383,8 +518,12 @@ export default function PrivateApiSetupPage() {
                 </div>
                 <div className="border-2 border-dashed border-slate-300 rounded-2xl p-10 bg-slate-50/70 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-100/70 transition-colors">
                   <FileCode className="w-12 h-12 text-slate-400 mb-3" />
-                  <span className="text-sm font-bold text-slate-800">Click to select or drag and drop health manifest</span>
-                  <span className="text-xs text-slate-500 mt-1 max-w-md">Accepts .json files containing endpoint definitions or .csv files with columns (name, endpoint, interval_seconds).</span>
+                  <span className="text-sm font-bold text-slate-800">
+                    Click to select or drag and drop health manifest
+                  </span>
+                  <span className="text-xs text-slate-500 mt-1 max-w-md">
+                    Accepts .json files containing endpoint definitions or .csv files with columns (name, endpoint, interval_seconds).
+                  </span>
                 </div>
               </div>
             )}
@@ -454,7 +593,7 @@ export default function PrivateApiSetupPage() {
             <div className="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => router.push('/demo')}
+                onClick={() => router.push('/console')}
                 className="px-5 py-2.5 rounded-full border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Cancel
@@ -464,13 +603,29 @@ export default function PrivateApiSetupPage() {
                 disabled={isSubmitting}
                 className="px-7 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-75"
               >
-                <Plus className="w-4 h-4" />
-                <span>{isSubmitting ? 'Creating Suite...' : 'Create & Monitor Suite'}</span>
+                {isEditMode ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                <span>
+                  {isSubmitting
+                    ? isEditMode
+                      ? 'Saving Suite Changes...'
+                      : 'Creating Suite...'
+                    : isEditMode
+                    ? 'Save Suite Changes'
+                    : 'Create & Monitor Suite'}
+                </span>
               </button>
             </div>
           </div>
         </form>
       </main>
     </div>
+  );
+}
+
+export default function PrivateApiSetupPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500 font-sans">Loading Suite Editor...</div>}>
+      <PrivateApiSetupForm />
+    </Suspense>
   );
 }

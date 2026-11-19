@@ -30,7 +30,8 @@ import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_qu
 import { MessageSquare, Video, Plus, Cloud } from 'lucide-react';
 import { InspectView } from '@/frontend/box/inspect/box4';
 import { DeliveryView } from '@/frontend/box/delivery/box4';
-import { getActiveAccount, UserAccount, DEFAULT_TEST_USER, syncSessionFromServer } from '@/lib/auth/accounts_manager';
+import { getActiveAccount, UserAccount, DEFAULT_TEST_USER, syncSessionFromServer, canManageUsers, isDefaultAdmin, isSuperAdmin, DEFAULT_ADMIN_EMAIL } from '@/lib/auth/accounts_manager';
+import { Lock } from 'lucide-react';
 
 interface ObservatoryGmailLayoutProps {
   onNavigateLanding?: () => void;
@@ -38,7 +39,7 @@ interface ObservatoryGmailLayoutProps {
 
 export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLayoutProps) {
   const [activeAccount, setActiveAccountState] = useState<UserAccount>(DEFAULT_TEST_USER);
-  const [activeRailTab, setActiveRailTab] = useState<RailTab>('demo');
+  const [activeRailTab, setActiveRailTab] = useState<RailTab>('chat');
   const [demoSubView, setDemoSubView] = useState<DemoSubView>('dashboard');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [activeMetricsCategory, setActiveMetricsCategory] = useState<MetricsCategory>('Cloud');
@@ -46,19 +47,90 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   const [activeUserSection, setActiveUserSection] = useState<UserSection>('accounts');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [visibilityConfigs, setVisibilityConfigs] = useState<Record<string, any>>({});
+
+  // Dynamic role-based visibility configurations
+  useEffect(() => {
+    const fetchVisibilityConfigs = async () => {
+      try {
+        const res = await fetch('/api/visibility');
+        const data = await res.json();
+        if (data.success && data.configs) {
+          setVisibilityConfigs(data.configs);
+        }
+      } catch (err) {
+        console.error('Failed to load visibility configs:', err);
+      }
+    };
+
+    fetchVisibilityConfigs();
+
+    const handleVisibilityUpdate = () => {
+      fetchVisibilityConfigs();
+    };
+
+    window.addEventListener('infratrace_visibility_updated', handleVisibilityUpdate);
+    return () => {
+      window.removeEventListener('infratrace_visibility_updated', handleVisibilityUpdate);
+    };
+  }, []);
+
+  // Compute active role visibility
+  const effectiveRole = isSuperAdmin(activeAccount)
+    ? 'Super Admin'
+    : (activeAccount.role === 'Admin' ? 'Admin' : 'Normal User');
+
+  const currentRoleConfig = visibilityConfigs[effectiveRole];
+  const allowedA1Tabs = currentRoleConfig?.a1_tabs as RailTab[] | undefined;
+  const allowedA2Elements = currentRoleConfig?.a2_elements as Record<string, string[]> | undefined;
 
   // Browser History & Back button synchronization + Session sync
   useEffect(() => {
-    setActiveAccountState(getActiveAccount());
+    const initialAccount = getActiveAccount();
+    setActiveAccountState(initialAccount);
+
+    if (typeof window !== 'undefined') {
+      const isDemoUser = initialAccount?.role === 'Demo';
+      if (!isDemoUser && window.location.pathname === '/demo') {
+        window.history.replaceState(null, '', '/console' + window.location.search);
+      }
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab') as RailTab | null;
+      const viewParam = urlParams.get('view') as DemoSubView | null;
+      if (tabParam) {
+        if (tabParam === 'demo' && initialAccount.role !== 'Demo') {
+          setActiveRailTab('chat');
+        } else if (tabParam === 'users' && !canManageUsers(initialAccount)) {
+          setActiveRailTab('chat');
+        } else {
+          setActiveRailTab(tabParam);
+        }
+      } else if (initialAccount.role === 'Demo') {
+        setActiveRailTab('demo');
+      } else {
+        setActiveRailTab('chat');
+      }
+      if (viewParam) setDemoSubView(viewParam);
+    }
+
     syncSessionFromServer().then((user) => {
       if (user) {
         setActiveAccountState(user);
+        if (user.role === 'Demo') {
+          setActiveRailTab('demo');
+        } else {
+          setActiveRailTab((prev) => {
+            if (prev === 'demo') return 'chat';
+            if (prev === 'users' && !canManageUsers(user)) return 'chat';
+            return prev;
+          });
+          setActiveUserSection((prevSec) => {
+            if (prevSec === 'visibility' && !isSuperAdmin(user)) return 'accounts';
+            return prevSec;
+          });
+        }
       }
     });
-
-    if (typeof window !== 'undefined' && !window.history.state) {
-      window.history.replaceState({ tab: 'demo', subView: 'dashboard' }, '');
-    }
 
     const handlePopState = (e: PopStateEvent) => {
       if (e.state) {
@@ -72,18 +144,27 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
   }, []);
 
   const navigateTab = (newTab: RailTab) => {
+    if (activeAccount.role === 'Demo' && newTab !== 'demo') return;
+    if (newTab === 'demo' && activeAccount.role !== 'Demo') return;
+    if (newTab === 'users' && !canManageUsers(activeAccount)) return;
     setActiveRailTab(newTab);
     if (typeof window !== 'undefined') {
-      window.history.pushState({ tab: newTab, subView: demoSubView }, '', `?tab=${newTab}`);
+      const basePath = activeAccount.role === 'Demo' ? '/demo' : '/console';
+      window.history.pushState({ tab: newTab, subView: demoSubView }, '', `${basePath}?tab=${newTab}`);
     }
   };
 
   const navigateDemoSubView = (newView: DemoSubView) => {
     setDemoSubView(newView);
     if (typeof window !== 'undefined') {
-      window.history.pushState({ tab: 'demo', subView: newView }, '', `?tab=demo&view=${newView}`);
+      const basePath = activeAccount.role === 'Demo' ? '/demo' : '/console';
+      const tabParam = activeAccount.role === 'Demo' ? 'demo' : 'chat';
+      window.history.pushState({ tab: tabParam, subView: newView }, '', `${basePath}?tab=${tabParam}&view=${newView}`);
     }
   };
+
+  // Mail Folder Navigation (Inbox vs Phases / Rounds)
+  const [activeMailFolder, setActiveMailFolder] = useState<'inbox' | 'phases'>('inbox');
 
   // Flexbox Boundaries Visibility (Default: false as requested)
   const [showFlexboxBorders, setShowFlexboxBorders] = useState(false);
@@ -245,6 +326,9 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
           onSelectTab={navigateTab}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
           hasWallpaper={hasWallpaper}
+          userRole={activeAccount.role}
+          canManageUsers={canManageUsers(activeAccount)}
+          allowedA1Tabs={allowedA1Tabs}
         />
       </div>
 
@@ -277,6 +361,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
             }}
             isSettingsOpen={isQuickSettingsOpen}
             onOpenAccountMenu={() => {
+              if (activeAccount.role === 'Demo') return;
               setIsAccountFlyoutOpen((prev) => !prev);
               setIsQuickSettingsOpen(false);
             }}
@@ -287,7 +372,8 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
             hasWallpaper={hasWallpaper}
             onNavigateLanding={onNavigateLanding}
             onNavigatePrivateApi={() => window.location.href = '/private-api'}
-            userAvatarUrl={activeAccount.avatarUrl || '/infra_trace_logo.png'}
+            userAvatarUrl={activeAccount.profilePicture || activeAccount.avatarUrl || '/infra_trace_logo.png'}
+            isDemoMode={activeAccount.role === 'Demo'}
           />
         </div>
 
@@ -354,7 +440,17 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   setActiveMetricsSuboption(subId);
                 }}
                 activeUserSection={activeUserSection}
-                onSelectUserSection={setActiveUserSection}
+                onSelectUserSection={(sec) => {
+                  if (sec === 'visibility' && !isSuperAdmin(activeAccount)) {
+                    setActiveUserSection('accounts');
+                    return;
+                  }
+                  setActiveUserSection(sec);
+                }}
+                isSuperAdmin={isSuperAdmin(activeAccount)}
+                allowedA2Elements={allowedA2Elements}
+                activeMailFolder={activeMailFolder}
+                onSelectMailFolder={setActiveMailFolder}
               />
             </div>
           )}
@@ -376,7 +472,7 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   : 'border-[#e0e2ec] bg-white shadow-sm'
               }`}
             >
-              {activeRailTab === 'demo' ? (
+              {(activeRailTab === 'demo' || activeRailTab === 'chat') ? (
                 <ObservatoryTelemetryEmbeddedView
                   services={services}
                   summary={summary}
@@ -406,105 +502,40 @@ export function ObservatoryGmailLayout({ onNavigateLanding }: ObservatoryGmailLa
                   searchQuery={searchQuery}
                   onSelectSuboption={setActiveMetricsSuboption}
                   userEmail={activeAccount.email}
+                  disabledGraphs={allowedA2Elements?.disabled_graphs}
                 />
               ) : activeRailTab === 'users' ? (
-                <ObservatoryUsersDatabaseView
-                  activeSection={activeUserSection}
-                  density={density}
-                  hasWallpaper={hasWallpaper}
-                />
+                canManageUsers(activeAccount) ? (
+                  <ObservatoryUsersDatabaseView
+                    activeSection={activeUserSection}
+                    density={density}
+                    hasWallpaper={hasWallpaper}
+                    isSuperAdmin={isSuperAdmin(activeAccount)}
+                  />
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50">
+                    <div className="w-16 h-16 rounded-2xl bg-rose-100 border border-rose-200 flex items-center justify-center mb-4 text-rose-600">
+                      <Lock className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">Access Denied: Admin Privileges Required</h3>
+                    <p className="text-sm text-slate-600 max-w-md leading-relaxed mb-6">
+                      Your account (<strong>{activeAccount.email}</strong>) has role <strong>{activeAccount.role || 'Normal User'}</strong> without the <code>U-MGT</code> permission. Only Administrators authorized by <strong>{DEFAULT_ADMIN_EMAIL}</strong> can manage users.
+                    </p>
+                    <button
+                      onClick={() => navigateTab('chat')}
+                      className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-colors cursor-pointer"
+                    >
+                      Return to Console
+                    </button>
+                  </div>
+                )
               ) : activeRailTab === 'mail' ? (
-                <GmailInboxView density={density} hasWallpaper={hasWallpaper} userEmail={activeAccount.email} />
+                <GmailInboxView density={density} hasWallpaper={hasWallpaper} userEmail={activeAccount.email} activeMailFolder={activeMailFolder} onSelectMailFolder={setActiveMailFolder} />
               ) : activeRailTab === 'inspect' ? (
                 <InspectView />
               ) : activeRailTab === 'delivery' ? (
                 <DeliveryView />
-              ) : activeRailTab === 'chat' ? (
-                <div
-                  className={`flex-1 flex flex-col h-full ${
-                    hasWallpaper ? 'bg-transparent' : 'bg-slate-50/60'
-                  } overflow-y-auto font-sans select-text w-full p-4 md:p-6 space-y-4`}
-                >
-                  {/* 1. Overview Metrics Bar */}
-                  <section className="space-y-2.5 w-full">
-                    <div className="flex items-center justify-between pb-1">
-                      <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                        System Telemetry Overview
-                      </h2>
-                    </div>
-                    <SystemOverviewMetricsBarContainer
-                      total={0}
-                      healthy={0}
-                      degraded={0}
-                      down={0}
-                      activeAlerts={0}
-                      onSelectIncidents={() => {
-                        setActiveRailTab('demo');
-                        setDemoSubView('incidents');
-                      }}
-                      onSelectStatusFilter={(filter) => {
-                        setActiveRailTab('demo');
-                        setDemoSubView('dashboard');
-                        setStatusFilter(filter);
-                      }}
-                    />
-                  </section>
-
-                  {/* 2. Interactive Chaos Injection Panel (Box A) & Outage Notifications (Box B) Side-by-Side */}
-                  <section className="w-full flex flex-col md:flex-row gap-4">
-                    {/* Box A: Chaos Injection Panel (Console Standalone) */}
-                    <div className="w-full md:w-80 lg:w-96 shrink-0">
-                      <ChaosTestingControlPanelContainer onChaosTriggered={() => {}} />
-                    </div>
-
-                    {/* Box B: Outage Notifications (Console has zero active outages since no endpoints configured) */}
-                    <div className="flex-1 flex flex-col justify-between bg-white border border-slate-200/90 rounded-xl p-4 shadow-2xs">
-                      <div>
-                        {/* Header with Title and Severity Legend */}
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-sans font-bold text-sm text-slate-900 tracking-tight">
-                              Outage Notifications
-                            </h3>
-                          </div>
-
-                          <div className="flex items-center gap-3 text-xs font-semibold text-slate-500">
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-amber-500" />
-                              <span>Warning</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-rose-500" />
-                              <span>Critical</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Active Outages List */}
-                        <div className="mt-2.5 space-y-2">
-                          <div className="py-6 text-center text-xs text-slate-500 font-medium">
-                            Zero active outages &mdash; all monitored endpoints operating normally.
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Footer link: more */}
-                      <div className="pt-2 border-t border-slate-100 flex justify-end">
-                        <button
-                          onClick={() => {
-                            setActiveRailTab('demo');
-                            setDemoSubView('incidents');
-                          }}
-                          className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
-                        >
-                          more
-                        </button>
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Rest of the screen is kept empty, no extra boxes */}
-                </div>
+              
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#5e5e5e] space-y-4">
                   <div className="w-16 h-16 rounded-full bg-[#eaf1fb] flex items-center justify-center text-[#0b57d0]">

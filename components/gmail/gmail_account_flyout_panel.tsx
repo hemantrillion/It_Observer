@@ -1,8 +1,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { X, ChevronUp, ChevronDown, Plus, LogOut, Check } from 'lucide-react';
-import { UserAccount, getStoredAccounts, getActiveAccount, setActiveAccount, removeAccount, clearAllAccounts, signOutActiveAccount } from '@/lib/auth/accounts_manager';
+import { X, LogOut } from 'lucide-react';
+import {
+  UserAccount,
+  getActiveAccount,
+  removeAccount,
+  signOutActiveAccount,
+} from '@/lib/auth/accounts_manager';
 
 interface GmailAccountFlyoutPanelProps {
   isOpen: boolean;
@@ -18,19 +23,13 @@ export function GmailAccountFlyoutPanel({
   onClose,
   onNavigateLanding,
   onNavigateAccount,
-  onNavigateAddAccount,
-  onAccountChanged,
 }: GmailAccountFlyoutPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [accounts, setAccounts] = useState<UserAccount[]>([]);
   const [activeUser, setActiveUserState] = useState<UserAccount>(getActiveAccount());
-  const [showAccountList, setShowAccountList] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      const all = getStoredAccounts();
       const current = getActiveAccount();
-      setAccounts(all);
       setActiveUserState(current);
     }
   }, [isOpen]);
@@ -60,48 +59,24 @@ export function GmailAccountFlyoutPanel({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // Demo sessions should never open this account flyout box
+  if (!isOpen || activeUser.role === 'Demo') return null;
 
-  const handleSwitchAccount = (acc: UserAccount) => {
-    setActiveAccount(acc);
-    setActiveUserState(acc);
-    onAccountChanged?.(acc);
-    onClose();
-  };
-
-  const handleSignOutSingle = async () => {
-    const nextAcc = removeAccount(activeUser.email);
-    if (nextAcc) {
-      setActiveUserState(nextAcc);
-      onAccountChanged?.(nextAcc);
-      onClose();
-    } else {
-      await signOutActiveAccount();
-      onClose();
-      if (onNavigateLanding) {
-        onNavigateLanding();
-      } else {
-        window.location.href = '/signin';
-      }
-    }
-  };
-
-  const handleSignOutAll = async () => {
+  const handleSignOut = async () => {
+    removeAccount(activeUser.email);
     await signOutActiveAccount();
     onClose();
     if (onNavigateLanding) {
       onNavigateLanding();
     } else {
-      window.location.href = '/signin';
+      window.location.href = '/';
     }
   };
-
-  const otherAccounts = accounts.filter((a) => a.email.toLowerCase() !== activeUser.email.toLowerCase());
 
   return (
     <div
       ref={panelRef}
-      className="absolute top-16 right-4 z-50 w-[360px] bg-white text-slate-900 rounded-[28px] shadow-2xl border border-slate-200/90 p-4 space-y-3 font-sans select-none animate-in fade-in slide-in-from-top-2 duration-150"
+      className="absolute top-16 right-4 z-50 w-[340px] bg-white text-slate-900 rounded-[28px] shadow-2xl border border-slate-200/90 p-4 space-y-3 font-sans select-none animate-in fade-in slide-in-from-top-2 duration-150"
     >
       {/* Top Header with Close (X) button */}
       <div className="flex items-center justify-between px-2 pt-0.5">
@@ -116,124 +91,45 @@ export function GmailAccountFlyoutPanel({
         </button>
       </div>
 
-      {/* Main Account Info & Account Actions Container */}
+      {/* Main Single Account Card */}
       <div className="bg-slate-50/80 rounded-2xl overflow-hidden divide-y divide-slate-100 border border-slate-200/80 shadow-2xs">
-        {/* Active Profile Card Row */}
-        <div className="p-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Circular Avatar with user avatar or InfraTrace logo */}
-            <div className="relative shrink-0">
-              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs overflow-hidden border border-slate-200">
-                <img
-                  src={activeUser.profilePicture || activeUser.avatarUrl || '/infra_trace_logo.png'}
-                  alt={activeUser.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Name & Email Address */}
-            <div className="flex flex-col min-w-0">
-              <span className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight truncate">
-                {activeUser.name}
-              </span>
-              <span className="text-xs text-slate-500 font-normal truncate max-w-[175px] mt-0.5">
-                {activeUser.email}
-              </span>
-              {activeUser.authProvider === 'google' && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                    Google Account
-                  </span>
-                </div>
-              )}
-            </div>
+        {/* Active Profile Card */}
+        <div className="p-4 flex items-center gap-3.5">
+          {/* Circular Avatar */}
+          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs overflow-hidden border border-slate-200 shrink-0">
+            <img
+              src={activeUser.profilePicture || activeUser.avatarUrl || '/avatars/hemant_kumar.jpg'}
+              alt={activeUser.name}
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover"
+            />
           </div>
 
-          {/* Toggle other accounts accordion */}
-          {otherAccounts.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowAccountList(!showAccountList)}
-              className="w-8 h-8 rounded-full bg-slate-200/60 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-              title={showAccountList ? 'Hide other accounts' : 'Show other accounts'}
-            >
-              {showAccountList ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-            </button>
-          )}
+          {/* Name & Email */}
+          <div className="flex flex-col min-w-0">
+            <span className="text-[15px] font-semibold text-slate-900 tracking-tight leading-tight truncate">
+              {activeUser.name}
+            </span>
+            <span className="text-xs text-slate-500 font-normal truncate max-w-[220px] mt-0.5">
+              {activeUser.email}
+            </span>
+          </div>
         </div>
 
-        {/* Other Accounts List (when expanded) */}
-        {showAccountList && otherAccounts.length > 0 && (
-          <div className="bg-slate-100/60 divide-y divide-slate-200/60 max-h-48 overflow-y-auto">
-            {otherAccounts.map((acc) => (
-              <div
-                key={acc.email}
-                onClick={() => handleSwitchAccount(acc)}
-                className="p-3 flex items-center justify-between hover:bg-slate-200/50 cursor-pointer transition-colors"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center overflow-hidden border border-slate-200 shrink-0">
-                    <img src={acc.avatarUrl || '/infra_trace_logo.png'} alt={acc.name} className="w-5 h-5 object-contain" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-semibold text-slate-800 truncate">{acc.name}</span>
-                    <span className="text-[11px] text-slate-500 truncate">{acc.email}</span>
-                  </div>
-                </div>
-                <span className="text-xs text-blue-600 font-medium shrink-0">Switch</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Action: Add another account */}
+        {/* Action: Single Sign out button (only one account in browser at a time) */}
         <button
           type="button"
-          onClick={() => {
-            onClose();
-            if (onNavigateAddAccount) {
-              onNavigateAddAccount();
-            } else {
-              window.location.href = '/?mode=add_account';
-            }
-          }}
-          className="w-full px-4 py-3 flex items-center gap-3.5 hover:bg-slate-100/70 text-slate-700 text-sm font-medium transition-colors text-left cursor-pointer"
-        >
-          <div className="w-7 h-7 rounded-full bg-slate-200/80 flex items-center justify-center text-slate-700 shrink-0">
-            <Plus className="w-4 h-4" />
-          </div>
-          <span>Add another account</span>
-        </button>
-
-        {/* Action: Sign out of this account */}
-        <button
-          type="button"
-          onClick={handleSignOutSingle}
-          className="w-full px-4 py-2.5 flex items-center gap-3.5 hover:bg-slate-100/70 text-slate-700 text-sm font-medium transition-colors text-left cursor-pointer"
+          onClick={handleSignOut}
+          className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-100/70 text-slate-700 text-sm font-medium transition-colors text-left cursor-pointer"
         >
           <div className="w-7 h-7 rounded-full bg-slate-200/80 flex items-center justify-center text-slate-700 shrink-0">
             <LogOut className="w-4 h-4" />
           </div>
           <span>Sign out of this account</span>
         </button>
-
-        {/* Action: Sign out of all accounts */}
-        {accounts.length > 1 && (
-          <button
-            type="button"
-            onClick={handleSignOutAll}
-            className="w-full px-4 py-2.5 flex items-center gap-3.5 hover:bg-rose-50 text-rose-600 text-xs font-semibold transition-colors text-left cursor-pointer"
-          >
-            <div className="w-7 h-7 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-              <LogOut className="w-4 h-4" />
-            </div>
-            <span>Sign out of all accounts</span>
-          </button>
-        )}
       </div>
 
-      {/* Manage your Account button with InfraTrace logo */}
+      {/* Manage your Account button */}
       <button
         type="button"
         onClick={() => {
@@ -244,18 +140,18 @@ export function GmailAccountFlyoutPanel({
             window.location.href = '/account';
           }
         }}
-        className="w-full py-3 px-4 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/90 flex items-center gap-3 text-slate-800 text-sm font-semibold transition-colors cursor-pointer shadow-xs"
+        className="w-full py-2.5 px-4 rounded-full bg-slate-50 hover:bg-slate-100 border border-slate-200/90 flex items-center justify-center gap-2.5 text-slate-800 text-xs sm:text-sm font-semibold transition-colors cursor-pointer shadow-xs"
       >
         <img
           src="/infra_trace_logo.png"
           alt="InfraTrace"
-          className="w-5 h-5 object-contain shrink-0"
+          className="w-4 h-4 object-contain shrink-0"
         />
         <span className="truncate">Manage your Account</span>
       </button>
 
       {/* Footer Links */}
-      <div className="pt-1 pb-0.5 flex items-center justify-center gap-2 text-xs text-slate-400">
+      <div className="pt-1 pb-0.5 flex items-center justify-center gap-2 text-[11px] text-slate-400">
         <a href="#" className="hover:underline hover:text-slate-600 transition-colors">
           Privacy Policy
         </a>

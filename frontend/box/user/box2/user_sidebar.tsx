@@ -8,17 +8,21 @@ interface UserSidebarProps {
   activeSection: UserSection;
   onSelectSection: (s: UserSection) => void;
   hasWallpaper?: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export function UserSidebar({
   activeSection,
   onSelectSection,
   hasWallpaper = false,
+  isSuperAdmin = false,
 }: UserSidebarProps) {
   const userSections: { id: UserSection; label: string; icon: React.ElementType }[] = [
     { id: 'accounts', label: 'User Accounts', icon: Users },
+    { id: 'permissions', label: 'Permissions', icon: ShieldCheck },
+    ...(isSuperAdmin ? [{ id: 'visibility' as UserSection, label: 'Visibility', icon: ShieldCheck }] : []),
     { id: 'websites', label: 'Monitored Websites', icon: Globe },
-    { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
+    { id: 'roles', label: 'Roles Matrix', icon: ShieldCheck },
     { id: 'apikeys', label: 'API Keys & Webhooks', icon: Key },
     { id: 'audit', label: 'User Audit Logs', icon: FileText },
   ];

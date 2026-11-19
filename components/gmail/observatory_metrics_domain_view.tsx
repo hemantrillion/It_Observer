@@ -28,6 +28,7 @@ interface ObservatoryMetricsDomainViewProps {
   searchQuery?: string;
   onSelectSuboption?: (subId: string) => void;
   userEmail?: string;
+  disabledGraphs?: string[];
 }
 
 const TIME_RANGES = [
@@ -47,6 +48,7 @@ export function ObservatoryMetricsDomainView({
   searchQuery = '',
   onSelectSuboption,
   userEmail = 'xyztestuser@gmail.com',
+  disabledGraphs,
 }: ObservatoryMetricsDomainViewProps) {
   // Category Metadata from Excel Catalogue
   const meta = useMemo(() => getCategoryMetadata(activeCategory), [activeCategory]);
@@ -54,6 +56,24 @@ export function ObservatoryMetricsDomainView({
   // Active sub-tab state (e.g. AWS, Azure, Cloud Foundry, GCP)
   const defaultTab = meta.tabs[0]?.id || 'aws';
   const [activeTabId, setActiveTabId] = useState<string>(activeSuboption || defaultTab);
+
+  // Set of actively monitored IDs from database
+  const [monitoredIds, setMonitoredIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    async function loadMonitoredServices() {
+      try {
+        const res = await fetch('/api/services');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.services)) {
+          setMonitoredIds(new Set(data.services.map((s: any) => s.id)));
+        }
+      } catch (err) {
+        console.error('Failed to load monitored services in domain view:', err);
+      }
+    }
+    loadMonitoredServices();
+  }, []);
 
   // Time range selector state
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>('3h');
@@ -93,27 +113,33 @@ export function ObservatoryMetricsDomainView({
     return getCategoryMetricGroups(activeCategory, activeTabId);
   }, [activeCategory, activeTabId]);
 
-  // Apply search query filter if user typed in Box 3 top search bar
+  // Apply disabledGraphs filter and search query filter
   const metricGroups: MetricGroup[] = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return rawGroups;
 
     return rawGroups
       .map((group) => {
-        const filtered = group.metrics.filter(
-          (m) =>
+        const filtered = group.metrics.filter((m) => {
+          if (disabledGraphs && disabledGraphs.length > 0) {
+            if (disabledGraphs.includes(m.id) || disabledGraphs.includes(m.title)) {
+              return false;
+            }
+          }
+          if (!q) return true;
+          return (
             m.title.toLowerCase().includes(q) ||
             m.description.toLowerCase().includes(q) ||
             m.parentPath.toLowerCase().includes(q) ||
             m.sampleApi.toLowerCase().includes(q)
-        );
+          );
+        });
         return {
           ...group,
           metrics: filtered,
         };
       })
       .filter((group) => group.metrics.length > 0);
-  }, [rawGroups, searchQuery]);
+  }, [rawGroups, searchQuery, disabledGraphs]);
 
   const totalMetricsCount = useMemo(() => {
     return metricGroups.reduce((acc, g) => acc + g.metrics.length, 0);
@@ -223,27 +249,7 @@ export function ObservatoryMetricsDomainView({
           </div>
         )}
 
-        {userEmail && userEmail !== 'xyztestuser@gmail.com' ? (
-          <div className="p-12 text-center text-slate-500 bg-white border border-slate-200/90 rounded-2xl shadow-2xs space-y-4 max-w-xl mx-auto my-8">
-            <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-              <Cloud className="w-7 h-7" />
-            </div>
-            <div className="space-y-1">
-              <h4 className="text-base font-bold text-slate-900">No Private Metrics Configured Yet</h4>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Dummy metric graphs are hidden for real user accounts. Register your private API suite or AWS cloud endpoints to start capturing real-time metrics.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => window.location.href = '/private-api'}
-              className="px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-colors cursor-pointer shadow-xs inline-flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Private API Suite</span>
-            </button>
-          </div>
-        ) : metricGroups.length === 0 ? (
+        {metricGroups.length === 0 ? (
           <div className="p-12 text-center text-slate-500 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-2">
             <Filter className="w-8 h-8 text-slate-400 mx-auto" />
             <h4 className="text-sm font-bold text-slate-700">No matching metrics found</h4>
@@ -283,7 +289,12 @@ export function ObservatoryMetricsDomainView({
                 {!isCollapsed && (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
                     {group.metrics.map((metric) => (
-                      <MetricTelemetryChartCard key={metric.id} data={metric} />
+                      <MetricTelemetryChartCard
+                        key={metric.id}
+                        data={metric}
+                        userEmail={userEmail}
+                        isMonitored={monitoredIds.has(metric.id)}
+                      />
                     ))}
                   </div>
                 )}

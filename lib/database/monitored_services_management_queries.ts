@@ -7,6 +7,8 @@ export interface ServiceInput {
   target_type?: string;
   target_url?: string;
   check_interval_seconds?: number;
+  user_email?: string;
+  metric_type?: string;
 }
 
 export function isServiceMonitoredQuery(id: string): boolean {
@@ -34,9 +36,9 @@ export function addMonitoredServiceQuery(service: ServiceInput): boolean {
     INSERT INTO monitored_services (
       id, name, target_type, target_url, check_interval_seconds,
       current_status, latest_response_time_ms, uptime_percentage,
-      total_checks, failed_checks, last_checked_at
-    ) VALUES (?, ?, ?, ?, ?, 'HEALTHY', 45.0, 100.0, 1, 0, ?)
-  `).run(service.id, service.name, targetType, targetUrl, interval, now);
+      total_checks, failed_checks, last_checked_at, user_email, metric_type
+    ) VALUES (?, ?, ?, ?, ?, 'HEALTHY', 45.0, 100.0, 1, 0, ?, ?, ?)
+  `).run(service.id, service.name, targetType, targetUrl, interval, now, service.user_email || null, service.metric_type || null);
 
   // Insert initial baseline metric samples so Inspect graph renders immediately with time-series history
   const insertSample = db.prepare(`

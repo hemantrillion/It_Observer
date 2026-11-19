@@ -1,6 +1,96 @@
 {
   "Cloud": [
     {
+      "metric": "AWS Price List Service API",
+      "description": "Real-time hourly cost estimation per provisioned EC2 instance and S3 storage tier ($/hr, $/GB).",
+      "parent_path": "Cloud › AWS › Price List Service",
+      "api_info": "https://api.pricing.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS Cost Explorer API",
+      "description": "Fetches real-time daily infrastructure spend ($) and monthly forecasted running cost across EC2, S3, RDS, and bandwidth.",
+      "parent_path": "Cloud › AWS › Cost Explorer FinOps",
+      "api_info": "https://ce.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS RDS API",
+      "description": "Monitors managed database engine health, multi-AZ failovers, read replica replication lag (ms), and storage auto-scaling events.",
+      "parent_path": "Cloud › AWS › RDS Database Engine",
+      "api_info": "https://rds.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS EventBridge API",
+      "description": "Captures real-time cloud infrastructure state transitions and triggers instant incident dispatches.",
+      "parent_path": "Cloud › AWS › EventBridge State Router",
+      "api_info": "https://events.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS CloudTrail API",
+      "description": "Tracks administrative governance and audit logs (modifications to security groups, instance state changes, credential changes).",
+      "parent_path": "Cloud › AWS › CloudTrail Audit Events",
+      "api_info": "https://cloudtrail.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "count",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS CloudWatch Logs API",
+      "description": "Streams raw application error logs, unhandled exceptions, and fatal stack traces directly from the server.",
+      "parent_path": "Cloud › AWS › CloudWatch Logs Filter",
+      "api_info": "https://logs.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "count",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS CloudWatch Metrics API",
+      "description": "Fetches EC2 hypervisor CPU utilization (%), Application Load Balancer target response time (ms), live 5xx error spikes, and incoming request volume.",
+      "parent_path": "Cloud › AWS › CloudWatch Metrics Ingress",
+      "api_info": "https://monitoring.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "%",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS S3 Storage API",
+      "description": "Stores customer QR passes, business logos, and DBML backup archives; measures S3 asset upload/download latency (ms), total bucket storage consumption (Bytes), and 4xx/5xx object retrieval error rates.",
+      "parent_path": "Cloud › AWS › S3 Storage & Pass Bucket",
+      "api_info": "https://s3.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "AWS EC2 API",
+      "description": "Measures direct instance lifecycle states (running, stopping, terminated), system/instance status checks, and EBS volume attachment health.",
+      "parent_path": "Cloud › AWS › EC2 Lifecycle & Status",
+      "api_info": "https://ec2.us-east-1.amazonaws.com",
+      "requirements": "Managed by Amazon Web Services",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
       "metric": "EC2 CPU",
       "description": "Percent of the instance's allocated compute that is in use (CloudWatch CPUUtilization)",
       "parent_path": "Cloud › AWS › EC2",
@@ -1136,6 +1226,36 @@
     }
   ],
   "Containers": [
+    {
+      "metric": "Kubernetes Core API",
+      "description": "Tracks pod lifecycle events, CrashLoopBackOff restart counts, and pending scheduling states.",
+      "parent_path": "Containers › Kubernetes › Core Pod Lifecycle",
+      "api_info": "http://localhost:5001/api/v1/namespaces/default/pods",
+      "requirements": "Managed by Kubernetes Engine",
+      "unit": "count",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "Kubernetes Metrics Server API",
+      "description": "Measures pod CPU and RAM consumption inside the cluster.",
+      "parent_path": "Containers › Kubernetes › Metrics Server Ingress",
+      "api_info": "http://localhost:5001/apis/metrics.k8s.io/v1beta1/pods",
+      "requirements": "Managed by Kubernetes Engine",
+      "unit": "MB",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "Docker Engine Daemon API",
+      "description": "Measures container-level memory limits, memory RSS usage (MB), CPU shares, and container exit/crash codes (OOMKilled).",
+      "parent_path": "Containers › Docker › Engine Daemon Stats",
+      "api_info": "http://localhost:5001/containers/stats",
+      "requirements": "Managed by Docker Engine",
+      "unit": "MB",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
     {
       "metric": "Container running/stopped/restarting/unhealthy state",
       "description": "Current state of each container, including failing health checks",
@@ -2575,6 +2695,56 @@
     }
   ],
   "Infrastructure": [
+    {
+      "metric": "POST http://localhost:5001/chaos/recover",
+      "description": "Triggers service recovery, automatically resolving active incidents and logging downtime duration.",
+      "parent_path": "Infrastructure › Host Daemon & Chaos › Chaos Auto-Recovery Gate",
+      "api_info": "http://localhost:5001/chaos/recover",
+      "requirements": "Managed by InfraTrace Controlled Daemon",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST http://localhost:5001/chaos/lag",
+      "description": "Injects artificial latency spikes (e.g., 2500ms delay) to test latency threshold violation alerts.",
+      "parent_path": "Infrastructure › Host Daemon & Chaos › Chaos Latency Spike (2500ms)",
+      "api_info": "http://localhost:5001/chaos/lag",
+      "requirements": "Managed by InfraTrace Controlled Daemon",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST http://localhost:5001/chaos/down",
+      "description": "Injects deliberate service outage (forces HTTP 503 errors) to test InfraTrace incident detection.",
+      "parent_path": "Infrastructure › Host Daemon & Chaos › Chaos Outage Injection (503)",
+      "api_info": "http://localhost:5001/chaos/down",
+      "requirements": "Managed by InfraTrace Controlled Daemon",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GET http://localhost:5001/health",
+      "description": "Returns current host daemon simulated health state (HEALTHY, DOWN, or LAG).",
+      "parent_path": "Infrastructure › Host Daemon & Chaos › Simulated Health State",
+      "api_info": "http://localhost:5001/health",
+      "requirements": "Managed by InfraTrace Controlled Daemon",
+      "unit": "%",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GET http://localhost:5001/metrics",
+      "description": "Returns host OS CPU load (%), process memory RSS (MB), heap allocation, and Node.js event loop lag (ms).",
+      "parent_path": "Infrastructure › Host Daemon & Chaos › Host OS & Process Telemetry",
+      "api_info": "http://localhost:5001/metrics",
+      "requirements": "Managed by InfraTrace Controlled Daemon",
+      "unit": "MB",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
     {
       "metric": "CPU utilization overall",
       "description": "Percent of total CPU capacity in use",
@@ -4306,6 +4476,156 @@
   ],
   "Service": [
     {
+      "metric": "POST /api/private-apis & GET /api/private-apis",
+      "description": "Creates, edits, saves, and retrieves Private API Test Suites inside InfraTrace.",
+      "parent_path": "Service › Two-Way Integration › Private API Suites",
+      "api_info": "http://localhost:3000/api/private-apis",
+      "requirements": "Managed by InfraTrace Private API Engine",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GET /api/v1/dashboard/summary",
+      "description": "Exposes compact operational status data consumed by OQ's admin portal to embed a live health widget directly into OQ.",
+      "parent_path": "Service › Two-Way Integration › Outbound Health Summary",
+      "api_info": "http://localhost:3000/api/v1/dashboard/summary",
+      "requirements": "Managed by InfraTrace Outbound Integration",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/schema/migrate",
+      "description": "Automatically provisions and synchronizes tables, foreign keys, and indexes in the relational database from generated DBML; measures automated migration execution duration (ms).",
+      "parent_path": "Service › AI & Schema › Atlas/Prisma DDL Migration",
+      "api_info": "http://localhost:3001/api/schema/migrate",
+      "requirements": "Managed by Atlas & Prisma Engine",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/ai/translate-schema",
+      "description": "Translates natural spoken or typed Hindi/English descriptions into structured DBML blueprints; measures translation latency (ms), token generation rate (tokens/sec), and trade-packet rejection rate (%).",
+      "parent_path": "Service › AI & Schema › Ollama/Gemini Translation",
+      "api_info": "http://localhost:3001/api/ai/translate-schema",
+      "requirements": "Managed by Ollama & Gemini AI Engine",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/customer/pass/:id",
+      "description": "Generates authenticated digital passes and QR codes for customer entry.",
+      "parent_path": "Service › OQ Operations › Digital Pass & QR Entry Gate",
+      "api_info": "http://localhost:3001/api/customer/pass",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "PATCH /api/queue/token/:id/complete",
+      "description": "Completes an appointment session; logs total service duration (minutes).",
+      "parent_path": "Service › OQ Operations › Session Completion Duration",
+      "api_info": "http://localhost:3001/api/queue/token/complete",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "min",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "PATCH /api/queue/token/:id/call",
+      "description": "Station operator calls the next customer; tracks station turnaround time (ms).",
+      "parent_path": "Service › OQ Operations › Station Operator Call",
+      "api_info": "http://localhost:3001/api/queue/token/call",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GET /api/queue/stats",
+      "description": "Returns live business operational metrics: active queue depth/backlog count, average customer wait time (minutes), and concurrent active users.",
+      "parent_path": "Service › OQ Operations › Queue Backlog & Wait Stats",
+      "api_info": "http://localhost:3001/api/queue/stats",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "min",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/queue/token",
+      "description": "Generates live queue tickets; measures token creation latency (ms).",
+      "parent_path": "Service › OQ Operations › Queue Ticket Generator",
+      "api_info": "http://localhost:3001/api/queue/token",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "PATCH /api/bookings/:id/cancel",
+      "description": "Handles booking cancellations, triggers automated client notice workflows, and tracks customer drop-off rate (%).",
+      "parent_path": "Service › OQ Operations › Booking Cancellation Pipeline",
+      "api_info": "http://localhost:3001/api/bookings/cancel",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "%",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/bookings",
+      "description": "Measures booking creation response latency (ms), booking transaction volume, and 4xx/5xx failure rates (%).",
+      "parent_path": "Service › OQ Operations › Booking Transaction Engine",
+      "api_info": "http://localhost:3001/api/bookings",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GET /api/slots",
+      "description": "Returns available slots and live remaining capacity counts (e.g., 3/5 booked • 2 remaining).",
+      "parent_path": "Service › OQ Operations › Available Slots Capacity",
+      "api_info": "http://localhost:3001/api/slots",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "count",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/slots/allocate",
+      "description": "Enforces 3-way binding (Service + Station/Room + Time Window); measures clash-free allocation latency (ms) and slot conflict rejection rate (%).",
+      "parent_path": "Service › OQ Operations › Slot Allocation Engine",
+      "api_info": "http://localhost:3001/api/slots/allocate",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/onboarding/verify",
+      "description": "Verifies bilingual onboarding credentials and issues signed HMAC-SHA256 JWT tokens.",
+      "parent_path": "Service › OQ Operations › Bilingual Onboarding Gate",
+      "api_info": "http://localhost:3001/api/onboarding/verify",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GET /api/health",
+      "description": "Checks overall application availability, uptime (%), and HTTP 200 response.",
+      "parent_path": "Service › OQ Operations › Application Health",
+      "api_info": "http://localhost:3001/api/health",
+      "requirements": "Managed by OQ Monitored Service",
+      "unit": "%",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
       "metric": "Dependency availability/latency",
       "description": "Whether each third-party API is up and how fast it responds",
       "parent_path": "Service › Dependencies (third-party)",
@@ -4517,6 +4837,66 @@
     }
   ],
   "Synthetic": [
+    {
+      "metric": "Binance Spot Ticker Ping",
+      "description": "Measures high-frequency trading engine network ping probe latency (ms).",
+      "parent_path": "Synthetic › Public Benchmarks › Spot Trading Ping Probe",
+      "api_info": "https://api.binance.com/api/v3/ping",
+      "requirements": "Managed by Binance Global API",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "Open-Meteo Documentation Gateway",
+      "description": "Public documentation gateway latency benchmark (ms).",
+      "parent_path": "Synthetic › Public Benchmarks › Documentation Probe",
+      "api_info": "https://open-meteo.com/en/docs",
+      "requirements": "Managed by Open-Meteo Weather API",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "Hacker News Firebase API",
+      "description": "Measures high-traffic public serverless endpoint response latency (ms).",
+      "parent_path": "Synthetic › Public Benchmarks › Serverless MaxItem Latency",
+      "api_info": "https://hacker-news.firebaseio.com/v0/maxitem.json",
+      "requirements": "Managed by Firebase / Hacker News",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "GitHub Zen & Rate Limit API",
+      "description": "Measures public external API availability and quota remaining before rate-limiting.",
+      "parent_path": "Synthetic › Public Benchmarks › GitHub Zen & Quota",
+      "api_info": "https://api.github.com/zen",
+      "requirements": "Managed by GitHub Public API",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "OpenStreetMap Online Tile Server API",
+      "description": "Live map tile rendering probe; measures map tile download response latency (ms) and map service HTTP availability (%).",
+      "parent_path": "Synthetic › OpenStreetMap › Tile Server Probe",
+      "api_info": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "requirements": "Managed by OpenStreetMap Foundation",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "OpenStreetMap Nominatim Geocoding API",
+      "description": "Resolves business and station street addresses into real latitude/longitude coordinates; measures online geocoding address lookup latency (ms).",
+      "parent_path": "Synthetic › OpenStreetMap › Nominatim Geocoding",
+      "api_info": "https://nominatim.openstreetmap.org/search?q={address}&format=json",
+      "requirements": "Managed by OpenStreetMap Foundation",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
     {
       "metric": "Availability",
       "description": "Whether the endpoint answers correctly right now (result of each check)",
@@ -5621,6 +6001,16 @@
   ],
   "Database": [
     {
+      "metric": "GET /api/db/metrics",
+      "description": "Returns database query execution time (ms), active connection pool saturation count, and read/write failure rate (%) across SQLite, PostgreSQL, or MongoDB.",
+      "parent_path": "Database › Connection Pool & Queries › Database Telemetry Probe",
+      "api_info": "http://localhost:3001/api/db/metrics",
+      "requirements": "Managed by OQ Database Layer",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
       "metric": "Database connection success",
       "description": "Whether a client can open a connection and run a trivial query",
       "parent_path": "Database › Connectivity & status",
@@ -5874,6 +6264,46 @@
     }
   ],
   "Security": [
+    {
+      "metric": "GitHub REST API",
+      "description": "Tracks CI/CD deployment run timestamps and commit triggers to correlate code pushes with latency spikes.",
+      "parent_path": "Security › Edge, TLS & DNS › CI/CD Deployment Actions Ingress",
+      "api_info": "https://api.github.com/repos/owner/repo/actions/runs",
+      "requirements": "Managed by GitHub Actions",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "Cloudflare Analytics API",
+      "description": "Measures Edge cache hit ratio (%) and blocked threat/DDoS request counts.",
+      "parent_path": "Security › Edge, TLS & DNS › Cloudflare Edge Analytics",
+      "api_info": "https://api.cloudflare.com/client/v4/zones/zone_id/analytics/dashboard",
+      "requirements": "Managed by Cloudflare Edge",
+      "unit": "%",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "Public DNS Resolution API",
+      "description": "Measures public DNS resolution latency (ms) and domain propagation time.",
+      "parent_path": "Security › Edge, TLS & DNS › Cloudflare 1.1.1.1 DNS Probe",
+      "api_info": "https://1.1.1.1/dns-query",
+      "requirements": "Managed by Cloudflare DNS",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "TLS Socket Probe",
+      "description": "Direct SSL cryptographic handshake inspecting days remaining before SSL/TLS certificate expiry.",
+      "parent_path": "Security › Edge, TLS & DNS › TLS Cryptographic Handshake Expiry",
+      "api_info": "https://api.oq.com:443",
+      "requirements": "Managed by TLS / SSL Public Handshake",
+      "unit": "days",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
     {
       "metric": "Authentication success/failure rates",
       "description": "Share of logins that succeed or fail",
@@ -6163,6 +6593,26 @@
     }
   ],
   "Queues": [
+    {
+      "metric": "GET /api/notifications/status",
+      "description": "Reports communication pipeline status, notice queue backlog, and notification delivery failure rate (%).",
+      "parent_path": "Queues › Client Notices & Backlog › Delivery Backlog Status",
+      "api_info": "http://localhost:3001/api/notifications/status",
+      "requirements": "Managed by OQ Communication Gateway",
+      "unit": "%",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
+    {
+      "metric": "POST /api/notifications/send",
+      "description": "Dispatches automated bilingual delay/cancellation notices to clients affected by schedule changes; measures notice dispatch queue latency (ms).",
+      "parent_path": "Queues › Client Notices & Backlog › Notice Dispatch Queue",
+      "api_info": "http://localhost:3001/api/notifications/send",
+      "requirements": "Managed by OQ Communication Gateway",
+      "unit": "ms",
+      "target_type": "HTTP",
+      "is_api_endpoint": true
+    },
     {
       "metric": "Jobs queued/started/completed/failed/retried",
       "description": "Lifecycle counters for each job",

@@ -10,8 +10,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: 'InfraTrace // Gmail Telemetry Observatory',
-  description: 'Enterprise Infrastructure Observatory in Gmail Shell',
+  title: 'InfraTrace',
+  description: 'Real-time infrastructure observability and service health monitoring',
   icons: {
     icon: '/infra_trace_logo.png',
   },

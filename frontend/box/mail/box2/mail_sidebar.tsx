@@ -44,8 +44,8 @@ export function MailSidebar({ hasWallpaper = false }: MailSidebarProps) {
           }`}
         >
           <div className="flex items-center gap-4">
-            <Star className="w-5 h-5" />
-            <span>Starred</span>
+            <Clock className="w-5 h-5" />
+            <span>Phases / Rounds</span>
           </div>
         </button>
 

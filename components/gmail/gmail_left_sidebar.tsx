@@ -89,6 +89,8 @@ export const METRICS_NAVIGATION: MetricsCategoryItem[] = [
 
 export type UserSection =
   | 'accounts'
+  | 'permissions'
+  | 'visibility'
   | 'websites'
   | 'roles'
   | 'apikeys'
@@ -114,6 +116,10 @@ interface GmailLeftSidebarProps {
   onSelectMetricsSuboption?: (cat: MetricsCategory, suboptionId: string) => void;
   activeUserSection?: UserSection;
   onSelectUserSection?: (section: UserSection) => void;
+  isSuperAdmin?: boolean;
+  allowedA2Elements?: Record<string, string[]>;
+  activeMailFolder?: 'inbox' | 'phases';
+  onSelectMailFolder?: (folder: 'inbox' | 'phases') => void;
 }
 
 export function GmailLeftSidebar({
@@ -136,26 +142,45 @@ export function GmailLeftSidebar({
   onSelectMetricsSuboption,
   activeUserSection = 'accounts',
   onSelectUserSection,
+  isSuperAdmin = false,
+  allowedA2Elements,
+  activeMailFolder = 'inbox',
+  onSelectMailFolder,
 }: GmailLeftSidebarProps) {
   // ==========================================================
   // VIEW: INSPECT & DELIVERY MODES
   // ==========================================================
   if (activeTab === 'inspect') {
-    return <InspectSidebar hasWallpaper={hasWallpaper} />;
+    return (
+      <InspectSidebar
+        hasWallpaper={hasWallpaper}
+        allowedElements={allowedA2Elements?.inspect}
+      />
+    );
   }
 
   if (activeTab === 'delivery') {
-    return <DeliverySidebar hasWallpaper={hasWallpaper} />;
+    return (
+      <DeliverySidebar
+        hasWallpaper={hasWallpaper}
+        allowedElements={allowedA2Elements?.delivery}
+      />
+    );
   }
 
   // ==========================================================
   // VIEW 1: METRICS MODE (Clean list with right arrow when active, matching Image 4)
   // ==========================================================
   if (activeTab === 'metrics') {
+    const allowedCategories = allowedA2Elements?.metrics;
+    const visibleCategories = allowedCategories
+      ? METRICS_NAVIGATION.filter((cat) => allowedCategories.includes(cat.id))
+      : METRICS_NAVIGATION;
+
     return (
       <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
         <div className="space-y-1 px-2">
-          {METRICS_NAVIGATION.map((catItem) => {
+          {visibleCategories.map((catItem) => {
             const isSelected = activeMetricsCategory === catItem.id;
             const Icon = catItem.icon;
 
@@ -200,13 +225,22 @@ export function GmailLeftSidebar({
   // VIEW 2: USERS MODE (Clean, No header, No right arrows)
   // ==========================================================
   if (activeTab === 'users') {
-    const userSections: { id: UserSection; label: string; icon: React.ElementType }[] = [
+    const allUserSections: { id: UserSection; label: string; icon: React.ElementType }[] = [
       { id: 'accounts', label: 'User Accounts', icon: Users },
+      { id: 'permissions', label: 'Permissions', icon: ShieldCheck },
+      ...(isSuperAdmin ? [{ id: 'visibility' as UserSection, label: 'Visibility', icon: ShieldCheck }] : []),
       { id: 'websites', label: 'Monitored Websites', icon: Globe },
-      { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheck },
-      { id: 'apikeys', label: 'API Keys & Webhooks', icon: Key },
-      { id: 'audit', label: 'User Audit Logs', icon: FileText },
+      { id: 'roles', label: 'Roles Matrix', icon: ShieldCheck },
+      { id: 'apikeys', label: 'API Keys', icon: Key },
+      { id: 'audit', label: 'Audit Logs', icon: FileText },
     ];
+
+    const allowed = allowedA2Elements?.users;
+    const userSections = allUserSections.filter((s) => {
+      // Invariant: visibility is strictly and exclusively visible for Super Admin
+      if (s.id === 'visibility') return isSuperAdmin;
+      return !allowed || allowed.includes(s.id);
+    });
 
     return (
       <aside className="w-64 flex flex-col py-2 shrink-0 bg-transparent overflow-y-auto select-none">
@@ -243,9 +277,9 @@ export function GmailLeftSidebar({
   }
 
   // ==========================================================
-  // VIEW 3: DEMO MODE (PURE DEMO ONLY - NO USERS / NO DB)
+  // VIEW 3: CONSOLE & DEMO MODE (Box 2: Telemetry & Service Status Filters)
   // ==========================================================
-  if (activeTab === 'demo') {
+  if (activeTab === 'demo' || activeTab === 'chat') {
     return (
       <aside className="w-64 flex flex-col px-3 py-2 shrink-0 bg-transparent overflow-y-auto select-none">
         {/* Top Action Button: "Poll Now" */}
@@ -271,75 +305,81 @@ export function GmailLeftSidebar({
         {/* Navigation Links strictly for Demo */}
         <div className="space-y-1">
           {/* Dashboard */}
-          <button
-            onClick={() => onSelectDemoSubView('dashboard')}
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-              demoSubView === 'dashboard'
-                ? hasWallpaper
-                  ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                  : 'bg-[#d3e3fd] text-[#041e49]'
-                : hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <LayoutDashboard className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-              <span>Dashboard</span>
-            </div>
-            <span
-              className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
-                hasWallpaper ? 'bg-white/25 text-white' : 'bg-black/10 text-[#444746]'
+          {(!allowedA2Elements?.console || allowedA2Elements.console.includes('dashboard')) && (
+            <button
+              onClick={() => onSelectDemoSubView('dashboard')}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                demoSubView === 'dashboard'
+                  ? hasWallpaper
+                    ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                    : 'bg-[#d3e3fd] text-[#041e49]'
+                  : hasWallpaper
+                  ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                  : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
               }`}
             >
-              {totalServicesCount}
-            </span>
-          </button>
+              <div className="flex items-center gap-4">
+                <LayoutDashboard className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+                <span>Dashboard</span>
+              </div>
+              <span
+                className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                  hasWallpaper ? 'bg-white/25 text-white' : 'bg-black/10 text-[#444746]'
+                }`}
+              >
+                {totalServicesCount}
+              </span>
+            </button>
+          )}
 
           {/* Incidents */}
-          <button
-            onClick={() => onSelectDemoSubView('incidents')}
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-              demoSubView === 'incidents'
-                ? hasWallpaper
-                  ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                  : 'bg-[#d3e3fd] text-[#041e49]'
-                : hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <AlertTriangle
-                className={`w-5 h-5 ${hasWallpaper ? 'text-amber-300' : 'text-amber-600'}`}
-              />
-              <span>Incidents</span>
-            </div>
-            {incidentCount > 0 && (
-              <span className="text-xs bg-[#b3261e] text-white px-2.5 py-0.5 rounded-full font-bold shadow-xs">
-                {incidentCount}
-              </span>
-            )}
-          </button>
+          {(!allowedA2Elements?.console || allowedA2Elements.console.includes('incidents')) && (
+            <button
+              onClick={() => onSelectDemoSubView('incidents')}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                demoSubView === 'incidents'
+                  ? hasWallpaper
+                    ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                    : 'bg-[#d3e3fd] text-[#041e49]'
+                  : hasWallpaper
+                  ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                  : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <AlertTriangle
+                  className={`w-5 h-5 ${hasWallpaper ? 'text-amber-300' : 'text-amber-600'}`}
+                />
+                <span>Incidents</span>
+              </div>
+              {incidentCount > 0 && (
+                <span className="text-xs bg-[#b3261e] text-white px-2.5 py-0.5 rounded-full font-bold shadow-xs">
+                  {incidentCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Settings */}
-          <button
-            onClick={() => onSelectDemoSubView('settings')}
-            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-              demoSubView === 'settings'
-                ? hasWallpaper
-                  ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                  : 'bg-[#d3e3fd] text-[#041e49]'
-                : hasWallpaper
-                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <Sliders className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-              <span>Settings</span>
-            </div>
-          </button>
+          {(!allowedA2Elements?.console || allowedA2Elements.console.includes('settings')) && (
+            <button
+              onClick={() => onSelectDemoSubView('settings')}
+              className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+                demoSubView === 'settings'
+                  ? hasWallpaper
+                    ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                    : 'bg-[#d3e3fd] text-[#041e49]'
+                  : hasWallpaper
+                  ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                  : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+              }`}
+            >
+              <div className="flex items-center gap-4">
+                <Sliders className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+                <span>Settings</span>
+              </div>
+            </button>
+          )}
 
 
 
@@ -459,71 +499,90 @@ export function GmailLeftSidebar({
       </div>
 
       <div className="space-y-0.5">
-        <button
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-            hasWallpaper
-              ? 'bg-white/20 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-              : 'bg-[#d3e3fd] text-[#041e49]'
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <Inbox className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-            <span>Inbox</span>
-          </div>
-          <span className="text-xs font-bold">128</span>
-        </button>
+        {(!allowedA2Elements?.mail || allowedA2Elements.mail.includes('inbox')) && (
+          <button
+            onClick={() => onSelectMailFolder?.('inbox')}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              activeMailFolder === 'inbox'
+                ? hasWallpaper
+                  ? 'bg-white/30 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                  : 'bg-[#d3e3fd] text-[#041e49]'
+                : hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <Inbox className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+              <span>Inbox</span>
+            </div>
+          </button>
+        )}
 
-        <button
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-            hasWallpaper
-              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <Star className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-            <span>Starred</span>
-          </div>
-        </button>
+        {(!allowedA2Elements?.mail || allowedA2Elements.mail.includes('starred') || allowedA2Elements.mail.includes('phases')) && (
+          <button
+            onClick={() => onSelectMailFolder?.('phases')}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              activeMailFolder === 'phases'
+                ? hasWallpaper
+                  ? 'bg-white/30 text-white backdrop-blur-sm shadow-xs drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                  : 'bg-[#d3e3fd] text-[#041e49]'
+                : hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <Clock className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+              <span>Phases / Rounds</span>
+            </div>
+          </button>
+        )}
 
-        <button
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-            hasWallpaper
-              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <Clock className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-            <span>Snoozed</span>
-          </div>
-        </button>
+        {(!allowedA2Elements?.mail || allowedA2Elements.mail.includes('snoozed')) && (
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <Clock className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+              <span>Snoozed</span>
+            </div>
+          </button>
+        )}
 
-        <button
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-            hasWallpaper
-              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <Send className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-            <span>Sent</span>
-          </div>
-        </button>
+        {(!allowedA2Elements?.mail || allowedA2Elements.mail.includes('sent')) && (
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <Send className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+              <span>Sent</span>
+            </div>
+          </button>
+        )}
 
-        <button
-          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
-            hasWallpaper
-              ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
-              : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
-          }`}
-        >
-          <div className="flex items-center gap-4">
-            <File className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
-            <span>Drafts</span>
-          </div>
-        </button>
+        {(!allowedA2Elements?.mail || allowedA2Elements.mail.includes('drafts')) && (
+          <button
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-r-full text-sm font-semibold transition-colors cursor-pointer ${
+              hasWallpaper
+                ? 'text-white hover:bg-white/15 drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                : 'text-[#444746] hover:bg-black/5 hover:text-[#1f1f1f]'
+            }`}
+          >
+            <div className="flex items-center gap-4">
+              <File className={`w-5 h-5 ${hasWallpaper ? 'text-white' : ''}`} />
+              <span>Drafts</span>
+            </div>
+          </button>
+        )}
       </div>
     </aside>
   );

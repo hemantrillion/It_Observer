@@ -13,7 +13,7 @@ function SignInContent() {
     <SignInView
       onBack={() => router.push('/')}
       onGoToSignUp={() => router.push('/signup')}
-      onSuccess={() => router.push('/demo')}
+      onSuccess={() => router.push('/console')}
       prefilledEmail={prefilledEmail}
     />
   );

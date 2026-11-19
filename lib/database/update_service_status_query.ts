@@ -2,7 +2,7 @@ import { getDatabaseConnection } from './sqlite_database_connection_manager';
 
 export function updateServiceStatusQuery(
   serviceId: string,
-  status: 'HEALTHY' | 'DEGRADED' | 'DOWN',
+  status: 'HEALTHY' | 'UP' | 'DEGRADED' | 'DOWN' | 'UNSTABLE' | string,
   responseTimeMs: number,
   isFailure: boolean
 ): void {

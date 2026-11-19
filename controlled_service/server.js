@@ -51,15 +51,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // Chaos controls
-  if (req.method === 'POST' && req.url === '/chaos/down') {
+  // Chaos controls (support both GET and POST for easy browser / curl triggering)
+  const isDownReq = req.url === '/chaos/down' || req.url === '/chaos/crash' || req.url === '/crash' || req.url === '/down';
+  const isLagReq = req.url === '/chaos/lag' || req.url === '/lag';
+  const isRecoverReq = req.url === '/chaos/recover' || req.url === '/recover' || req.url === '/up';
+
+  if (isDownReq && (req.method === 'POST' || req.method === 'GET')) {
     state.status = 'DOWN';
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ message: 'Chaos: Service set to DOWN (503)' }));
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/chaos/lag') {
+  if (isLagReq && (req.method === 'POST' || req.method === 'GET')) {
     state.status = 'LAG';
     state.artificialLagMs = 2500;
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -67,7 +71,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === 'POST' && req.url === '/chaos/recover') {
+  if (isRecoverReq && (req.method === 'POST' || req.method === 'GET')) {
     state.status = 'HEALTHY';
     state.artificialLagMs = 0;
     res.writeHead(200, { 'Content-Type': 'application/json' });

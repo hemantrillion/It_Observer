@@ -1,249 +1,181 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   RotateCw,
-  MoreVertical,
-  ChevronLeft,
-  ChevronRight,
-  Star,
-  Inbox,
-  Tag,
-  Users,
-  Info,
-  Archive,
   Trash2,
-  MailOpen,
   Clock,
   CheckSquare,
   Square,
+  Mail,
+  X,
+  AlertTriangle,
+  CheckCircle2,
+  Activity,
+  Layers,
+  ArrowRight,
 } from 'lucide-react';
+import { DensityOption } from './gmail_quick_settings_panel';
 
 interface EmailItem {
   id: string;
   sender: string;
   subject: string;
   snippet: string;
+  body: string;
   date: string;
   isUnread: boolean;
-  isStarred?: boolean;
+  tag?: string;
 }
 
-const INITIAL_EMAILS: EmailItem[] = [
-  {
-    id: '1',
-    sender: 'Datadog HQ',
-    subject: 'Your Datadog Verification Code',
-    snippet:
-      'Finish signing up for Datadog by entering the code below. Do not share this verification code with anyone else. 8bb58142...',
-    date: '6:56 PM',
-    isUnread: true,
-  },
-  {
-    id: '2',
-    sender: 'Google',
-    subject: 'You shared some Google Account data with datadoghq.com',
-    snippet:
-      "Keep track of your Google Account data hemantrillion@gmail.com You're receiving this email because you used...",
-    date: '6:55 PM',
-    isUnread: true,
-  },
-  {
-    id: '3',
-    sender: 'anomalydetection',
-    subject:
-      'Getting started with AWS Cost Anomaly Detection - Hemant Kumar (857481121632)',
-    snippet:
-      'AWS Account: Hemant Kumar (857481121632) Hello, As part of your enablement of AWS...',
-    date: '6:51 PM',
-    isUnread: true,
-  },
-  {
-    id: '4',
-    sender: 'no-reply',
-    subject: 'Verify your identity',
-    snippet:
-      "Verify your identity Hello, We identified unusual activity in a recent sign in attempt from your AWS account's root user...",
-    date: '6:50 PM',
-    isUnread: true,
-  },
-  {
-    id: '5',
-    sender: 'no-reply',
-    subject: 'Sign up for AWS - Email Verification',
-    snippet:
-      'The email specified is already associated with an AWS account We received a request to create a new AWS account using this e-mail...',
-    date: '6:48 PM',
-    isUnread: true,
-  },
-  {
-    id: '6',
-    sender: 'noreply',
-    subject: 'Login from new location or browser',
-    snippet:
-      'Login from new device or location We have noticed that you recently logged in to Dynatrace from a different browser or location than...',
-    date: '6:40 PM',
-    isUnread: true,
-  },
-  {
-    id: '7',
-    sender: 'noreply',
-    subject: 'Welcome to Dynatrace!',
-    snippet:
-      "Welcome to your Dynatrace trial! Hi, We've included some helpful resources below to get you started on your journey to delivering...",
-    date: '6:39 PM',
-    isUnread: true,
-  },
-  {
-    id: '8',
-    sender: 'Udemy',
-    subject: 'Learning AI alone? (Udemy has a fix)',
-    snippet:
-      'Plus: the instructor who says the real AI skill is asking better questions.',
-    date: '11:28 AM',
-    isUnread: true,
-  },
-  {
-    id: '9',
-    sender: 'DigiLocker',
-    subject: 'Your OTP to access DigiLocker account',
-    snippet:
-      'Dear DigiLocker User, You are attempting to sign in to your DigiLocker account using the registered mobile number ******4364. Your O...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '10',
-    sender: 'no-reply@amazonaw...',
-    subject: 'Customer verification successfully completed',
-    snippet:
-      'AWS logo Greetings from Amazon Web Services, We were able to complete customer verification based on the information you...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '11',
-    sender: 'no-reply',
-    subject: 'Verify your email address',
-    snippet:
-      'Verification code 679650 (This code will expire 10 minutes after it was sent.) Amazon Web Services will never email you and ask...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '12',
-    sender: 'billing-subscr...@aws.c...',
-    subject: 'Your AWS project has been closed',
-    snippet:
-      'Account Closure Confirmation Your AWS project has been closed This e-mail confirms that your project has been closed. Here is what to...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '13',
-    sender: 'billing-subscr...@aws.c...',
-    subject: 'Your AWS account plan has been upgraded',
-    snippet:
-      'Free Tier Self Initiated Upgrade Your AWS account plan has been upgraded Your AWS account has been successfully upgraded to...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '14',
-    sender: 'DevOps Jobs via Lin...',
-    subject: '42 New DevOps Jobs',
-    snippet: 'DevOps Jobs - Recommended positions matched to your profile...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '15',
-    sender: 'billing-subscr...@aws.c...',
-    subject: 'Welcome to AWS - Your Account with Free Plan is Ready',
-    snippet:
-      'Free Tier Trial Welcome Welcome to AWS - Your Account with Free Plan is Ready Your AWS free plan is active. Here is what to know...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '16',
-    sender: 'Google',
-    subject: 'You shared some Google Account data with Amazon Web Services',
-    snippet:
-      "Keep track of your Google Account data hemantrillion@gmail.com You're receiving this email because you signed in...",
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '17',
-    sender: 'Dharani HR',
-    subject: 'Registration Open: IBM-Associated Training & Internship Program 2026',
-    snippet:
-      'PROGRAM INVITATION 2026 IBM-Associated Training & Internship Program Dear Student, Greetings from...',
-    date: 'Oct 15',
-    isUnread: false,
-  },
-  {
-    id: '18',
-    sender: 'Namecheap',
-    subject: 'Quick! Not long left to get up to 79% off domains',
-    snippet:
-      'Save big on domain registrations and transfers as we celebrate our 26th birthday.',
-    date: 'Oct 14',
-    isUnread: false,
-  },
-];
+interface PhaseEngineState {
+  current_phase_number: number;
+  phase_stage: 'BOOTSTRAP_WAITING_DOWN' | 'BOOTSTRAP_WAITING_UP' | 'WINDOW_RUNNING';
+  active_window_started_at: string | null;
+  active_window_duration_minutes: number;
+  up_events_count: number;
+  down_events_count: number;
+  degraded_events_count: number;
+  last_evaluated_at: string | null;
+  last_notification_status: string | null;
+  previous_notification_status: string | null;
+  last_window_duration_minutes: number;
+  previous_window_duration_minutes: number;
+  updated_at: string;
+}
 
-import { DensityOption } from './gmail_quick_settings_panel';
-
-type CategoryTab = 'primary' | 'promotions' | 'social' | 'updates';
+interface PhaseHistoryRecord {
+  id: number;
+  phase_number: number;
+  phase_type: string;
+  window_duration_minutes: number;
+  started_at: string;
+  completed_at: string;
+  up_count: number;
+  down_count: number;
+  degraded_count: number;
+  outcome_status: string;
+  notification_sent: number;
+  notification_subject: string | null;
+  recipient_email: string | null;
+}
 
 interface GmailInboxViewProps {
   density?: DensityOption;
   hasWallpaper?: boolean;
   userEmail?: string;
+  activeMailFolder?: 'inbox' | 'phases';
+  onSelectMailFolder?: (folder: 'inbox' | 'phases') => void;
 }
 
 export function GmailInboxView({
   density = 'compact',
   hasWallpaper = false,
-  userEmail = 'xyztestuser@gmail.com',
+  userEmail = 'jai18hemant334@gmail.com',
+  activeMailFolder = 'inbox',
+  onSelectMailFolder,
 }: GmailInboxViewProps) {
-  const [emails, setEmails] = useState<EmailItem[]>(() => {
-    const isTest = !userEmail || userEmail === 'xyztestuser@gmail.com';
-    return isTest ? INITIAL_EMAILS : [];
-  });
-  const [activeTab, setActiveTab] = useState<CategoryTab>('primary');
+  // Inbox State
+  const [emails, setEmails] = useState<EmailItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeEmail, setActiveEmail] = useState<EmailItem | null>(null);
+  const [isLoadingEmails, setIsLoadingEmails] = useState(false);
+
+  // Phases State
+  const [phaseState, setPhaseState] = useState<PhaseEngineState | null>(null);
+  const [phaseHistory, setPhaseHistory] = useState<PhaseHistoryRecord[]>([]);
+  const [isLoadingPhases, setIsLoadingPhases] = useState(false);
+  const [isResettingPhases, setIsResettingPhases] = useState(false);
+  const [resetFeedback, setResetFeedback] = useState<string | null>(null);
+
+  // Fetch emails from platform_mailbox (reflection of external emails)
+  const fetchEmails = useCallback(async () => {
+    setIsLoadingEmails(true);
+    try {
+      const res = await fetch(`/api/mail?email=${encodeURIComponent(userEmail)}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.mails)) {
+        const formattedMails: EmailItem[] = data.mails.map((m: any) => ({
+          id: m.id,
+          sender: m.sender.split('<')[0].trim() || m.sender,
+          subject: m.subject,
+          snippet: m.snippet,
+          body: m.body,
+          date: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isUnread: !m.is_read,
+          tag: m.tag,
+        }));
+        setEmails(formattedMails);
+      }
+    } catch (err) {
+      console.error('Failed to fetch mailbox:', err);
+    } finally {
+      setIsLoadingEmails(false);
+    }
+  }, [userEmail]);
+
+  // Fetch phase tracker state and history
+  const fetchPhases = useCallback(async () => {
+    setIsLoadingPhases(true);
+    try {
+      const res = await fetch('/api/notifications/phases', { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success) {
+        setPhaseState(data.state);
+        setPhaseHistory(data.history || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch phases:', err);
+    } finally {
+      setIsLoadingPhases(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const isTest = !userEmail || userEmail === 'xyztestuser@gmail.com';
-    fetch(`/api/mail?email=${encodeURIComponent(userEmail)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.mails)) {
-          const formattedMails: EmailItem[] = data.mails.map((m: any) => ({
-            id: m.id,
-            sender: m.sender.split('<')[0].trim() || m.sender,
-            subject: m.subject,
-            snippet: m.snippet,
-            date: new Date(m.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isUnread: !m.is_read,
-          }));
+    fetchEmails();
+    fetchPhases();
+    const interval = setInterval(() => {
+      fetchEmails();
+      fetchPhases();
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [fetchEmails, fetchPhases]);
 
-          if (isTest) {
-            // Deduplicate by ID
-            const existingIds = new Set(formattedMails.map((m) => m.id));
-            const remainingInitial = INITIAL_EMAILS.filter((m) => !existingIds.has(m.id));
-            setEmails([...formattedMails, ...remainingInitial]);
-          } else {
-            // Clear all dummy mails for real users as requested
-            setEmails(formattedMails);
-          }
-        }
-      })
-      .catch(() => {});
-  }, [userEmail]);
+  // Clear mailbox handler
+  const handleClearMailbox = async () => {
+    try {
+      await fetch('/api/mail', { method: 'DELETE' });
+      setEmails([]);
+      setActiveEmail(null);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error('Failed to clear mailbox:', err);
+    }
+  };
+
+  // Reset phases handler
+  const handleResetPhases = async () => {
+    setIsResettingPhases(true);
+    setResetFeedback(null);
+    try {
+      const res = await fetch('/api/notifications/phases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPhaseState(data.state);
+        setPhaseHistory([]);
+        setResetFeedback('Phases reset to Phase 1 (Initial Bootstrap). Next DOWN & UP events will alert immediately.');
+        await fetchPhases();
+      }
+    } catch (err: any) {
+      setResetFeedback(`Reset failed: ${err.message}`);
+    } finally {
+      setIsResettingPhases(false);
+    }
+  };
 
   const toggleSelectAll = () => {
     if (selectedIds.size === emails.length) {
@@ -253,290 +185,344 @@ export function GmailInboxView({
     }
   };
 
-  const toggleSelectOne = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-    }
-    setSelectedIds(next);
-  };
+  // =========================================================================
+  // VIEW 1: PHASES / ROUNDS HISTORY VIEW
+  // =========================================================================
+  if (activeMailFolder === 'phases') {
+    const stageLabel =
+      phaseState?.phase_stage === 'BOOTSTRAP_WAITING_DOWN'
+        ? 'Phase 1: Initial Bootstrap (Awaiting first incident)'
+        : phaseState?.phase_stage === 'BOOTSTRAP_WAITING_UP'
+        ? 'Phase 1: Awaiting Initial Recovery (UP)'
+        : `Phase ${phaseState?.current_phase_number}: Observation Window in Progress`;
 
-  const toggleStar = (id: string) => {
-    setEmails((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, isStarred: !e.isStarred } : e))
-    );
-  };
+    const windowMinutes = phaseState?.active_window_duration_minutes || 20;
+    const n = Math.max(1, Math.round(windowMinutes / 20));
+    const upCount = phaseState?.up_events_count || 0;
+    const downCount = (phaseState?.down_events_count || 0) + (phaseState?.degraded_events_count || 0);
 
-  return (
-    <div
-      className={`flex-1 flex flex-col h-full ${
-        hasWallpaper ? 'bg-transparent' : 'bg-white'
-      } select-none overflow-hidden`}
-    >
-      {/* Top Toolbar */}
-      <div
-        className={`h-12 border-b border-[#e0e2ec]/70 px-4 flex items-center justify-between shrink-0 ${
-          hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'
-        }`}
-      >
-        <div className="flex items-center gap-1 sm:gap-2">
-          {/* Select all checkbox */}
-          <button
-            onClick={toggleSelectAll}
-            className="p-2 rounded hover:bg-black/5 text-[#444746]"
-          >
-            {selectedIds.size > 0 ? (
-              <CheckSquare className="w-4 h-4 text-[#0b57d0]" />
-            ) : (
-              <Square className="w-4 h-4 text-[#747775]" />
-            )}
-          </button>
+    return (
+      <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-slate-50/70'} overflow-y-auto p-6 font-sans`}>
+        <div className="max-w-5xl mx-auto w-full space-y-6">
 
-          {/* Refresh button */}
-          <button
-            title="Refresh"
-            className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors"
-          >
-            <RotateCw className="w-4 h-4" />
-          </button>
-
-          {/* More options */}
-          <button
-            title="More"
-            className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center gap-3 text-xs text-[#444746] font-semibold">
-          <span>1–{emails.length} of 531</span>
-          <div className="flex items-center">
-            <button
-              disabled
-              className="p-1.5 rounded-full text-[#c4c7c5] cursor-not-allowed"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 rounded-full hover:bg-black/5 text-[#444746]">
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs Row (Primary, Promotions, Social, Updates) */}
-      <div
-        className={`flex border-b border-[#e0e2ec]/70 shrink-0 ${
-          hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'
-        }`}
-      >
-        {/* Primary */}
-        <button
-          onClick={() => setActiveTab('primary')}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold relative transition-colors ${
-            activeTab === 'primary'
-              ? 'text-[#0b57d0]'
-              : 'text-[#444746] hover:bg-black/5'
-          }`}
-        >
-          <Inbox className="w-4 h-4" />
-          <span>Primary</span>
-          {activeTab === 'primary' && (
-            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#0b57d0] rounded-t-sm" />
-          )}
-        </button>
-
-        {/* Promotions */}
-        <button
-          onClick={() => setActiveTab('promotions')}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold relative transition-colors ${
-            activeTab === 'promotions'
-              ? 'text-[#0b57d0]'
-              : 'text-[#444746] hover:bg-black/5'
-          }`}
-        >
-          <Tag className="w-4 h-4" />
-          <span>Promotions</span>
-          <span className="px-1.5 py-0.5 text-[10px] bg-emerald-600 text-white font-bold rounded-full">
-            49 new
-          </span>
-          {activeTab === 'promotions' && (
-            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#0b57d0] rounded-t-sm" />
-          )}
-        </button>
-
-        {/* Social */}
-        <button
-          onClick={() => setActiveTab('social')}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold relative transition-colors ${
-            activeTab === 'social'
-              ? 'text-[#0b57d0]'
-              : 'text-[#444746] hover:bg-black/5'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Social</span>
-          <span className="px-1.5 py-0.5 text-[10px] bg-[#0b57d0] text-white font-bold rounded-full">
-            50 new
-          </span>
-          {activeTab === 'social' && (
-            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#0b57d0] rounded-t-sm" />
-          )}
-        </button>
-
-        {/* Updates */}
-        <button
-          onClick={() => setActiveTab('updates')}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold relative transition-colors ${
-            activeTab === 'updates'
-              ? 'text-[#0b57d0]'
-              : 'text-[#444746] hover:bg-black/5'
-          }`}
-        >
-          <Info className="w-4 h-4" />
-          <span>Updates</span>
-          <span className="px-1.5 py-0.5 text-[10px] bg-amber-600 text-white font-bold rounded-full">
-            50 new
-          </span>
-          {activeTab === 'updates' && (
-            <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#0b57d0] rounded-t-sm" />
-          )}
-        </button>
-      </div>
-
-      {/* Email Thread Rows List */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[#e0e2ec]/50">
-        {emails.map((email) => {
-          const isSelected = selectedIds.has(email.id);
-          const rowPadding =
-            density === 'compact'
-              ? 'py-1.5 text-xs'
-              : density === 'comfortable'
-              ? 'py-2.5 text-sm'
-              : 'py-3 text-sm';
-
-          return (
-            <div
-              key={email.id}
-              className={`group flex items-center px-4 ${rowPadding} hover:shadow-xs transition-colors cursor-pointer ${
-                isSelected
-                  ? 'bg-[#c2e7ff]/70'
-                  : email.isUnread
-                  ? hasWallpaper
-                    ? 'bg-white/75 hover:bg-white/95'
-                    : 'bg-white hover:bg-[#f6f8fc]'
-                  : hasWallpaper
-                  ? 'bg-white/45 hover:bg-white/70'
-                  : 'bg-[#f7f9fc] hover:bg-[#f1f3f7]'
-              }`}
-            >
-              {/* Select Checkbox */}
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSelectOne(email.id);
-                }}
-                className="p-1 text-[#747775] hover:text-[#1f1f1f] mr-1.5"
-              >
-                {isSelected ? (
-                  <CheckSquare className="w-4 h-4 text-[#0b57d0]" />
-                ) : (
-                  <Square className="w-4 h-4 text-[#747775]" />
-                )}
-              </div>
-
-              {/* Star */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleStar(email.id);
-                }}
-                className="p-1 mr-3 text-[#747775] hover:text-[#1f1f1f]"
-              >
-                <Star
-                  className={`w-4 h-4 ${
-                    email.isStarred
-                      ? 'fill-[#fbbc04] text-[#fbbc04]'
-                      : 'text-[#747775]'
-                  }`}
-                />
-              </button>
-
-              {/* Sender Name */}
-              <div
-                className={`w-48 truncate pr-3 shrink-0 ${
-                  email.isUnread ? 'font-semibold text-[#1f1f1f]' : 'font-normal text-[#444746]'
-                }`}
-              >
-                {email.sender}
-              </div>
-
-              {/* Subject & Preview Snippet */}
-              <div className="flex-1 min-w-0 truncate pr-4">
-                <span
-                  className={
-                    email.isUnread
-                      ? 'font-semibold text-[#1f1f1f]'
-                      : 'font-normal text-[#1f1f1f]'
-                  }
-                >
-                  {email.subject}
-                </span>
-                <span className="text-[#5e5e5e] mx-1.5">-</span>
-                <span className="text-[#5e5e5e] font-normal">
-                  {email.snippet}
-                </span>
-              </div>
-
-              {/* Timestamp / Hover Action Icons */}
-              <div className="w-24 text-right shrink-0 flex items-center justify-end">
-                {/* Regular Date Display (hidden on hover) */}
-                <span
-                  className={`text-xs group-hover:hidden ${
-                    email.isUnread
-                      ? 'font-bold text-[#1f1f1f]'
-                      : 'text-[#5e5e5e]'
-                  }`}
-                >
-                  {email.date}
-                </span>
-
-                {/* Quick Action Icons on Row Hover */}
-                <div className="hidden group-hover:flex items-center gap-1">
-                  <button
-                    title="Archive"
-                    className="p-1.5 rounded-full hover:bg-black/10 text-[#444746]"
-                  >
-                    <Archive className="w-4 h-4" />
-                  </button>
-                  <button
-                    title="Delete"
-                    className="p-1.5 rounded-full hover:bg-black/10 text-[#444746]"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    title="Mark as read"
-                    className="p-1.5 rounded-full hover:bg-black/10 text-[#444746]"
-                  >
-                    <MailOpen className="w-4 h-4" />
-                  </button>
-                  <button
-                    title="Snooze"
-                    className="p-1.5 rounded-full hover:bg-black/10 text-[#444746]"
-                  >
+          {/* Top Control Bar */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                     <Clock className="w-4 h-4" />
-                  </button>
+                  </div>
+                  <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                    Phases &amp; Rounds Management
+                  </h1>
                 </div>
+                <p className="text-xs text-slate-500">
+                  Adaptive multi-phase observation engine. Multiples of 20 minutes with Fibonacci backoff to prevent email quota fatigue.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={fetchPhases}
+                  disabled={isLoadingPhases}
+                  className="px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
+                >
+                  <RotateCw className={`w-3.5 h-3.5 ${isLoadingPhases ? 'animate-spin' : ''}`} />
+                  <span>Refresh</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetPhases}
+                  disabled={isResettingPhases}
+                  className="px-4 py-2 rounded-xl bg-black hover:bg-slate-800 text-xs font-bold text-white transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  <span>{isResettingPhases ? 'Resetting...' : 'Reset All Phases to Phase 1'}</span>
+                </button>
               </div>
             </div>
-          );
-        })}
+
+            {/* Reset Feedback Notification */}
+            {resetFeedback && (
+              <div className="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-900 flex items-center justify-between">
+                <span>{resetFeedback}</span>
+                <button onClick={() => setResetFeedback(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer text-xs">
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {/* Current Phase Status Block */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-5">
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60">
+                <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Current Phase</div>
+                <div className="text-base font-black text-slate-900 mt-1">
+                  Phase {phaseState?.current_phase_number || 1}
+                </div>
+                <div className="text-[11px] font-medium text-slate-500 mt-0.5 truncate">{stageLabel}</div>
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60">
+                <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Window Duration</div>
+                <div className="text-base font-black text-slate-900 mt-1">
+                  {phaseState?.phase_stage === 'WINDOW_RUNNING' ? `${windowMinutes} minutes` : 'Immediate (Phase 1)'}
+                </div>
+                <div className="text-[11px] font-medium text-slate-500 mt-0.5">Scale multiplier n = {n}</div>
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60">
+                <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Observed Probes in Window</div>
+                <div className="text-base font-black text-slate-900 mt-1">
+                  {upCount} UP &bull; {downCount} DOWN
+                </div>
+                <div className="text-[11px] font-medium text-slate-500 mt-0.5">Silently recording without notifications</div>
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-3.5 border border-slate-200/60">
+                <div className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Unstable Threshold (n = {n})</div>
+                <div className="text-xs font-bold text-slate-800 mt-1">
+                  {2 * n} UP + {1 * n} DOWN or {2 * n} DOWN + {1 * n} UP
+                </div>
+                <div className="text-[11px] font-medium text-purple-700 mt-0.5">Dispatches single Unstable digest</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Completed Phases History Log */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-xs">
+                Completed Phases &amp; Rounds History
+              </h2>
+              <span className="text-xs font-semibold text-slate-400">
+                {phaseHistory.length} recorded rounds
+              </span>
+            </div>
+
+            {phaseHistory.length === 0 ? (
+              <div className="py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl space-y-2">
+                <Clock className="w-8 h-8 mx-auto text-slate-300" />
+                <p>No completed phases yet.</p>
+                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                  Trigger an outage and recovery in Phase 1 to advance to Phase 2 observation windows.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-slate-200/80 rounded-xl">
+                <table className="w-full text-left text-xs font-sans">
+                  <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                    <tr>
+                      <th className="p-3">Phase #</th>
+                      <th className="p-3">Type / Duration</th>
+                      <th className="p-3">Transitions</th>
+                      <th className="p-3">Outcome</th>
+                      <th className="p-3">Notification Subject</th>
+                      <th className="p-3">Dispatched At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {phaseHistory.map((phase) => {
+                      const isUnstable = phase.outcome_status === 'UNSTABLE';
+                      const isDown = phase.outcome_status === 'DOWN';
+                      const isUp = phase.outcome_status === 'UP';
+
+                      return (
+                        <tr key={phase.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="p-3 font-bold text-slate-900">
+                            Round {phase.phase_number}
+                          </td>
+                          <td className="p-3 text-slate-600">
+                            {phase.window_duration_minutes > 0 ? `${phase.window_duration_minutes}m Window` : 'Immediate (Phase 1)'}
+                          </td>
+                          <td className="p-3 font-mono text-[11px] text-slate-600">
+                            {phase.up_count} UP &bull; {phase.down_count + phase.degraded_count} DOWN
+                          </td>
+                          <td className="p-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                isUnstable
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                  : isDown
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              }`}
+                            >
+                              {phase.outcome_status}
+                            </span>
+                          </td>
+                          <td className="p-3 text-slate-700 max-w-sm truncate" title={phase.notification_subject || ''}>
+                            {phase.notification_subject || 'Notification dispatched'}
+                          </td>
+                          <td className="p-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                            {new Date(phase.completed_at).toLocaleTimeString()}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW 2: LIVE MAIL INBOX (REAL EMAILS REFLECTING RESEND DISPATCHES)
+  // =========================================================================
+  return (
+    <div className={`flex-1 flex flex-col h-full ${hasWallpaper ? 'bg-transparent' : 'bg-white'} select-none overflow-hidden font-sans`}>
+      {/* Top Toolbar */}
+      <div className={`h-12 border-b border-[#e0e2ec]/70 px-4 flex items-center justify-between shrink-0 ${hasWallpaper ? 'bg-white/70 backdrop-blur-sm' : 'bg-white'}`}>
+        <div className="flex items-center gap-1 sm:gap-2">
+          <button
+            type="button"
+            onClick={toggleSelectAll}
+            className="p-2 rounded hover:bg-black/5 text-[#444746]"
+            title="Select all"
+          >
+            {selectedIds.size > 0 ? <CheckSquare className="w-4 h-4 text-[#0b57d0]" /> : <Square className="w-4 h-4 text-[#747775]" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchEmails}
+            title="Refresh Mailbox"
+            className="p-2 rounded-full hover:bg-black/5 text-[#444746] transition-colors cursor-pointer"
+          >
+            <RotateCw className={`w-4 h-4 ${isLoadingEmails ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleClearMailbox}
+            title="Clear Mailbox"
+            className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:text-rose-700 text-[#444746] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ml-2"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Mailbox</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#444746] font-medium">
+            {emails.length} operational {emails.length === 1 ? 'alert' : 'alerts'}
+          </span>
+        </div>
+      </div>
+
+      {/* Main Mailbox Content */}
+      <div className="flex-1 overflow-y-auto">
+        {emails.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center text-slate-400 p-6 space-y-2">
+            <Mail className="w-10 h-10 text-slate-300" />
+            <div className="text-sm font-semibold text-slate-600">Your Mailbox is Empty</div>
+            <p className="text-xs text-slate-400 max-w-sm">
+              Live alert emails sent to <strong>{userEmail}</strong> via Resend will automatically appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {emails.map((email) => {
+              const isSelected = selectedIds.has(email.id);
+              const isDown = email.subject.includes('DOWN') || email.subject.includes('Alert');
+              const isUnstable = email.subject.includes('UNSTABLE');
+
+              return (
+                <div
+                  key={email.id}
+                  onClick={() => setActiveEmail(email)}
+                  className={`flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors ${
+                    email.isUnread ? 'bg-[#f2f6fc]/50 font-bold' : 'bg-white'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const next = new Set(selectedIds);
+                      if (next.has(email.id)) next.delete(email.id);
+                      else next.add(email.id);
+                      setSelectedIds(next);
+                    }}
+                    className="text-slate-400 hover:text-slate-600"
+                  >
+                    {isSelected ? <CheckSquare className="w-4 h-4 text-blue-600" /> : <Square className="w-4 h-4" />}
+                  </button>
+
+                  <span className="w-48 truncate text-xs font-bold text-slate-900 shrink-0">
+                    {email.sender}
+                  </span>
+
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase shrink-0 ${
+                        isUnstable
+                          ? 'bg-purple-100 text-purple-800'
+                          : isDown
+                          ? 'bg-rose-100 text-rose-800'
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {isUnstable ? 'UNSTABLE' : isDown ? 'INCIDENT' : 'RECOVERY'}
+                    </span>
+                    <span className="text-xs text-slate-900 font-semibold truncate">
+                      {email.subject}
+                    </span>
+                    <span className="text-xs text-slate-400 truncate font-normal">
+                      &mdash; {email.snippet}
+                    </span>
+                  </div>
+
+                  <span className="text-xs text-slate-500 font-mono shrink-0 whitespace-nowrap">
+                    {email.date}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Email Reader Modal */}
+      {activeEmail && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden font-sans">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <div>
+                <h3 className="font-bold text-base text-slate-900">{activeEmail.subject}</h3>
+                <p className="text-xs text-slate-500 font-mono mt-0.5">From: {activeEmail.sender} &bull; {activeEmail.date}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveEmail(null)}
+                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 text-xs font-mono whitespace-pre-wrap leading-relaxed text-slate-800">
+              {activeEmail.body}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setActiveEmail(null)}
+                className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Close Email
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

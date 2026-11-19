@@ -22,13 +22,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 200 });
     }
 
+    const isSuperAdmin = user.email.toLowerCase() === 'jai18hemant334@gmail.com';
+    const effectiveRole = isSuperAdmin ? 'Super Admin' : (user.role === 'Super Admin' ? 'Super Admin' : (user.role === 'Admin' ? 'Admin' : 'Normal User'));
+    const defaultPerms = (effectiveRole === 'Super Admin' || effectiveRole === 'Admin')
+      ? ['VT1', 'EM1', 'PA1', 'CI1', 'UM1', 'SC1']
+      : ['VT1'];
+    const effectivePerms = user.permissions
+      ? user.permissions.split(',').map((p: string) => p.trim())
+      : defaultPerms;
+
     return NextResponse.json({
       authenticated: true,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role || 'Admin',
+        role: effectiveRole,
+        permissions: effectivePerms,
         avatarUrl: user.profile_picture || user.avatar_url || '/infra_trace_logo.png',
         profilePicture: user.profile_picture || user.avatar_url || '/infra_trace_logo.png',
         authProvider: user.auth_provider || 'local',

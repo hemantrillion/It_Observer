@@ -10,6 +10,9 @@ interface GmailLeftRailProps {
   onSelectTab: (tab: RailTab) => void;
   onToggleSidebar?: () => void;
   hasWallpaper?: boolean;
+  userRole?: string;
+  canManageUsers?: boolean;
+  allowedA1Tabs?: RailTab[];
 }
 
 export function GmailLeftRail({
@@ -17,8 +20,11 @@ export function GmailLeftRail({
   onSelectTab,
   onToggleSidebar,
   hasWallpaper = false,
+  userRole = 'Admin',
+  canManageUsers = true,
+  allowedA1Tabs,
 }: GmailLeftRailProps) {
-  const tabs = [
+  const allTabs = [
     {
       id: 'chat' as RailTab,
       label: 'Console',
@@ -55,6 +61,32 @@ export function GmailLeftRail({
       icon: Users,
     },
   ];
+
+  // Role-based visibility enforcement:
+  // 1. If entering non-account through Demo, user can ONLY see demo dashboard nothing else.
+  // 2. For any real logged-in user, Demo tab must NEVER be visible.
+  // 3. Normal users cannot see the Users tab (Admin with U-MGT only).
+  const tabs = allTabs.filter((t) => {
+    if (userRole === 'Demo') {
+      return t.id === 'demo';
+    }
+    // Real users NEVER see Demo
+    if (t.id === 'demo') {
+      return false;
+    }
+    // Dynamic a1 tab visibility configured by Super Admin
+    if (allowedA1Tabs && allowedA1Tabs.length > 0) {
+      if (!allowedA1Tabs.includes(t.id)) {
+        // Invariant: Super Admin can NEVER lose access to Users tab
+        if (t.id === 'users' && userRole === 'Super Admin') return true;
+        return false;
+      }
+    }
+    if (t.id === 'users') {
+      return canManageUsers;
+    }
+    return true;
+  });
 
   return (
     <aside className="w-[72px] h-full flex flex-col items-center py-2 shrink-0 bg-transparent space-y-4 select-none">
@@ -99,15 +131,15 @@ export function GmailLeftRail({
                 <IconComponent className="w-6 h-6 stroke-[1.8]" />
               </div>
 
-              {/* Label below capsule */}
+              {/* Label below capsule with increased, sharp contrast font */}
               <span
-                className={`text-xs mt-1.5 tracking-tight ${
+                className={`text-xs mt-1 transition-colors select-none ${
                   isActive
                     ? hasWallpaper
-                      ? 'font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
+                      ? 'font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]'
                       : 'font-bold text-[#041e49]'
                     : hasWallpaper
-                    ? 'font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)] group-hover:text-white'
+                    ? 'font-medium text-white/90 group-hover:text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.75)]'
                     : 'font-medium text-[#444746] group-hover:text-[#1f1f1f]'
                 }`}
               >

@@ -14,7 +14,10 @@ import { IncidentAlertRecord } from '@/lib/database/get_all_incidents_history_qu
 import { MetricSampleRecord } from '@/lib/database/get_metric_samples_by_service_query';
 import { DemoSubView, StatusFilter } from './gmail_left_sidebar';
 import { DensityOption } from './gmail_quick_settings_panel';
-import { Cloud, Plus } from 'lucide-react';
+import { Cloud, Plus, Heart, Sparkles } from 'lucide-react';
+import { MetricTelemetryChartCard } from '@/components/cards/metric_telemetry_chart_card';
+import { MetricCardData } from '@/lib/catalog/metrics_catalogue_provider';
+import { IMPLEMENTED_METRICS } from '@/lib/metrics/implemented_metrics_registry';
 
 interface ObservatoryTelemetryEmbeddedViewProps {
   services: MonitoredServiceRecord[];
@@ -70,6 +73,47 @@ export function ObservatoryTelemetryEmbeddedView({
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
   const [allIncidents, setAllIncidents] = useState<IncidentAlertRecord[]>([]);
   const [isLoadingIncidents, setIsLoadingIncidents] = useState(false);
+  const [favoriteMetricCards, setFavoriteMetricCards] = useState<MetricCardData[]>([]);
+
+  // Load user's favorited metrics from localStorage (Phase 9 requirement)
+  const loadFavorites = useCallback(() => {
+    try {
+      const storageKey = `infratrace_favorite_metrics_${userEmail.toLowerCase().trim()}`;
+      const stored = localStorage.getItem(storageKey);
+      const favIds: string[] = stored ? JSON.parse(stored) : [];
+
+      const cards: MetricCardData[] = [];
+      for (const id of favIds) {
+        const found = IMPLEMENTED_METRICS.find((m) => m.id === id);
+        if (found) {
+          cards.push({
+            id: found.id,
+            title: found.name,
+            description: found.description,
+            parentPath: `${found.category} / ${found.subCategory}`,
+            sampleApi: found.sampleApiUrl,
+            requirements: `Monitored via ${found.sampleApiProvider}. Expected interval: ${found.expectedIntervalSeconds}s.`,
+            hasData: true,
+            curveType: 'wave',
+            color: found.primaryColor,
+            dualColor: found.secondaryColor,
+            points: [0.35, 0.45, 0.38, 0.52, 0.48, 0.61, 0.54, 0.58, 0.49],
+            unit: found.unit,
+          });
+        }
+      }
+      setFavoriteMetricCards(cards);
+    } catch {
+      setFavoriteMetricCards([]);
+    }
+  }, [userEmail]);
+
+  useEffect(() => {
+    loadFavorites();
+    const handleFavUpdate = () => loadFavorites();
+    window.addEventListener('infratrace_favorites_updated', handleFavUpdate);
+    return () => window.removeEventListener('infratrace_favorites_updated', handleFavUpdate);
+  }, [loadFavorites]);
 
   // Fetch incidents list on mount and whenever demoSubView changes
   const fetchIncidentsHistory = useCallback(() => {
@@ -288,6 +332,7 @@ export function ObservatoryTelemetryEmbeddedView({
                 )}
               </div>
             </section>
+
 
             {/* Section: Monitored Targets Grid */}
             <section className="space-y-2.5 w-full">

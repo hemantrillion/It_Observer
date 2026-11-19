@@ -11,7 +11,7 @@ export default function SignUpPage() {
     <CreateAccountView
       onBack={() => router.push('/')}
       onGoToSignIn={(prefilled) => router.push(prefilled ? `/signin?email=${encodeURIComponent(prefilled)}` : '/signin')}
-      onSuccess={() => router.push('/demo')}
+      onSuccess={() => router.push('/console')}
     />
   );
 }
